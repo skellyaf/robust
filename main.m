@@ -10,7 +10,7 @@ clear global;
 close all; 
 clc;
 format longg;
-cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust_2body_tcmerror');
+cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
 savename = 'cr3bp_heo_to_mlo_robust';
@@ -33,8 +33,12 @@ saveOutput = true; % bool for saving the output or not, true or false
 % cr3bp
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_llo';
 % init_fn = './init_traj_files/init_simparams_cr3bp_geo_to_llo';
-init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo';
+% init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo';
 % init_fn = './init_traj_files/init_simparams_cr3bp_llo_to_nrho';
+
+% cr3bp, 3 nominal maneuvers
+init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
+
 
 run(init_fn);
 
@@ -122,7 +126,6 @@ if exitflag ~= -2 && saveOutput
     outputPath = strcat('./sims/',dateString,'_',savename);
     mkdir(outputPath);
     outputPathName = strcat('./',outputPath,'/video.avi');
-    optimHistoryMovie(history,outputPathName, simparams);
 
     % Save workspace    
     save(strcat('./',outputPath,'/workspace.mat'));
@@ -151,6 +154,11 @@ if exitflag ~= -2 && saveOutput
 %     newbackup=strcat('./',outputPath,'/initialize_simulation_parameters_backup.m');
     newbackup=strcat(outputPath,'/initialize_simparams_backup.m');
     copyfile(strcat(init_fn,'.m'),newbackup);
+
+
+
+    optimHistoryMovie(history,outputPathName, simparams);
+
 
 end
 
