@@ -67,13 +67,16 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 20; % number of trajectory segments
+simparams.n = 30; % number of trajectory segments
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
 
 % Three nominal maneuvers
-simparams.maneuverSegments = [2, 6, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.maneuverSegments = [2, 13, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+simparams.max_num_TCMs = 8; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
 simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a correction occurs (currently the first nominal maneuver); set to 0 to not tie to a nominal maneuver
@@ -218,7 +221,7 @@ simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = 
 
 
 %% Target orbit - low lunar orbit
-altitude_targ = 1000; % Lunar altitude, km
+altitude_targ = 10000; % Lunar altitude, km
 coe_targ.a = altitude_targ + moon.rad; % semimajor axis, km
 coe_targ.ecc = 0.001; % eccentricity
 % Inclination of 27 degrees (27, 50, 76, & 86 enable extended LLO stays)
@@ -264,8 +267,8 @@ simparams.x0 = simparams.x0(:);
 simparams.optoptions = optimoptions('fmincon');
 
 % # Iterations
-simparams.optoptions.MaxFunctionEvaluations = 3e5;
-simparams.optoptions.MaxIterations = 1e4;
+simparams.optoptions.MaxFunctionEvaluations = 1e6;
+simparams.optoptions.MaxIterations = 1e6;
 
 % Algorithm
 simparams.optoptions.Algorithm = 'interior-point';
@@ -279,11 +282,11 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 % Optimality and constraint satisfaction tolerances
 simparams.optoptions.OptimalityTolerance = 1e-10;
 simparams.optoptions.ConstraintTolerance = 1e-10;
-simparams.optoptions.StepTolerance = 1e-14; % use with sqp
+simparams.optoptions.StepTolerance = 1e-10; % use with sqp
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
 % To use parallel processing
-simparams.optoptions.UseParallel = true;
+% simparams.optoptions.UseParallel = true;
 
 % Fmincon interior point feasibility mode
 % simparams.optoptions.EnableFeasibilityMode = true;

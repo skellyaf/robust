@@ -1,4 +1,4 @@
-function [dstmNCdxi,dstmNCddti] = calc_dstmNC(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tCk_idx, tCk_seg, stmN0, i, simparams)
+function [dstmNCdxi,dstmNCddti] = calc_dstmNC(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tCk_idx, tCk_seg, i, simparams)
 
 mu = simparams.mu;
 

@@ -13,7 +13,7 @@ format longg;
 cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_heo_to_mlo_robust';
+savename = 'cr3bp_leo_mlo_3dv_midcourseTcmTarget_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -37,7 +37,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 % init_fn = './init_traj_files/init_simparams_cr3bp_llo_to_nrho';
 
 % cr3bp, 3 nominal maneuvers
-init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 
 run(init_fn);
@@ -59,7 +60,11 @@ run(init_fn);
 % Calculate total impulsive delta V for initial guess trajectory
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0,x_i_f0,simparams);
 % [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
-[tcm_time0,tcm_idx0,min_tcm_dv0] = opt_multiple_tcm(simparams.x0, t0, stm_t0, simparams);
+
+
+[tcm_time0,tcm_idx0,min_tcm_dv0] = opt_multiple_tcm(simparams.x0, t0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+
+
 totalDV0 = deltaV0 + 3*min_tcm_dv0
 
 figure;

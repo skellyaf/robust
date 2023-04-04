@@ -22,7 +22,7 @@ tCk_idx = find(t==tCk);
 tClast_idx = find(t==tClast);
 
 
-%%%%% 5 LOGIC CASES FOR dstmCkClastdxi
+%%%%% 6 LOGIC CASES FOR dstmCkClastdxi
 
 %% Logic case 1: [t0,i < tf,i < tClast < tCk]
 if tf_i <= tClast

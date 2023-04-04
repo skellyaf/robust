@@ -62,17 +62,23 @@ else
         % Function to find the minimum pair along the trajectory
 %         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
 
-        [tcm_time,tcm_idx,min_tcm_dv] = opt_multiple_tcm(x, t, stm_t, simparams);
+        [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus, event_is_tcm] = opt_multiple_tcm(x, t, stm_t, simparams);
 
-        % 
-        [~, ~, tcm_dv_each, P_i_minus, P_i_plus] = calc_covariance_tcmdv(x, t, stm_t, tcm_time, simparams);
+%         % Loop over TCM portions (also each of the nominal maneuvers after the first) with different targets and pass the
+%         % final dispersion covariance as the initial to the next
+
+%         P_i = simparams.P_initial;
+%         for i = 1:length(simparams.P_constrained_nodes)
+%         end
+
+%         [~, ~, tcm_dv_each, P_i_minus, P_i_plus] = calc_covariance_tcmdv(x, t, stm_t, tcm_time, simparams);
 
         tcm_3sigma = 3*min_tcm_dv;
 
 
     
         % TCM gradient
-        tcm_gradient = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, tcm_dv_each, P_i_minus, P_i_plus, simparams);
+        tcm_gradient = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_i_minus, P_i_plus, event_is_tcm, simparams);
         tcm_gradient = 3*tcm_gradient;
     else
         tcm_3sigma = 0;

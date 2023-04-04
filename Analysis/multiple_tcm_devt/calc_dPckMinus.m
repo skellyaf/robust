@@ -6,7 +6,7 @@ function [dPCkminusd] = calc_dPckMinus(stmCkClast, dstmCkClast, k, simparams, Tl
 
 
 if k == 1
-    PClast_minus = simparams.P_initial;
+%     PClast_minus = simparams.P_initial;
 
     dPCkminusd = tmult(stmCkClast*PClast_minus,dstmCkClast,[0 1])         + tmult(dstmCkClast,PClast_minus*stmCkClast');
 

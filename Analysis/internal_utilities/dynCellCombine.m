@@ -1,5 +1,5 @@
 function [stm_combined, stt_combined] = dynCellCombine(t, t_s, total_idx_start, total_idx_end, simparams, stm_t_i, stt_t_i)
-%sttCellCombine combines multiple STTs in the cell structure stt_t_i to
+%dynCellCombine combines multiple STMs and STTs in the cell structures stm_t_i and stt_t_i to
 %create a single STT that spans from t_idx_start to t_idx_end
 %(stt_end_start)
 
@@ -57,28 +57,43 @@ if ~skip
     
     for i = seg_t_start:seg_t_end
         seg_times = t(t_s==i);
-        seg_idx = find(t_s==i);
-        
+
+
+            
         % Get seg_idx_start
-        seg_idx_start = seg_idx(1); 
-        seg_idx_end = seg_idx(end);
-    
-        if total_idx_end < seg_idx_end
-            idx_end = total_idx_end;
+%         seg_idx_start = seg_idx(1);
+%         seg_idx_end = seg_idx(end);
+
+        if t(total_idx_end) < seg_times(end)
+            % Don't go all the way to the end of the current cell
+            end_logical = t(t_s==i)==t(total_idx_end);
+            if size(end_logical,2) ~= size(stm_t_i{i})
+                end_logical = [false; end_logical];
+            end
+            if stt_flag
+                stt_if_i0 = stt_t_i{i}(:,:,:,end_logical);
+            end
+            stm_if_i0 = stm_t_i{i}(:,:,end_logical);
         else
-            idx_end = seg_idx_end;
+            % Go all the way to the end of the current cell
+            if stt_flag
+                stt_if_i0 = stt_t_i{i}(:,:,:,end);
+            end
+            stm_if_i0 = stm_t_i{i}(:,:,end);
         end
     
-        cell_idx_end = find_cell_t_i_idx(t,t_s,stm_t_i,idx_end);
-    
-        if stt_flag
-            stt_if_i0 = stt_t_i{i}(:,:,:,cell_idx_end);
-        end
-    
-        stm_if_i0 = stm_t_i{i}(:,:,cell_idx_end);
+
+
+
         
         % If the requested start index is after the beginning of the current segment
-        if total_idx_start > seg_idx_start
+%         if total_idx_start > seg_idx_start
+        if t(total_idx_start) > seg_times(1)
+
+            
+
+
+
             % Then need to combine from the beginning of the segment to the end index      
             cell_idx_start = find_cell_t_i_idx(t,t_s,stm_t_i,total_idx_start);
     
