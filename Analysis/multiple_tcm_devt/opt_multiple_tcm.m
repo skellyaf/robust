@@ -91,6 +91,8 @@ for i = 1:length(simparams.P_constrained_nodes)
     %% Find the optimal number and time of TCMs
     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(t_eval, stm_t_eval, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, P, simparams);
 
+    
+
     % Calculate the covariance at the end of the coast portion to use at
     % the beginning of the next TCM coast portion
     [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv(t_eval, stm_t_eval, tcm_time, vel_disp_flag, P, simparams);

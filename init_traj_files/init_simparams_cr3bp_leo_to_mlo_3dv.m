@@ -60,6 +60,7 @@ simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma
 % simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
 
 simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
+simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
 
@@ -167,7 +168,8 @@ altitude_targ = 1000; % Lunar altitude, km
 coe_targ.a = altitude_targ + moon.rad; % semimajor axis, km
 coe_targ.ecc = 0.001; % eccentricity
 % Inclination of 27 degrees (27, 50, 76, & 86 enable extended LLO stays)
-coe_targ.inc = (180 - 27) * pi/180; % inclination, deg
+% coe_targ.inc = (180 - 27) * pi/180; % inclination, deg
+coe_targ.inc = pi;
 coe_targ.raan = 180 * pi/180; % Right ascension - 180 degrees (not used for equatorial orbits)
 coe_targ.argp = 0; % arg of perigee, deg (not used for circular & equatorial orbits)
 coe_targ.nu = 180 * pi/180; % true anomaly, deg (not used for circular orbits)
@@ -262,8 +264,8 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 
 
 % Optimality and constraint satisfaction tolerances
-simparams.optoptions.OptimalityTolerance = 1e-10;
-simparams.optoptions.ConstraintTolerance = 1e-10;
+simparams.optoptions.OptimalityTolerance = 1e-9;
+simparams.optoptions.ConstraintTolerance = 1e-9;
 simparams.optoptions.StepTolerance = 1e-10; % use with sqp
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 

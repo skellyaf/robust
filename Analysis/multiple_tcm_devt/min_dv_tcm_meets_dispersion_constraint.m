@@ -50,7 +50,7 @@ end
 
 
 %%%%%% DEBUGGING:
-% 
+
 % P_t = tmult(stm_t, tmult(simparams.P_initial, stm_t, [0 1]));
 % 
 % for i = 1:size(P_t,3)
@@ -59,12 +59,14 @@ end
 % figure;
 % plot(t,Pmag_t)
 % xlim([t(1) t(end)]);
+% title('Position dispersion through traj without TCM')
 % 
 % 
 % figure
 % plot(t,tcm_dv_t)
 % % ylim([0 tcm_dv_t(end-100)*1.5])
 % xlim([t(1) t(end)]);
+% title('TCM magnitude as a function of execution time')
 % 
 % 
 % figure
@@ -73,7 +75,7 @@ end
 % hold on
 % yline(simparams.P_max_r)
 % plot(t,rP_meets_constraint_logical * simparams.P_max_r,'LineWidth',2)
-% 
+% title('Target position dispersion as a function of TCM execution time with constraint shown')
 % 
 % figure
 % 
@@ -81,7 +83,20 @@ end
 % xlim([t(1) t(end)]);
 % hold on;
 % plot(tcm_feasibleMin_time, minTcmDV_meets_constraint,'.','MarkerSize',25)
+% title('TCM magnitude options that meet the target position dispersion constraint')
 % 
 % 
-
+% 
+% % Adding a second TCM
+% 
+% for i = 1:tcm_feasibleMin_idx - 1
+%     tcm2_time_i = sort([tcm_feasibleMin_time, t(i)]);
+%     [Pn_2tcm_time_i, tcm2_dv_t(i)] = calc_covariance_tcmdv(t, stm_t, tcm2_time_i, vel_disp_flag, P_i, simparams);
+%     rP_2tcm_time_t(i) = sqrt(trace(Pn_2tcm_time_i(1:3,1:3)));
+% end
+% 
+% 
+% figure
+% plot(t(1:tcm_feasibleMin_idx - 1), tcm2_dv_t)
+% title('Second TCM magnitude options as a function of execution time along traj')
 

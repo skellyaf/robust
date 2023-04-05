@@ -47,6 +47,11 @@ while improving
         if TCMr_idx_test(i)-1 > compare
             TCMr_idx_test(i) = TCMr_idx_test(i)-1;
             TCMr_time_test(i) = t(TCMr_idx_test(i));
+
+            if length(TCMr_idx_test) ~= length(unique(TCMr_idx_test))
+                ppp=1;
+            end
+
             [~, testDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
 
             if testDV < minDV
@@ -91,6 +96,13 @@ while improving
             if TCMr_idx_test(i)+1 < compare
                 TCMr_idx_test(i) = TCMr_idx_test(i)+1;
                 TCMr_time_test(i) = t(TCMr_idx_test(i));
+
+                if length(TCMr_idx_test) ~= length(unique(TCMr_idx_test))
+                    ppp=1;
+                end
+
+
+
                 [~, testDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
     
                 if testDV < minDV
@@ -126,6 +138,14 @@ while improving
     else
         TCMr_idx_best = TCMr_idx_best + gradient_vector;
         TCMr_time_best = t(TCMr_idx_best)';
+
+
+        if length(TCMr_idx_best) ~= length(unique(TCMr_idx_best))
+            ppp=1;
+        end
+
+
+
         [~, minDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
         TCMr_idx_test_save(end,:) = TCMr_idx_best;
         minDV_save(end) = minDV;

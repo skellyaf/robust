@@ -65,16 +65,27 @@ while improving
     
         % Perform gradient descent on the indices
 
-        [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
-        
-        if length(tcm_idx_test) > 2
-            % Perform stochastic gradient descent to get double indices
-            [tcm_idx_test] = random_unit_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
-        
-            % Perform gradient descent one more time on the indices
+        %%%%% NEW STUFF, IN TESTING
+        % CREATING AN IMPROVEMENT THRESHOLD (set in init_params but
+        % currently at 3 sigma of the TCM execution error magnitude)
+
+        if minDV + simparams.add_tcm_improvement_threshold < tcm_num_option_DVs(end)
+
+        %%%%%
+
             [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+            
+            if length(tcm_idx_test) > 2
+                % Perform stochastic gradient descent to get double indices
+                [tcm_idx_test] = random_unit_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+            
+                % Perform gradient descent one more time on the indices
+                [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+            end
+        
+
         end
-    
+
         % Save it as the minimum:
         % Save the TCM times in a structure
         tcm_time_cell{end+1} = tcm_time_test;
@@ -82,17 +93,19 @@ while improving
         tcm_idx_cell{end+1} = tcm_idx_test;
         % Save the total TCM delta V in a structure
         tcm_num_option_DVs(end+1) = minDV;
+
+
     
     
-        % Check if the Delta V improved, end the while loop if not
-        if minDV >= tcm_num_option_DVs(end-1)
+        % Check if the Delta V (plus an improvement threshold) improved, end the while loop if not
+        if minDV + simparams.add_tcm_improvement_threshold >= tcm_num_option_DVs(end-1)
             tcm_time = tcm_time_cell{end-1};
             tcm_idx = tcm_idx_cell{end-1};
             min_tcm_dv = tcm_num_option_DVs(end-1); %%%% 1 SIGMA ONLY
             improving = 0;
-        end 
+        
 
-        if length(tcm_idx_test) == simparams.max_num_TCMs %%%%% MAXIMUM NUMBER OF TCMS ALLOWED
+        elseif length(tcm_idx_test) == simparams.max_num_TCMs %%%%% MAXIMUM NUMBER OF TCMS ALLOWED
             tcm_time = tcm_time_cell{end};
             tcm_idx = tcm_idx_cell{end};
             min_tcm_dv = tcm_num_option_DVs(end); %%%% 1 SIGMA ONLY
