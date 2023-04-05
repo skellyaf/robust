@@ -10,7 +10,7 @@ clear global;
 close all; 
 clc;
 format longg;
-cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
+% cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
 savename = 'cr3bp_heo_mlo_3dv_midcourseTcmTarget_robust';

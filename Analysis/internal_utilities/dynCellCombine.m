@@ -59,12 +59,14 @@ if ~skip
         seg_times = t(t_s==i);
 
 
+        seg_idx = find(t_s==i);
             
         % Get seg_idx_start
-%         seg_idx_start = seg_idx(1);
-%         seg_idx_end = seg_idx(end);
+        seg_idx_start = seg_idx(1);
+        seg_idx_end = seg_idx(end);
 
-        if t(total_idx_end) < seg_times(end)
+%         if t(total_idx_end) < seg_times(end)
+        if total_idx_end < seg_idx_end
             % Don't go all the way to the end of the current cell
             end_logical = t(t_s==i)==t(total_idx_end);
             if size(end_logical,2) ~= size(stm_t_i{i})
@@ -87,8 +89,8 @@ if ~skip
 
         
         % If the requested start index is after the beginning of the current segment
-%         if total_idx_start > seg_idx_start
-        if t(total_idx_start) > seg_times(1)
+        if total_idx_start > seg_idx_start
+%         if t(total_idx_start) > seg_times(1)
 
             
 
