@@ -60,6 +60,8 @@ simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma
 % simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
 
 simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
+simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
+
 
 % simparams.R = diag([0 0 0]);
 
@@ -75,7 +77,7 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 % Three nominal maneuvers
 simparams.maneuverSegments = [2, 13, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
-simparams.max_num_TCMs = 8; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
@@ -98,7 +100,7 @@ simparams.segn_coast_fraction = 0.3; % percent of orbital period to coast in the
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
@@ -221,7 +223,7 @@ simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = 
 
 
 %% Target orbit - low lunar orbit
-altitude_targ = 10000; % Lunar altitude, km
+altitude_targ = 1000; % Lunar altitude, km
 coe_targ.a = altitude_targ + moon.rad; % semimajor axis, km
 coe_targ.ecc = 0.001; % eccentricity
 % Inclination of 27 degrees (27, 50, 76, & 86 enable extended LLO stays)

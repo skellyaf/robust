@@ -13,7 +13,7 @@ format longg;
 cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_leo_mlo_3dv_midcourseTcmTarget_robust';
+savename = 'cr3bp_heo_mlo_3dv_midcourseTcmTarget_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -37,8 +37,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 % init_fn = './init_traj_files/init_simparams_cr3bp_llo_to_nrho';
 
 % cr3bp, 3 nominal maneuvers
-% init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 
 run(init_fn);
