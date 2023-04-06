@@ -328,7 +328,7 @@ simparams.x0(:,end) = x_dv3;
 % % % % % Optimality and constraint satisfaction tolerances
 % % % % simparams.optoptions.OptimalityTolerance = 1e-10;
 simparams.optoptions.ConstraintTolerance = 1.5e-9;
-% % % % simparams.optoptions.StepTolerance = 1e-10; % use with sqp
+simparams.optoptions.StepTolerance = 1e-16; % use with sqp
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
 % To use parallel processing
