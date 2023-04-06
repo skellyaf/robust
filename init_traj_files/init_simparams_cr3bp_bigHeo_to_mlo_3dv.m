@@ -318,7 +318,7 @@ simparams.x0(:,end) = x_dv3;
 % % % % 
 % % % % % Algorithm
 % % % % simparams.optoptions.Algorithm = 'interior-point';
-% % % % % simparams.optoptions.Algorithm = 'sqp';
+simparams.optoptions.Algorithm = 'sqp';
 % % % % 
 % % % % % Specifying gradient flags
 % % % % simparams.optoptions.SpecifyConstraintGradient = true;
