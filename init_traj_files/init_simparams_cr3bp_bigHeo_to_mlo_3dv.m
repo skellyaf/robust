@@ -21,7 +21,7 @@ ndDist2km = Rm;
 ndVel2kms = Rm * n;
 
 %%
-load('./large_elliptical_3burn_xfer_params.mat')
+load('./initial_guesses/large_elliptical_3burn_xfer_params.mat')
 
 %%
 
