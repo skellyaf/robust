@@ -22,6 +22,12 @@ ndVel2kms = Rm * n;
 
 %%
 load('./initial_guesses/large_elliptical_3burn_xfer_params.mat')
+x0_prev = reshape(x_opt, simparams.m, simparams.n);
+x_init = x0_prev(:,1);
+x_dv1 = [x0_prev(1:6,simparams.maneuverSegments(1)); sum(x0_prev(7,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1))];
+x_dv2 = [x0_prev(1:6,simparams.maneuverSegments(2)); sum(x0_prev(7,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1))];
+x_dv3 = [x0_prev(1:6,simparams.maneuverSegments(3)); sum(x0_prev(7,simparams.maneuverSegments(end)))];
+
 
 %%
 
@@ -76,14 +82,14 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 
 %% Trajectory parameter structure
-% simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-% simparams.n = 30; % number of trajectory segments
-% simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
+simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
+simparams.n = 30; % number of trajectory segments
+simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
 
 % Three nominal maneuvers
-% simparams.maneuverSegments = [2, 13, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.maneuverSegments = [2, 13, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
@@ -112,8 +118,35 @@ simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
-%%
-simparams.x0 = x_opt;
+%% Divide the previous guess into a different number of segments, defined by the new simparams.maneuverSegments vector
+
+simparams.x0(:,1) = x_init;
+
+% x_dv1
+[~,x_xfer1_t, t1] = stateProp(x_dv1(1:6), x_dv1(7), simparams);
+n = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
+x_1 = subdivide_segment(x_xfer1_t, t1, n);
+simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_1;
+
+
+
+% x_dv2
+[~,x_xfer2_t, t2] = stateProp(x_dv2(1:6), x_dv2(7), simparams);
+n = simparams.maneuverSegments(3) - simparams.maneuverSegments(2);
+x_2 = subdivide_segment(x_xfer2_t, t2, n);
+simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = x_2;
+
+
+
+% x_dv3
+simparams.x0(:,end) = x_dv3;
+
+
+
+
+
+
+
 
 % %% Orbit parameters
 % %% Initial Earth departure orbit - currently circular inclined
