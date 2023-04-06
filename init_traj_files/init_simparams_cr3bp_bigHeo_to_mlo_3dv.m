@@ -294,7 +294,7 @@ simparams.x0 = x_opt;
 % % % % 
 % % % % % Optimality and constraint satisfaction tolerances
 % % % % simparams.optoptions.OptimalityTolerance = 1e-10;
-simparams.optoptions.ConstraintTolerance = 1e-9;
+simparams.optoptions.ConstraintTolerance = 1.5e-9;
 % % % % simparams.optoptions.StepTolerance = 1e-10; % use with sqp
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
