@@ -13,7 +13,7 @@ format longg;
 % cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_heo_mlo_3dv_midTcmTgt_x0bigellipse_robust';
+savename = 'cr3bp_heo_mlo_3dv_midTcmTgt_ndvErr_stdx0_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 
 

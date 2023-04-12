@@ -20,7 +20,8 @@ x = reshape(x,m,n);
 
 R_tcm = zeros(6,6);
 R_tcm(4:6,4:6) = simparams.R; % TCM execution error covariance
-R_dv = R_tcm; % nominal maneuver execution error covariance
+G = [zeros(3,3); eye(3,3)];
+R_dv = G*simparams.R_dv*G'; % nominal maneuver execution error covariance
 
 
 %% Finding the nominal maneuvers, their times, and defining which events are TCMs

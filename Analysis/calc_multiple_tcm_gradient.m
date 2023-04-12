@@ -11,7 +11,7 @@ mu = simparams.mu;
 % P_initial = simparams.P_initial;
 R = simparams.R;
 G = [zeros(3,3); eye(3,3)];
-R_dv = G*R*G';
+R_dv = G*simparams.R_dv*G';
 maneuverSegments = simparams.maneuverSegments;
 num_r_corrections = length(tcm_idx);
 
