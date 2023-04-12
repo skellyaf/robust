@@ -1,4 +1,4 @@
-function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess(t, stm_t, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, P_i, simparams)
+function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess(x, t, t_s, stm_t, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, P_i, simparams)
 %optimize_tcm_guess takes the single final TCM to meet the position
 %dispersion constraint and incrementally adds a TCM and optimizes the TCMs
 %until the lowest TCM magnitude is found (stops searching when adding a TCM
@@ -46,14 +46,14 @@ while improving
     % Test each index in the logical array
 
     if sum(test_logical)==0
-        [~, min_tcm_dv] = calc_covariance_tcmdv(t, stm_t, tcm_time, vel_disp_flag, P_i, simparams);
+        [~, min_tcm_dv] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time, vel_disp_flag, P_i, simparams);
 
         improving = 0;
     else
         for i = find(test_logical)
             tcm_new_i = t(i);
             tcm_time_test = sort([tcm_time, tcm_new_i]);
-            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv(t, stm_t, tcm_time_test, vel_disp_flag, P_i, simparams);         
+            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time_test, vel_disp_flag, P_i, simparams);         
         end
        
 
@@ -73,14 +73,14 @@ while improving
 
         %%%%%
 
-            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
             
             if length(tcm_idx_test) > 2
                 % Perform stochastic gradient descent to get double indices
-                [tcm_idx_test] = random_unit_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+                [tcm_idx_test] = random_unit_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
             
                 % Perform gradient descent one more time on the indices
-                [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(t, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
+                [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
             end
         
 

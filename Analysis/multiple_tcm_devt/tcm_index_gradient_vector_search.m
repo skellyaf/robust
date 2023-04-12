@@ -1,4 +1,4 @@
-function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search(t, stm_t, TCMr_idx_best, vel_disp_flag, P_i, simparams)
+function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, P_i, simparams)
 %tcm_index_gradient_search Alters the time index of each individual TCM in
 %each direction (earlier and later) to search for an improvement in the
 %total delta V
@@ -14,7 +14,7 @@ TCMr_time_best = t(TCMr_idx_best)';
 
 improving = 1;
 
-[~, minDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
+[~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
 
 while improving
 % for j = 1:nIter
@@ -52,7 +52,7 @@ while improving
                 ppp=1;
             end
 
-            [~, testDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
+            [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
 
             if testDV < minDV
                 TCMr_idx_test_save(i,:) = TCMr_idx_test;
@@ -103,7 +103,7 @@ while improving
 
 
 
-                [~, testDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
+                [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
     
                 if testDV < minDV
                     TCMr_idx_test_save(i,:) = TCMr_idx_test;
@@ -146,7 +146,7 @@ while improving
 
 
 
-        [~, minDV] = calc_covariance_tcmdv(t, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
+        [~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
         TCMr_idx_test_save(end,:) = TCMr_idx_best;
         minDV_save(end) = minDV;
 

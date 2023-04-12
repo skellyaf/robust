@@ -11,6 +11,7 @@ mu = simparams.mu;
 % P_initial = simparams.P_initial;
 R = simparams.R;
 G = [zeros(3,3); eye(3,3)];
+R_dv = G*R*G';
 maneuverSegments = simparams.maneuverSegments;
 num_r_corrections = length(tcm_idx);
 
@@ -79,21 +80,38 @@ dTkddti = zeros(3,6,length(event_is_tcm),n);
 %% New construct - looping through "events" instead of just TCMs
 % - An event is a TCM or a node with a nominal maneuver (currently)
 
-num_events = length(event_is_tcm);
-event_times = zeros(num_events,1);
-event_times(event_is_tcm) = tcm_time;
-event_time_not_tcm = [];
-
-for i = 1:sum(~event_is_tcm)
-    event_time_not_tcm(end+1) = sum(x(7,1:simparams.P_constrained_nodes(i) - 1));
-end
-
-event_times(~event_is_tcm) = event_time_not_tcm';
 
 
 
+
+% event_times = zeros(num_events,1);
+% event_times(event_is_tcm) = tcm_time;
+% event_time_not_tcm = [];
+% 
+% for i = 1:sum(~event_is_tcm)
+%     event_time_not_tcm(end+1) = sum(x(7,1:simparams.P_constrained_nodes(i) - 1));
+% end
+% 
+% event_times(~event_is_tcm) = event_time_not_tcm';
+
+
+
+
+
+
+[event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
+
+
+event_time_not_tcm = event_times(~event_is_tcm);
 target_time = event_time_not_tcm(1);
 target_idx = find(t==target_time);
+
+num_events = length(event_times);
+
+
+assert(length(event_times) == length(unique(event_times)),'Need some more logic to deal with a nominal maneuver and TCM simultaneous.')
+
+
 
 for k = 1:num_events - 1
 
@@ -123,9 +141,14 @@ for k = 1:num_events - 1
     
     % Extract STMs for calculations    
     stmCkClast = dynCellCombine(t, t_s, tClast_idx, tCk_idx, simparams, stm_t_i);
-    
 
-    if event_is_tcm(k)
+
+    if event_times(k) == event_times(k+1)
+        % A nominal maneuver and TCM are happening at the same time
+        assert(0,'Need some more logic to deal with a nominal maneuver and TCM simultaneous.')
+        
+
+    elseif event_is_tcm(k)
         % Calculate the T matrix
         stmNCk = dynCellCombine(t, t_s, tCk_idx, target_idx, simparams, stm_t_i);
         Tk = [-inv( stmNCk(1:3,4:6) ) * stmNCk(1:3,1:3), -eye(3)];
@@ -196,10 +219,13 @@ for k = 1:num_events - 1
 
         % Assemble dPCkminusdxi
         if k == 1 %%%% if the first correction
-            Tlast = zeros(3,6); dTlastdxi = zeros(3,6,6); dTlastddti = zeros(3,6); 
-            PClast_minus = simparams.P_initial; dPClast_minus_dxi = zeros(6,6); dPClast_minus_ddti = zeros(6,6);
+%             Tlast = zeros(3,6); dTlastdxi = zeros(3,6,6); dTlastddti = zeros(3,6); 
+%             PClast_minus = simparams.P_initial; dPClast_minus_dxi = zeros(6,6); dPClast_minus_ddti = zeros(6,6);
 
-            tcm_update_flag = true;
+            % Propagate dP to first event from P_initial
+            dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(6,6,6), zeros(6,6));
+            dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6));
+
         else
             
             dTlastdxi = dTkdxi(:,:,:,k-1,i);
@@ -211,35 +237,23 @@ for k = 1:num_events - 1
             % Structure P_k_minus has the dispersion P matrix prior to each EVENT 
             PClast_minus = P_k_minus(:,:,k-1);
 
-            tcm_update_flag = event_is_tcm(k-1);
+            % Update differently if TCM vs. nominal maneuver event:
+            % The event that matters is the last event (number k-1) because the
+            % update to the current event time either involves a TCM or doesn't
+            % pending what the previous event was.
+            if event_is_tcm(k-1)
+                dPCkminusdxi(:,:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastdxi, k, simparams, Tlast, dTlastdxi, PClast_minus, dPClast_minus_dxi);
+                dPCkminusddti(:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastddti, k, simparams, Tlast, dTlastddti, PClast_minus, dPClast_minus_ddti);
+    
+            else   
+                % Adding the impact of nominal maneuver execution error
+                dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, PClast_minus, dPClast_minus_dxi, R_dv);
+                dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, PClast_minus, dPClast_minus_ddti, R_dv);    
+            end
                 
             
-        end
+        end       
 
-        % Update differently if TCM vs. nominal maneuver event:
-        % The event that matters is the last event (number k-1) because the
-        % update to the current event time either involves a TCM or doesn't
-        % pending what the previous event was.
-
-        if tcm_update_flag
-            dPCkminusdxi(:,:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastdxi, k, simparams, Tlast, dTlastdxi, PClast_minus, dPClast_minus_dxi);
-            dPCkminusddti(:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastddti, k, simparams, Tlast, dTlastddti, PClast_minus, dPClast_minus_ddti);
-%             % Assemble gradient
-%             % dxi
-%             tcm_gradient_r((i-1)*7+1:(i-1)*7+6,k) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
-%     
-%             % ddti
-%             tcm_gradient_r(i*7,k) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
-        else
-            ppp=1;
-
-
-            dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, PClast_minus, dPClast_minus_dxi);
-            dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, PClast_minus, dPClast_minus_ddti);
-
-
-
-        end
 
         if event_is_tcm(k)
             % Assemble gradient
@@ -250,11 +264,7 @@ for k = 1:num_events - 1
             tcm_gradient_r(i*7,k) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
         end
 
-        
-
-
-
-
+        % The final tcmV gradient
         if k == num_events - 1
             %% new method
 
@@ -283,14 +293,14 @@ for k = 1:num_events - 1
     tClast = tCk; % Updating tClast for the next iteration
     tClast_idx = tCk_idx;
     tClast_seg = tCk_seg;
-    % TODO: ALSO ASSIGN LASTS FOR Tlast, dTlastdxi, PClast_minus, AND dPClast_minus_dxi
-    Tlast = Tk;
+    
 
 
     % Assign new target time
     if event_is_tcm(k)
-        
-
+        % Updating Tlast, which is referenced the next iteration:
+        % ( event_is_tcm(k-1) )
+        Tlast = Tk;
     else
         if k < num_events
             target_time = event_time_not_tcm(find(event_time_not_tcm==target_time)+1);

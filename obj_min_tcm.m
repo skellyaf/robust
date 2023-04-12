@@ -37,7 +37,7 @@ if ~outputGradients
 %         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
         % Function to find the optimal number of TCMs and times to perform
         % them along the nominal trajectory
-        [~,~,min_tcm_dv] = opt_multiple_tcm(x, t, stm_t, simparams);
+        [~,~,min_tcm_dv] = opt_multiple_tcm(x, t, t_s, stm_t, simparams);
         tcm_3sigma = 3*min_tcm_dv;
     else
         tcm_3sigma = 0;
@@ -62,7 +62,7 @@ else
         % Function to find the minimum pair along the trajectory
 %         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
 
-        [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus, event_is_tcm] = opt_multiple_tcm(x, t, stm_t, simparams);
+        [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus, event_is_tcm] = opt_multiple_tcm(x, t, t_s, stm_t, simparams);
 
 %         % Loop over TCM portions (also each of the nominal maneuvers after the first) with different targets and pass the
 %         % final dispersion covariance as the initial to the next

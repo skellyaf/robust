@@ -83,13 +83,13 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 25; % number of trajectory segments
+simparams.n = 15; % number of trajectory segments
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
 
 % Three nominal maneuvers
-simparams.maneuverSegments = [2, 10, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.maneuverSegments = [2, 8, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
@@ -318,7 +318,7 @@ simparams.x0(:,end) = x_dv3;
 % % % % 
 % % % % % Algorithm
 % % % % simparams.optoptions.Algorithm = 'interior-point';
-simparams.optoptions.Algorithm = 'sqp';
+% simparams.optoptions.Algorithm = 'sqp';
 % % % % 
 % % % % % Specifying gradient flags
 % % % % simparams.optoptions.SpecifyConstraintGradient = true;

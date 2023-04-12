@@ -38,8 +38,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 
 % cr3bp, 3 nominal maneuvers
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
-% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
 
 
 run(init_fn);
@@ -64,14 +64,14 @@ run(init_fn);
 % [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
 
 
-[tcm_time0,tcm_idx0,min_tcm_dv0] = opt_multiple_tcm(simparams.x0, t0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-
+[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+ 
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
 
 figure;
 if simparams.perform_correction    
-    [~,tcm_idx0] = opt_multiple_tcm(simparams.x0, t0, stm_t0, simparams);
+    [~,tcm_idx0] = opt_multiple_tcm(simparams.x0, t0, t_s0, stm_t0, simparams);
     plotMultiSegTraj(simparams.x0, x_t0, t_s0, simparams, tcm_idx0);
 else
     plotMultiSegTraj(simparams.x0, x_t0, t_s0, simparams);
@@ -101,9 +101,9 @@ toc
 % [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x_opt, simparams);
 [stm_i, stt_i, x_i_f, x_t, stm_t, stt_t_i, t, t_s, stm_t_i]  = createStateStmSttHistory(x_opt, simparams);
 % Calculate total impulsive delta V 
-[deltaV, deltaVs_nom] = calcDeltaV(x_opt,x_i_f,simparams);
+[deltaV, deltaVs_nom] = calcDeltaV(x_opt, x_i_f, simparams);
 % [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
-[tcm_time,tcm_idx,min_tcm_dv] = opt_multiple_tcm(x_opt, t, stm_t, simparams);
+[tcm_time,tcm_idx,min_tcm_dv] = opt_multiple_tcm(x_opt, t, t_s, stm_t, simparams);
 totalDV = deltaV + 3*min_tcm_dv
 
 
