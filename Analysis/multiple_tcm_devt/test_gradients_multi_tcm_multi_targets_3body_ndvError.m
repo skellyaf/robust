@@ -48,11 +48,25 @@ x = reshape(x,simparams.m,simparams.n);
 
 
 %% Testing the gradient of a specific TCM
-k=2; %%%%%% which TCM we're testing from tcm_time / tcm_idx
+k=1; %%%%%% which TCM we're testing from tcm_time / tcm_idx
 
-[event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
+[event_times, throwaway] = define_events(x(:), t, tcm_time, simparams);
 
-num_events = length(event_is_tcm);
+
+%%%%%% FOR TESTING %%%%%%
+% Forcing a tcm time to be the same as a nominal maneuver 
+tcm_time(2) = event_times(3);
+% [event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
+
+[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
+% 
+% 
+[tcm_timeo, ~, min_tcm_dv, P_i_minus, P_i_plus, tcm_dv_each] = opt_multiple_tcm_fdGradientTesting(x, t, t_s, stm_t, tcm_time, simparams);
+
+%%%%%% END TESTING %%%%%%
+
+
+num_events = length(event_indicator);
 % event_times = zeros(num_events,1);
 % event_times(event_is_tcm) = tcm_time;
 % event_time_not_tcm = [];
@@ -66,8 +80,8 @@ num_events = length(event_is_tcm);
  
 % Logically indexing - return the event times that are not TCMs that are
 % after the TCM
-target_time = event_times( tcm_time(k) < event_times & ~event_is_tcm );
-target_time = target_time(1);
+target_times = event_times( tcm_time(k) < event_times & event_indicator ~=1 );
+target_time = target_times(1);
 target_idx = find(t == target_time);
 
 
@@ -182,9 +196,8 @@ parfor i = 1:simparams.m*simparams.n
     Pc4_minus1dx = P_i_minus1dx(:,:,4);
 %     Pc5_minus1dx = P_i_minus1dx(:,:,5);
 %     Pcn_minus1dx = P_i_minus1dx(:,:,num_events+1);
-    Pcn_minus1dx = P_i_minus1dx(:,:,num_events);
+%     Pcn_minus1dx = P_i_minus1dx(:,:,num_events);
 
-    %%%%%%%%%%% THESE NEED CLEANUP...STILL INDEXING ERRORS
 
 
     dPc1_minusdx_fd(:,:,i) = (Pc1_minus1dx - P_i_minus(:,:,1))./dx;
@@ -192,7 +205,7 @@ parfor i = 1:simparams.m*simparams.n
     dPc3_minusdx_fd(:,:,i) = (Pc3_minus1dx - P_i_minus(:,:,3))./dx;
     dPc4_minusdx_fd(:,:,i) = (Pc4_minus1dx - P_i_minus(:,:,4))./dx;
 %     dPc5_minusdx_fd(:,:,i) = (Pcn_minus1dx - P_i_minus(:,:,5))./dx;
-    dPcn_minusdx_fd(:,:,i) = (Pcn_minus1dx - P_i_minus(:,:,num_events))./dx;
+%     dPcn_minusdx_fd(:,:,i) = (Pcn_minus1dx - P_i_minus(:,:,num_events))./dx;
 
 
 
@@ -246,7 +259,17 @@ end
 % easier to debug into the calc_multiple_tcm_gradient function and directly
 % observe the tcm_gradient_r values
 
-[tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_i_minus, P_i_plus, event_is_tcm, simparams);
+[tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_i_minus, P_i_plus, simparams);
+
+
+
+
+%%%%%%%%%%%%%%%%% RETURN HERE AFTER VACATION!!!!
+%%%% NOTES: Just finished matching gradients when there is a concurrent TCM
+%%%% with a delta V. Can run tests now that haven't been run with TCM
+%%%% execution error, nominal execution error, 3 delta Vs with a
+%%%% mid-trajectory TCM target/covariance constraint.
+
 
 
 

@@ -80,6 +80,12 @@ for i = 1:length(simparams.P_constrained_nodes)
 
     % Calculate the covariance at the end of the coast portion to use at
     % the beginning of the next TCM coast portion
+
+
+%     if i == 2
+%         tcm_time(1) = sum(x(7,1:11));
+%     end
+
     [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv(x(:), t_eval, t_s_eval, stm_t_eval, tcm_time, vel_disp_flag, P, simparams);
 
 

@@ -1,18 +1,19 @@
-function [dPCkminusd] = calc_dPckMinus(stmCkClast, dstmCkClast, k, simparams, Tlast, dTlast, PClast_minus, dPClast_minus)
+function [dPCkminusd] = calc_dPckMinus(stmCkClast, dstmCkClast, R, Tlast, dTlast, PClast_minus, dPClast_minus)
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
 
 
 
 
-if k == 1
-%     PClast_minus = simparams.P_initial;
+% % % % if k == 1
+% % % % %     PClast_minus = simparams.P_initial;
+% % % % 
+% % % %     dPCkminusd = tmult(stmCkClast*PClast_minus,dstmCkClast,[0 1])         + tmult(dstmCkClast,PClast_minus*stmCkClast');
+% % % % 
+% % % % else
 
-    dPCkminusd = tmult(stmCkClast*PClast_minus,dstmCkClast,[0 1])         + tmult(dstmCkClast,PClast_minus*stmCkClast');
+%     R = simparams.R;
 
-else
-
-    R = simparams.R;
     G = [zeros(3,3); eye(3,3)]; % mapping matrix to vv submatrix
 
     
@@ -35,7 +36,7 @@ else
     
     dPCkminusd = t1 + t2 + t3 + t4;
 
-end
+% % % % end
 
 
 end

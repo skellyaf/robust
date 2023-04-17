@@ -18,15 +18,16 @@ n = simparams.n; % the number of segments
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
 
-R_tcm = zeros(6,6);
-R_tcm(4:6,4:6) = simparams.R; % TCM execution error covariance
+R_tcm = simparams.R;
+R_dv = simparams.R_dv; % nominal maneuver execution error covariance
 G = [zeros(3,3); eye(3,3)];
-R_dv = G*simparams.R_dv*G'; % nominal maneuver execution error covariance
 
 
 %% Finding the nominal maneuvers, their times, and defining which events are TCMs
 
-[event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
+% [event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
+
+[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
 
 % STM from beginning of trajectory to the end of the current stm history
 % % This code is frequently called such that the end of the stm history is
@@ -39,7 +40,8 @@ stmN0 = stm_t(:,:,end);
 % one longer than the tcm_time because the velocity correction occurs at
 % the end of the trajectory and isn't included in tcm_time.
 num_tcm = length(tcm_time);
-tcm_dv = zeros(1,length(tcm_time)+1);
+% tcm_dv = zeros(1,length(tcm_time)+1);
+tcm_dv = [];
 
 
 
@@ -72,31 +74,33 @@ else % Otherwise, if there are events, do:
 
     P_i_plus = zeros(6,6,length(unique(event_times))); % no plus one, it is the dispersion covariance after each event        
     
-    j = 1;
-    dup_cnt = 0;
+%     j = 1;
+%     dup_cnt = 0;
     %% Compute the covariance only at the correction(s) and the final
-%     for i = 1:length(event_times)
-    while j <= length(unique(event_times))
+    for i = 1:length(event_times)
+%     while j <= length(unique(event_times))
         % j - for accessing variables that are being saved
         % i - for accessing event_times
-        i = j + dup_cnt;
+%         i = j + dup_cnt;
        
         % Propagate dispersion covariance from previous event to i
 
         if i == 1
-            stmCiClast = stmC0(:,:,j);
+            stmCiClast = stmC0(:,:,i);
         else
-            stmCi0 = stmC0(:,:,j);
+            stmCi0 = stmC0(:,:,i);
             stmCiClast = stmCi0 * stm0C;
         end 
 
 
-        if j == 1 & event_idx_logical(1)
-            P_i_minus(:,:,j) = P_i;
+
+        if i == 1 & event_idx_logical(1)
+%         if i == 1
+            P_i_minus(:,:,i) = P_i;
             stm0C = eye(6);
         else
-            P_i_minus(:,:,j) = stmCiClast * P_i * stmCiClast';
-            stm0C = invert_stm(stmC0(:,:,j), simparams);
+            P_i_minus(:,:,i) = stmCiClast * P_i * stmCiClast';
+            stm0C = invert_stm(stmC0(:,:,i), simparams);
             
         end
 
@@ -104,59 +108,64 @@ else % Otherwise, if there are events, do:
         
         stmNC = stmN0 * stm0C;
 
-        % Is it a nominal maneuver, TCM, or both?
-        % Check for both first
-        if i == length(event_times)
-            next_event_time = nan;
-        else
-            next_event_time = event_times(i+1);
-        end
-        if event_times(i) == next_event_time % if it is a nominal maneuver and TCM at the same time
+        % Is it a nominal maneuver (0), TCM (1), or both (2)?
 
-            assert(xor(event_is_tcm(i), event_is_tcm(i+1)),'Some logic mishap happened...should only be here if one event is a TCM and one is a nominal manever, happening at the same time.');
+        if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
 
-            % Perform the TCM update   
-        
+            % Perform the TCM update matrix calculations     
             T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
             N = [zeros(3,6); T];
             IN = eye(6) + N;
-       
-            P_i = IN * P_i_minus(:,:,j) * IN' + R_tcm + R_dv;
-            P_i_plus(:,:,j) = P_i;
+
+            if event_indicator(i) == 2 
+                % If there is a nominal maneuver also turn on the nominal maneuver error 
+                rdv_mult = 1;
+            else
+                % If it is only a TCM, turn off the nominal maneuver error
+                rdv_mult = 0;
+            end
+
+            % Covariance update (TCM, nominal maneuver is turned on/off with rdv_mult)       
+            P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G' * rdv_mult;
+            P_i_plus(:,:,i) = P_i;
     
-            P_tcm = T * P_i_minus(:,:,j) * T' + simparams.R; % with error in tcm_dv magnitude calc 
+            P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
     %         P_tcm = T * P_i_minus(:,:,i) * T'; % without error in tcm_dv magnitude calc 
 
-            tcm_idx = find(find(event_is_tcm)==i);
-            if isempty(tcm_idx)
-                tcm_idx = find(find(event_is_tcm)==i+1);
-            end
-            tcm_dv(tcm_idx) = sqrt(trace(P_tcm));
+%             tcm_idx = find(find(event_is_tcm)==i);
+%             if isempty(tcm_idx)
+%                 tcm_idx = find(find(event_is_tcm)==i+1);
+%             end
+%             tcm_dv(i) = sqrt(trace(P_tcm));
+
+            tcm_dv(end+1) = sqrt(trace(P_tcm));
 
 
-            dup_cnt = dup_cnt + 1;
+%             dup_cnt = dup_cnt + 1;
 
 %             i = i+1;
 
-        elseif event_is_tcm(i) % otherwise, if it is a TCM
-            % Perform the TCM update    
-        
-            T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
-            N = [zeros(3,6); T];
-            IN = eye(6) + N;
-       
-            P_i = IN * P_i_minus(:,:,j) * IN' + R_tcm;
-            P_i_plus(:,:,j) = P_i;
-    
-            P_tcm = T * P_i_minus(:,:,i) * T' + simparams.R; % with error in tcm_dv magnitude calc 
-    %         P_tcm = T * P_i_minus(:,:,i) * T'; % without error in tcm_dv magnitude calc 
-            tcm_idx = find(find(event_is_tcm)==i);
-            tcm_dv(tcm_idx) = sqrt(trace(P_tcm));
+% % %         elseif event_indicator(i) == 1 % otherwise, if it is a TCM
+% % %             % Perform the TCM update    
+% % %         
+% % %             T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
+% % %             N = [zeros(3,6); T];
+% % %             IN = eye(6) + N;
+% % %        
+% % %             P_i = IN * P_i_minus(:,:,j) * IN' + R_tcm;
+% % %             P_i_plus(:,:,j) = P_i;
+% % %     
+% % %             P_tcm = T * P_i_minus(:,:,i) * T' + simparams.R; % with error in tcm_dv magnitude calc 
+% % %     %         P_tcm = T * P_i_minus(:,:,i) * T'; % without error in tcm_dv magnitude calc 
+% % % %             tcm_idx = find(find(event_is_tcm)==i);
+% % % 
+% % % %             tcm_dv(tcm_idx) = sqrt(trace(P_tcm));
+% % %             tcm_dv(end+1) = sqrt(trace(P_tcm));
 
-        else % otherwise, it must be a nominal maneuver
+        else % otherwise, it must be a nominal maneuver only
             % Add maneuver execution error 
-            P_i = P_i_minus(:,:,j) + R_dv;
-            P_i_plus(:,:,j) = P_i;
+            P_i = P_i_minus(:,:,i) + G*R_dv*G';
+            P_i_plus(:,:,i) = P_i;
             
 
         end
@@ -164,17 +173,16 @@ else % Otherwise, if there are events, do:
     
        
 
-%         i = i+1;
-        j = j+1;
         
     end
     
     % Propagate the rest of the way to the end of the trajectory
-    % Need to do one more propagation because event_times does not
+    % Need to do one more propagation because event_times does not contain
+    % the target
 
     
     P_target = stmNC * P_i * stmNC';
-    P_i_minus(:,:,end) = P_target;
+    P_i_minus(:,:,i+1) = P_target;
 
 
     if event_idx_logical(1)
@@ -186,9 +194,9 @@ else % Otherwise, if there are events, do:
 
 
     if vel_disp_flag
-        tcm_dv(end) = sqrt(trace(P_target(4:6,4:6)));
-    else
-        tcm_dv = tcm_dv(1:end-1);
+        tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6)));
+%     else
+%         tcm_dv = tcm_dv(1:end-1);
     end
 
     tcm_dv_total = sum(tcm_dv);

@@ -71,7 +71,7 @@ for i = 1:length(simparams.P_constrained_nodes)
     %% No TCM optimization calculations for the finite gradient version
     % Instead, only extract the TCMs that are within the applicable portion
     % of the trajectory
-    tcm_time_portion = tcm_time(tcm_time > t(start_idx) & tcm_time < target_time);
+    tcm_time_portion = tcm_time(tcm_time >= t(start_idx) & tcm_time < target_time);
 
     % Calculate the covariance at the end of the coast portion to use at
     % the beginning of the next TCM coast portion
