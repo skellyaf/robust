@@ -11,7 +11,7 @@ open(writerObj);
 for i = 1:size(x,3)
 %     x_opt, x_t, t_s, simparams, tcm_idx
     [~, ~, x_t, stm_t, t, t_s] = createStateStmHistory(x(:,:,i), simparams);
-    [~,tcm_idx] = opt_multiple_tcm(x(:,:,i), t, stm_t, simparams);
+    [~,tcm_idx] = opt_multiple_tcm(x(:,:,i), t, t_s, stm_t, simparams);
     clf;
     plotMultiSegTraj(x(:,:,i), x_t, t_s, simparams, tcm_idx);
     frame = getframe(gcf);

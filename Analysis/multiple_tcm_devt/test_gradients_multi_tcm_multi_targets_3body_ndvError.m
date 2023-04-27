@@ -264,15 +264,6 @@ end
 
 
 
-%%%%%%%%%%%%%%%%% RETURN HERE AFTER VACATION!!!!
-%%%% NOTES: Just finished matching gradients when there is a concurrent TCM
-%%%% with a delta V. Can run tests now that haven't been run with TCM
-%%%% execution error, nominal execution error, 3 delta Vs with a
-%%%% mid-trajectory TCM target/covariance constraint.
-
-
-
-
 
 
 [dtcmV_fd, tcm_gradient_v]
