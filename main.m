@@ -1,3 +1,23 @@
+% 27 Apr 23: Summary of changes:
+%       - Capability for additional nominal maneuvers. Current use cases are
+%       for elliptical departures/flyby trajectories/a lap to clean up LV
+%       dispersions.
+%       - Mid-trajectory TCM target / covariance constraint not at the
+%       target. Use case is to have a second nominal maneuver (TLI, for
+%       example) where it is also desired that dispersions are minimized.
+%       The TCM calculations are separated into two parts, before and after
+%       the mid-course TCM target.
+%       - Maneuver execution error. Implementing this required defining
+%       covariance-modifying trajectory events, not just TCMs which were
+%       the only events that modified the dispersion covariance previously.
+%       This applies to both TCM maneuver execution error and nominal
+%       maneuver execution error. Capability is also included that allows
+%       them to occur at the same time.
+%       - TCM improvement threshold. Rather than adding TCMs as long as the
+%       total TCM delta V magnitude decreased, created a minimum value by
+%       which it must decrease by (currently 3 sigma of the TCM execution
+%       error).
+
 % 1 Mar 23: Incorporating flexibility to CR3BP systems as well as 2BP.
 
 % Analytical objective function and constraint gradients working
