@@ -222,7 +222,7 @@ simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = 
 
 %% Flyby perilune radius
 simparams.constrain_flyby_radius = true; % bool, true or false
-simparams.flyby_radius = (moon.rad + 1000) / ndDist2km; % distance from the center of the moon
+simparams.flyby_radius = (moon.rad + 100) / ndDist2km; % distance from the center of the moon
 simparams.flyby_node = simparams.maneuverSegments(2); % the node that is constrained to a certain distance from the moon
 
 %% Add coast in target orbit to traj params
