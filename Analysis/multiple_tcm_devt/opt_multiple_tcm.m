@@ -38,6 +38,11 @@ for i = 1:length(simparams.P_constrained_nodes)
         target_time = sum(x(7,1:target_node - 1));
         target_idx = find(target_time == t);
 
+        assert(length(target_idx)>0);
+        if length(target_idx) > 1
+            target_idx = target_idx(1);
+        end
+
         t_eval = t(start_idx:target_idx);
         t_s_eval = t_s(start_idx:target_idx);
         stm_t_eval = stm_t(:,:,start_idx:target_idx);
@@ -50,6 +55,12 @@ for i = 1:length(simparams.P_constrained_nodes)
         target_time = sum(x(7,1:target_node - 1));
         target_idx = find(target_time == t);
 
+        assert(length(target_idx)>0);
+
+        if length(target_idx) > 1
+            target_idx = target_idx(1);
+        end
+
         t_eval = t(start_idx:target_idx);
         t_s_eval = t_s(start_idx:target_idx);
 
@@ -57,6 +68,10 @@ for i = 1:length(simparams.P_constrained_nodes)
         % to the end of the current correction portion (N): stmNtM
         % but currently have stmM0 and stmNt0
         % stmNtM = stmNt0 * stm0M
+        testStm = stm_t(:,:,start_idx);
+        if size(testStm,3) ~= 1
+            ppp=1; % debug
+        end
         stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
         stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
 

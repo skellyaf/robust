@@ -46,8 +46,8 @@ tcm_feasibleMin_idx = find(t == tcm_feasibleMin_time);
 
 
 end
-
-% COME BACK HERE AND SHOW DR GELLER FIGURE 3
+% 
+% % COME BACK HERE AND SHOW DR GELLER FIGURE 3
 % 
 % %%%%%% DEBUGGING:
 % % Covariance growth without any maneuvers or modifications
@@ -119,4 +119,15 @@ end
 % figure
 % plot(t(1:tcm_feasibleMin_idx - 1), tcm2_dv_t)
 % title('Second TCM magnitude options as a function of execution time along traj')
+% 
+% 
+% 
+% 
+% 
+% % Plot this portion of the trajectory, something weird is going on
+% [~,x_t] = stateProp(x(1:6), t(end) - t(1), simparams);
+% figure
+% axis equal
+% plot3(x_t(:,1), x_t(:,2), x_t(:,3))
+% 
 

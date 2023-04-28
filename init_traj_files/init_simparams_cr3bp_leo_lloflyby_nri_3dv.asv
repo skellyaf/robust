@@ -22,6 +22,7 @@ ndVel2kms = Rm * n;
 
 % mu
 simparams.mu = moon.mu/(earth.mu + moon.mu);
+mu = simparams.mu;
 
 % Dynamical system flag for which differential equations to use
 simparams.dynSys = 'cr3bp'; % options are 2bp and cr3bp.
@@ -157,6 +158,7 @@ x_tli_lloFlyby = subdivide_segment(x_tli_flyby_t, t_tli_flyby, num_tli_flyby_seg
 simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_tli_lloFlyby;
 
 
+
 %% Initial coast in LEO
 simparams.T0 = 2*pi*sqrt(simparams.coe_init.a^3/earth.mu) / ndTime2sec;
 
@@ -189,55 +191,67 @@ simparams.coe_targ = coe_flyby;
 r_2b_llo_nd = r_2b_llo / ndDist2km;
 v_2b_llo_nd = v_2b_llo / ndVel2kms;
 
+r_3b_llo = r_2b_llo_nd + [1-mu; 0; 0];
+    
+X_init = [r_3b_llo; v_2b_llo_nd];
+T_init = 1.25/ndTime2hrs;
+
+% Propagate the LLO initial state to find LLO departure state
+[~,x_llo_t] = stateProp(X_init, T_init, simparams);
+
+% The LLO departure
+j = 10;
+x_llo_depart = x_llo_t(j,:)';
+T_post_flyby = .72 / ndTime2days;
+
+iv_depart = x_llo_depart(4:6)/norm(x_llo_depart(4:6));
+i=23; % from shooting test
+dv = i * .025 * iv_depart;
+
+x_flyby_depart = x_llo_depart + [0; 0; 0; dv];
+
+[~,x_flyby_nri_t, t_flyby_nri] = stateProp(x_flyby_depart, T_post_flyby, simparams);
+
+% Divide the posty flyby to NRI into segments
+num_flyby_to_nri_segments = simparams.maneuverSegments(3) - simparams.maneuverSegments(2);
+x_flyby_to_nri = subdivide_segment(x_flyby_nri_t, t_flyby_nri, num_flyby_to_nri_segments);
+
+% Add to initial traj params
+simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = x_flyby_to_nri;
+
+
+%% Flyby perilune radius
+simparams.constrain_flyby_radius = true; % bool, true or false
+simparams.flyby_radius = coe_flyby.a; % distance from the center of the moon
+
+%% Add coast in target orbit to traj params
+% Get initial state for NRHO
+load('lagrangeOrbitICs.mat');
+x0_nrho = lagrangeOrbitICs.L2_southern.state_nd(:,1);
+T_nrho = lagrangeOrbitICs.L2_southern.T_nd(1);
+
+% Propagate the NRHO
+[~,x_nrho_t, t_nrho] = stateProp(x0_nrho, T_nrho*1.015, simparams);
+
+% Indices from external tests
+T_coast_nrho_target = t_nrho(280) - t_nrho(230);
+simparams.x_target = x_nrho_t(280,:)';
+simparams.T_target = T_nrho;
+
+simparams.x0(1:6,simparams.maneuverSegments(3)) = x_nrho_t(230,:)';
+simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_nrho_target;
+
+
+% 
+% 
+% 
+% figure
+% plot3(x_nrho_t(230:280,1),x_nrho_t(230:280,2),x_nrho_t(230:280,3),'LineWidth',2)
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-%% modifying all of this above
-% Position of moon in nondimensional CR3BP is (1-mu)
-% Velocity - all Y
-r_3b_llo_nd = r_2b_llo_nd + [1-simparams.mu; 0; 0];
-% CR3BP state at arrival to low lunar orbit
-x_3b_llo_arrive_nd = [r_3b_llo_nd; v_2b_llo_nd];
-
-% Add a coast to get to the actual LLO target (non dimensional)
-simparams.T_target = 2*pi*sqrt(simparams.coe_targ.a^3/moon.mu) / ndTime2sec;
-
-% Add final segment to trajectory parameter vector
-simparams.x0(1:6,end) = x_3b_llo_arrive_nd;
-simparams.x0(7,end) = simparams.T_target * simparams.segn_coast_fraction;
-
-% Propagate from arrival to the target
-simparams.x_target = stateProp(x_3b_llo_arrive_nd, simparams.T_target * simparams.segn_coast_fraction, simparams);
-
-%% Transfer states / initial guess
-
-simparams.xfer1_duration = 3.25 / ndTime2days;
-[~,x_xfer_t, t] = stateProp(x_3b_leo_depart_nd, simparams.xfer1_duration, simparams);
-% plot3(x_xfer_t(:,1),x_xfer_t(:,2),x_xfer_t(:,3))
-
-n = simparams.maneuverSegments(3) - simparams.maneuverSegments(2);
-X = subdivide_segment(x_xfer_t, t, n);
-
-
-simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = X;
-
+% Single parameter vector
 simparams.x0 = simparams.x0(:);
 
 %% Reset numerical propagation options
@@ -246,8 +260,7 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 
 %% Fmincon optimization options
 
-% Undefined algorithm
-
+% Undefined optimization algorithm
 simparams.optoptions = optimoptions('fmincon');
 
 % # Iterations

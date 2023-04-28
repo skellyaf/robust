@@ -158,6 +158,7 @@ x_tli_lloFlyby = subdivide_segment(x_tli_flyby_t, t_tli_flyby, num_tli_flyby_seg
 simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_tli_lloFlyby;
 
 
+
 %% Initial coast in LEO
 simparams.T0 = 2*pi*sqrt(simparams.coe_init.a^3/earth.mu) / ndTime2sec;
 
@@ -218,6 +219,12 @@ x_flyby_to_nri = subdivide_segment(x_flyby_nri_t, t_flyby_nri, num_flyby_to_nri_
 % Add to initial traj params
 simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = x_flyby_to_nri;
 
+
+%% Flyby perilune radius
+simparams.constrain_flyby_radius = true; % bool, true or false
+simparams.flyby_radius = coe_flyby.a; % distance from the center of the moon
+simparams.flyby_node = simparams.maneuverSegments(2); % the node that is constrained to a certain distance from the moon
+
 %% Add coast in target orbit to traj params
 % Get initial state for NRHO
 load('lagrangeOrbitICs.mat');
@@ -234,6 +241,13 @@ simparams.T_target = T_nrho;
 
 simparams.x0(1:6,simparams.maneuverSegments(3)) = x_nrho_t(230,:)';
 simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_nrho_target;
+
+
+% 
+% 
+% 
+% figure
+% plot3(x_nrho_t(230:280,1),x_nrho_t(230:280,2),x_nrho_t(230:280,3),'LineWidth',2)
 
 
 
