@@ -90,8 +90,9 @@ if strcmp(dynSys,'2bp')
     zlabel('Z (km)')
 elseif strcmp(dynSys,'cr3bp')
 %     view([-75, 10]);
+    view([80, 12]);
 
-    view([0 90]);
+%     view([0 90]);
     xlabel('X (nd)')
     ylabel('Y (nd)')
     zlabel('Z (nd)')

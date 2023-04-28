@@ -192,7 +192,7 @@ if simparams.constrain_flyby_radius
     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
     r_d = r_n - r_b;
     d = vecnorm(r_d);
-    ceq(neq+1) = d;
+    ceq(neq+1) = d - simparams.flyby_radius;
     
 
     % Gradient addition

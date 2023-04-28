@@ -146,7 +146,8 @@ solfig.CurrentAxes.Title.Visible="off";
 %% Save outputs
 
 % if output.firstorderopt < 4 && exitflag ~= -2 && saveOutput
-if exitflag ~= -2 && saveOutput
+% if exitflag ~= -2 && saveOutput
+if saveOutput
 
 
     % Saving movie of history
