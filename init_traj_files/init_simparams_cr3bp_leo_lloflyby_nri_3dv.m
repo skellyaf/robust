@@ -22,13 +22,14 @@ ndVel2kms = Rm * n;
 
 % mu
 simparams.mu = moon.mu/(earth.mu + moon.mu);
+mu = simparams.mu;
 
 % Dynamical system flag for which differential equations to use
 simparams.dynSys = 'cr3bp'; % options are 2bp and cr3bp.
 
 % Numerical integration options
-% simparams.options = odeset('AbsTol',1e-13,'RelTol',1e-13);
-simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
+simparams.options = odeset('AbsTol',1e-12,'RelTol',1e-12);
+% simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 
 
 %% Random variables / initial uncertainty
@@ -67,7 +68,6 @@ simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma =
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
-
 simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
@@ -82,7 +82,7 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 
 %% Trajectory options
 
-simparams.maneuverSegments = [2, 12, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.maneuverSegments = [2, 14, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
 simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
@@ -120,8 +120,7 @@ coe_init.raan = 180 * pi/180; % right ascension, deg (not used for equatorial or
 coe_init.argp = 0; % arg of perigee, deg (not used for circular & equatorial orbits)
 
 % From shooting / poincare map test
-nu = .3:.1:pi/2;
-coe_init.nu = nu(7); % true anomaly, deg (not used for circular orbits)
+coe_init.nu = .8; % true anomaly, deg (not used for circular orbits)
 
 % if initial orbit is circular/equatorial, the following are used.
 coe_init.truelon = nan; % deg, angle between x-axis and satellite (only for circular and equatorial)
@@ -131,8 +130,7 @@ simparams.coe_init = coe_init;
 
 
 % From shooting / poincare map test
-dv = 3:.1:3.5;
-dv_sol = dv(1);
+dv = 3;
 
 % Create state from best shooting result
 [r_2b_leo,v_2b_leo] = orbel2rv(coe_init.a, coe_init.ecc, coe_init.inc, coe_init.raan, coe_init.argp, coe_init.nu, earth.mu);
@@ -142,91 +140,114 @@ v_2b_leo_nd = v_2b_leo / ndVel2kms;
 X_depart_leo_pre_mnvr = [r_3b_leo; v_2b_leo_nd];
 
 i_leo_v = X_depart_leo_pre_mnvr(4:6) / norm(X_depart_leo_pre_mnvr(4:6));
-v_leo_nd = X_depart_leo_pre_mnvr(4:6) + dv_sol * i_leo_v;
+v_leo_nd = X_depart_leo_pre_mnvr(4:6) + dv * i_leo_v;
 x_3b_leo_depart_nd = [X_depart_leo_pre_mnvr(1:3); v_leo_nd];
 
 
 
-%% Adding in more than 1 full orbit coast in LEO with a deltaV1=0
-% the LEO departure Delta V is now DV2, lunar orbit arrival is DV3
 
+%% Create segments from LEO departure to LLO flyby
+% Propagate TLI portion
+t_tli = 2.9 / ndTime2days;
+[~,x_tli_flyby_t,t_tli_flyby] = stateProp(x_3b_leo_depart_nd, t_tli, simparams);
+
+num_tli_flyby_segments = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
+
+x_tli_lloFlyby = subdivide_segment(x_tli_flyby_t, t_tli_flyby, num_tli_flyby_segments);
+
+simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_tli_lloFlyby;
+
+
+%% Initial coast in LEO
 simparams.T0 = 2*pi*sqrt(simparams.coe_init.a^3/earth.mu) / ndTime2sec;
-% Add coast (in reverse) to get to the DV1 state 
-x_leoFullOrbit_start = stateProp(X_depart_leo_pre_mnvr, -simparams.T0, simparams);
 
-% Add an additional coast (in reverse) to get the initial state
-
-simparams.x_init = stateProp(x_leoFullOrbit_start, - simparams.T0 * simparams.seg1_coast_fraction, simparams);
+% Add coast (in reverse) to get to the initial state 
+simparams.x_init = stateProp(X_depart_leo_pre_mnvr, -simparams.T0 * simparams.seg1_coast_fraction, simparams);
 
 % Add the initial state to trajectory parameter vector
 simparams.x0(1:6,1) = simparams.x_init;
 simparams.x0(7,1) = simparams.T0 * simparams.seg1_coast_fraction;
 
-% Separate the full orbit LEO coast into multiple segments per simparams.maneuverSegments
-[~,x_leoFullOrbit_t, t_leoFullOrbit] = stateProp(x_leoFullOrbit_start, simparams.T0, simparams);
 
-n_leo_orbit = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
-x_leoFullOrbit = subdivide_segment(x_leoFullOrbit_t, t_leoFullOrbit, n_leo_orbit);
-
-simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_leoFullOrbit;
-
-
-%% Target orbit - low lunar orbit
-altitude_targ = 1000; % Lunar altitude, km
-coe_targ.a = altitude_targ + moon.rad; % semimajor axis, km
-coe_targ.ecc = 0.001; % eccentricity
+%% Generating LLO powered flyby to NRHO trajectory portion
+altitude_flyby = 1000; % Lunar altitude, km
+coe_flyby.a = altitude_flyby + moon.rad; % semimajor axis, km
+coe_flyby.ecc = 0.001; % eccentricity
 % Inclination of 27 degrees (27, 50, 76, & 86 enable extended LLO stays)
 % coe_targ.inc = (180 - 27) * pi/180; % inclination, deg
-coe_targ.inc = pi;
-coe_targ.raan = 180 * pi/180; % Right ascension - 180 degrees (not used for equatorial orbits)
-coe_targ.argp = 0; % arg of perigee, deg (not used for circular & equatorial orbits)
-coe_targ.nu = 180 * pi/180; % true anomaly, deg (not used for circular orbits)
+coe_flyby.inc = -65 * pi/180;
+coe_flyby.raan = 325 * pi/180; % Right ascension - (not used for equatorial orbits)
+coe_flyby.argp = 0; % arg of perigee, deg (not used for circular & equatorial orbits)
+coe_flyby.nu = 310 * pi/180; % true anomaly, deg (not used for circular orbits)
 % if initial orbit is circular/equatorial, the following are used.
-coe_targ.truelon = 90; % deg, angle between x-axis and satellite (only for circular and equatorial)
-coe_targ.arglat = 180; % deg, angle between ascending node and satellite position (only for circular inclined orbits)
-coe_targ.lonper = nan; % deg, angle between x-axis and eccentricity vector (only for eccentric equatorial orbits)
-simparams.coe_targ = coe_targ;
+coe_flyby.truelon = 90; % deg, angle between x-axis and satellite (only for circular and equatorial)
+coe_flyby.arglat = 180; % deg, angle between ascending node and satellite position (only for circular inclined orbits)
+coe_flyby.lonper = nan; % deg, angle between x-axis and eccentricity vector (only for eccentric equatorial orbits)
+simparams.coe_targ = coe_flyby;
 
-% 2 body COEs for LLO
-[r_2b_llo,v_2b_llo] = orbel2rv(coe_targ.a,coe_targ.ecc,coe_targ.inc,coe_targ.raan,coe_targ.argp,coe_targ.nu,moon.mu);
+% 2 body COEs for LLO flyby
+[r_2b_llo,v_2b_llo] = orbel2rv(coe_flyby.a,coe_flyby.ecc,coe_flyby.inc,coe_flyby.raan,coe_flyby.argp,coe_flyby.nu,moon.mu);
 r_2b_llo_nd = r_2b_llo / ndDist2km;
 v_2b_llo_nd = v_2b_llo / ndVel2kms;
 
-% Position of moon in nondimensional CR3BP is (1-mu)
-% Velocity - all Y
-r_3b_llo_nd = r_2b_llo_nd + [1-simparams.mu; 0; 0];
-% CR3BP state at arrival to low lunar orbit
-x_3b_llo_arrive_nd = [r_3b_llo_nd; v_2b_llo_nd];
+r_3b_llo = r_2b_llo_nd + [1-mu; 0; 0];
+    
+X_init = [r_3b_llo; v_2b_llo_nd];
+T_init = 1.25/ndTime2hrs;
 
-% Add a coast to get to the actual LLO target (non dimensional)
-simparams.T_target = 2*pi*sqrt(simparams.coe_targ.a^3/moon.mu) / ndTime2sec;
+% Propagate the LLO initial state to find LLO departure state
+[~,x_llo_t] = stateProp(X_init, T_init, simparams);
 
-% Add final segment to trajectory parameter vector
-simparams.x0(1:6,end) = x_3b_llo_arrive_nd;
-simparams.x0(7,end) = simparams.T_target * simparams.segn_coast_fraction;
+% The LLO departure
+j = 10;
+x_llo_depart = x_llo_t(j,:)';
+T_post_flyby = .72 / ndTime2days;
 
-% Propagate from arrival to the target
-simparams.x_target = stateProp(x_3b_llo_arrive_nd, simparams.T_target * simparams.segn_coast_fraction, simparams);
+iv_depart = x_llo_depart(4:6)/norm(x_llo_depart(4:6));
+i=23; % from shooting test
+dv = i * .025 * iv_depart;
 
-%% Transfer states / initial guess
+x_flyby_depart = x_llo_depart + [0; 0; 0; dv];
 
-simparams.xfer1_duration = 3.25 / ndTime2days;
-[~,x_xfer_t, t] = stateProp(x_3b_leo_depart_nd, simparams.xfer1_duration, simparams);
-% plot3(x_xfer_t(:,1),x_xfer_t(:,2),x_xfer_t(:,3))
+[~,x_flyby_nri_t, t_flyby_nri] = stateProp(x_flyby_depart, T_post_flyby, simparams);
 
-n = simparams.maneuverSegments(3) - simparams.maneuverSegments(2);
-X = subdivide_segment(x_xfer_t, t, n);
+% Divide the posty flyby to NRI into segments
+num_flyby_to_nri_segments = simparams.maneuverSegments(3) - simparams.maneuverSegments(2);
+x_flyby_to_nri = subdivide_segment(x_flyby_nri_t, t_flyby_nri, num_flyby_to_nri_segments);
+
+% Add to initial traj params
+simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = x_flyby_to_nri;
+
+%% Add coast in target orbit to traj params
+% Get initial state for NRHO
+load('lagrangeOrbitICs.mat');
+x0_nrho = lagrangeOrbitICs.L2_southern.state_nd(:,1);
+T_nrho = lagrangeOrbitICs.L2_southern.T_nd(1);
+
+% Propagate the NRHO
+[~,x_nrho_t, t_nrho] = stateProp(x0_nrho, T_nrho*1.015, simparams);
+
+% Indices from external tests
+T_coast_nrho_target = t_nrho(280) - t_nrho(230);
+simparams.x_target = x_nrho_t(280,:)';
+simparams.T_target = T_nrho;
+
+simparams.x0(1:6,simparams.maneuverSegments(3)) = x_nrho_t(230,:)';
+simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_nrho_target;
 
 
-simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = X;
 
+
+% Single parameter vector
 simparams.x0 = simparams.x0(:);
+
+%% Reset numerical propagation options
+simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 
 
 %% Fmincon optimization options
 
-% Undefined algorithm
-
+% Undefined optimization algorithm
 simparams.optoptions = optimoptions('fmincon');
 
 % # Iterations
