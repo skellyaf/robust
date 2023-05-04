@@ -200,7 +200,7 @@ T_init = 1.25/ndTime2hrs;
 [~,x_llo_t] = stateProp(X_init, T_init, simparams);
 
 % The LLO departure
-j = 10;
+j = 1;
 x_llo_depart = x_llo_t(j,:)';
 T_post_flyby = .72 / ndTime2days;
 

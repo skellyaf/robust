@@ -115,12 +115,12 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 altitude_init = 450; % km
 coe_init.a = altitude_init + earth.rad; % semimajor axis, km
 coe_init.ecc = 0.0001; % eccentricity
-coe_init.inc = .1 * pi/180; % inclination, deg
-coe_init.raan = 180 * pi/180; % right ascension, deg (not used for equatorial orbits)
+coe_init.inc = 28 * pi/180; % inclination, deg
+coe_init.raan = 50 * pi/180; % right ascension, deg (not used for equatorial orbits)
 coe_init.argp = 0; % arg of perigee, deg (not used for circular & equatorial orbits)
 
 % From shooting / poincare map test
-coe_init.nu = .8; % true anomaly, deg (not used for circular orbits)
+coe_init.nu = 3.242; % true anomaly, deg (not used for circular orbits)
 
 % if initial orbit is circular/equatorial, the following are used.
 coe_init.truelon = nan; % deg, angle between x-axis and satellite (only for circular and equatorial)
@@ -130,7 +130,7 @@ simparams.coe_init = coe_init;
 
 
 % From shooting / poincare map test
-dv = 3;
+dv = 2.98;
 
 % Create state from best shooting result
 [r_2b_leo,v_2b_leo] = orbel2rv(coe_init.a, coe_init.ecc, coe_init.inc, coe_init.raan, coe_init.argp, coe_init.nu, earth.mu);
@@ -148,7 +148,7 @@ x_3b_leo_depart_nd = [X_depart_leo_pre_mnvr(1:3); v_leo_nd];
 
 %% Create segments from LEO departure to LLO flyby
 % Propagate TLI portion
-t_tli = 2.9 / ndTime2days;
+t_tli = 4.0 / ndTime2days;
 [~,x_tli_flyby_t,t_tli_flyby] = stateProp(x_3b_leo_depart_nd, t_tli, simparams);
 
 num_tli_flyby_segments = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
@@ -222,7 +222,8 @@ simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = 
 
 %% Flyby perilune radius
 simparams.constrain_flyby_radius = true; % bool, true or false
-simparams.flyby_radius = coe_flyby.a; % distance from the center of the moon
+simparams.flyby_radius = (moon.rad + 100) / ndDist2km; % distance from the center of the moon
+simparams.flyby_node = simparams.maneuverSegments(2); % the node that is constrained to a certain distance from the moon
 
 %% Add coast in target orbit to traj params
 % Get initial state for NRHO

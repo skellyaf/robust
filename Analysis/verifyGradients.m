@@ -32,7 +32,7 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 1
+if 0
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);

@@ -31,7 +31,7 @@ function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 
 num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 
-ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
+ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
 
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
@@ -44,7 +44,11 @@ end
 
 % The only inequality constraints are the dt>=0 (moving forward in time constraint)
 % There is one for each segment, so the length is the number of segments
-cin_length = n;
+
+% For the flyby constraint, move the +simparams.constrain_flyby_radius to
+% here if want it to be an inequlity constraint, or back to ceq_length if
+% want it to be an equality constraint.
+cin_length = n + simparams.constrain_flyby_radius;
 
 cin = zeros(1,cin_length);
 
@@ -192,17 +196,25 @@ if simparams.constrain_flyby_radius
     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
     r_d = r_n - r_b;
     d = vecnorm(r_d);
-    ceq(neq+1) = d - simparams.flyby_radius;
+    % As an equality constraint
+%     ceq(neq+1) = d - simparams.flyby_radius;
+    % As an inequality constraint
+    cin(niq+1) = simparams.flyby_radius - d;
     
 
     % Gradient addition
     if outputCGradients
         i_d = r_d / d;
         k = simparams.flyby_node;
-        ceqGrad(neq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = i_d'; % Vector magnitude partial derivative
+        % Gradient if it is an equality constraint
+%         ceqGrad(neq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = i_d'; % Vector magnitude partial derivative
+
+        % Gradient if it is an inequality constraint
+        cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
     end
 
-    neq = neq+1;
+%     neq = neq+1;
+    niq = niq+1;
 end
 
 

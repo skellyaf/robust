@@ -59,7 +59,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 % cr3bp, 3 nominal maneuvers
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
 
