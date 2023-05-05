@@ -33,7 +33,7 @@ format longg;
 % cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_leo_nri_3dv_midTcmTgt_ndvErr_startDetOpt_robust';
+savename = 'cr3bp_leo_planar_nri_3dv_midTcmTgt_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -59,8 +59,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 % cr3bp, 3 nominal maneuvers
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
-% init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
 
@@ -71,7 +71,8 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\tli_llo_deterministic_opt.mat')
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
-load('nri_det_opt.mat');
+% load('nri_det_opt.mat');
+load('nri_planar_det_opt.mat');
 simparams.x0 = x_opt;
 
 
