@@ -63,6 +63,13 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 
+% Nominal maneuver execution error
+% simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
+simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+
+simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
+
+
 % simparams.R = diag([0 0 0]);
 
 %% Load saved trajectory parameters
@@ -100,7 +107,7 @@ simparams.segn_coast_fraction = 0.3; % percent of orbital period to coast in the
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
@@ -261,6 +268,13 @@ simparams.x_target = stateProp(x_3b_llo_arrive_nd, simparams.T_target * simparam
 
 
 simparams.x0 = simparams.x0(:);
+
+
+
+%% Flyby perilune radius
+simparams.constrain_flyby_radius = false; % bool, true or false
+simparams.flyby_radius = (moon.rad + 100) / ndDist2km; % distance from the center of the moon
+simparams.flyby_node = simparams.maneuverSegments(2); % the node that is constrained to a certain distance from the moon
 
 
 %% Fmincon optimization options

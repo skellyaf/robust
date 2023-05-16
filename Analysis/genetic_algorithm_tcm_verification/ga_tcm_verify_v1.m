@@ -83,6 +83,8 @@ options = optimoptions(@ga,...
             		'UseParallel',true);
 
 
+
+
 [tcm_idx_ga, fval] = ga(@(tcm_idx_test)calc_tcm_dv(tcm_idx_test, x0, t0, t_s0, stm_t0, simparams.P_initial, idx_dv1, idx_dv2, simparams), num_tcms_p1, A, b, [], [], lb, ub, @(tcm_idx_test)sequential_constraint(tcm_idx_test, x0, t0, t_s0, stm_t0, simparams.P_initial, idx_dv1, idx_dv2, simparams), int_con1, options)
 
 
@@ -96,8 +98,9 @@ options = optimoptions(@ga,...
 
 
 
+% tcm_idx_ga = [7, 474, 1856, 2287];
 
-% sequential_constraint(tcm_idx_ga, x0, t0, t_s0, stm_t0, simparams.P_initial, idx_dv1, idx_dv2, simparams)
+sequential_constraint(tcm_idx_ga, x0, t0, t_s0, stm_t0, simparams.P_initial, idx_dv1, idx_dv2, simparams)
 
 
 %% x_opt
