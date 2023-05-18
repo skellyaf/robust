@@ -17,7 +17,8 @@ x = reshape(x,m,n);
 
 
 t_start = t(1);
-t_end = t(end);
+% t_end = t(end);
+t_end = max(t); % had a bug when the NLP tried to get the last seg to go backwards for some reason
 
 maneuver_times = zeros(1,length(simparams.maneuverSegments));
 
@@ -34,7 +35,7 @@ event_indicator = [zeros(1,length(maneuver_times)), ones(1,length(tcm_time))];
 event_indicator = event_indicator(sort_idx);
 
 % Eliminate the events before t_start and after t_end
-keep_events = not(event_times < t_start | event_times >= t_end); % inclusive at the beginning, exclusive at the end (we are already propagating to the end/target. include the maneuver execution error into the susbequent propagation) 
+keep_events = not(event_times < t_start | event_times > t_end); % inclusive at the beginning, exclusive at the end (we are already propagating to the end/target. include the maneuver execution error into the susbequent propagation) 
 event_times = event_times(keep_events);
 event_indicator = event_indicator(keep_events);
 

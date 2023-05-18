@@ -33,7 +33,7 @@ format longg;
 cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_heo_mlo_3dv_midcourseTcmTarget_det';
+savename = 'cr3bp_heo_mlo_3dv_medConstraintTol_x0heo13_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -72,9 +72,11 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\tli_llo_deterministic_opt.mat')
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
+load('eed_leo_planar_13day.mat');
+
 % load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
-% simparams.x0 = x_opt;
+simparams.x0 = x_opt;
 
 
 %% Initialize transfer segments

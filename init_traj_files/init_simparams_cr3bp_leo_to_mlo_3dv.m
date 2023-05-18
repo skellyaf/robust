@@ -46,6 +46,10 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
 % simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
+% Medium
+% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+
 % Large
 simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
 simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
@@ -223,6 +227,9 @@ simparams.x0(:,simparams.maneuverSegments(2):simparams.maneuverSegments(3)-1) = 
 simparams.x0 = simparams.x0(:);
 
 
+%% Flyby perilune radius
+simparams.constrain_flyby_radius = false; % bool, true or false
+
 %% Fmincon optimization options
 
 % Undefined algorithm
@@ -245,7 +252,7 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 % Optimality and constraint satisfaction tolerances
 simparams.optoptions.OptimalityTolerance = 1e-6;
 simparams.optoptions.ConstraintTolerance = 2e-10 * simparams.n * simparams.m;
-simparams.optoptions.StepTolerance = 1e-14; % use with sqp
+simparams.optoptions.StepTolerance = 1e-15; 
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
 % To use parallel processing

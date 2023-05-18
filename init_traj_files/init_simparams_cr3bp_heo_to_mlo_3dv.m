@@ -46,9 +46,13 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
 % simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
+% Medium
+simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+
 % Large
-simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
-simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
+% simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
 % simparams.sig_vel = 10 / 1e5 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions converted to ND dist / ND time
 
 
@@ -107,7 +111,7 @@ simparams.segn_coast_fraction = 0.3; % percent of orbital period to coast in the
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 

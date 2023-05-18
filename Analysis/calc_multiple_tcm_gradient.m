@@ -159,6 +159,8 @@ for k = 1:num_events - 1
         [dstmCkClastdxi, dstmCkClastddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tClast, i, simparams); % verified numerically
 
 
+
+
         if event_indicator(k) > 0
             % Calculate dstmNC and assemble dTk
 
