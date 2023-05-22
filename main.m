@@ -30,7 +30,6 @@ clear global;
 close all; 
 clc;
 format longg;
-cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
 savename = ['leo_nri_flexX0_det_start_robust'];

@@ -239,7 +239,7 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 [~,x_nrho_t, t_nrho] = stateProp(x0_nrho, T_nrho, simparams);
 
 % Indices from external tests
-mid_nrho_idx = floor(length(t_nrho));
+mid_nrho_idx = floor(length(t_nrho)/2);
 % T_coast_nrho_target = t_nrho(280) - t_nrho(230);
 simparams.x_target = x_nrho_t(mid_nrho_idx,:)';
 simparams.T_target = T_nrho;
@@ -247,11 +247,13 @@ simparams.T_target = T_nrho;
 simparams.x0(:,simparams.maneuverSegments(3)) = x_ref(:,simparams.maneuverSegments(3));
 
 
-% 
-% 
-% 
+
+
+mid_nrho_idx = 281;
 % figure
-% plot3(x_nrho_t(230:280,1),x_nrho_t(230:280,2),x_nrho_t(230:280,3),'LineWidth',2)
+% plot3(x_nrho_t(:,1),x_nrho_t(:,2),x_nrho_t(:,3),'LineWidth',2)
+% hold on
+% plot3(x_nrho_t(mid_nrho_idx,1),x_nrho_t(mid_nrho_idx,2),x_nrho_t(mid_nrho_idx,3),'.','MarkerSize',25)
 
 
 
