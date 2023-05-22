@@ -33,7 +33,7 @@ format longg;
 cd('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust');
 addpath(genpath('./'));
 
-savename = 'cr3bp_heo_mlo_3dv_medConstraintTol_x0heo13_robust';
+savename = ['leo_nri_flexX0_det_start_robust'];
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -57,13 +57,15 @@ saveOutput = true; % bool for saving the output or not, true or false
 % init_fn = './init_traj_files/init_simparams_cr3bp_llo_to_nrho';
 
 % cr3bp, 3 nominal maneuvers
-init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_flex0_leo_lloflyby_nri_3dv';
+
 
 
 run(init_fn);
@@ -72,11 +74,11 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\tli_llo_deterministic_opt.mat')
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
-load('eed_leo_planar_13day.mat');
+% load('eed_leo_planar_13day.mat');
 
 % load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
-simparams.x0 = x_opt;
+% simparams.x0 = x_opt;
 
 
 %% Initialize transfer segments
