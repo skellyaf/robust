@@ -13,6 +13,7 @@ n = simparams.n;
 x_target = simparams.x_target;
 x_init = simparams.x_init;
 mu = simparams.mu;
+x = reshape(x,simparams.m,simparams.n);
 
 if nargin == 5
     tcm_idx = varargin{1};
@@ -125,6 +126,17 @@ else
 end
 
 
+
+% Plot the nominal Delta V's
+for i = 1:length(simparams.maneuverSegments)
+    r_dv = x(1:3,simparams.maneuverSegments(i));
+    plot3(r_dv(1),r_dv(2),r_dv(3),"pentagram",'MarkerSize',10,'MarkerFaceColor','Cyan','MarkerEdgeColor','Black');
+end
+
+
+% Plot the end of the trajectory (target after the final coast in most
+% instances)
+plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),"square",'MarkerSize',10,'MarkerFaceColor','Red','MarkerEdgeColor','Black')
 
 
 

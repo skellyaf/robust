@@ -202,3 +202,11 @@ end
 
 
 
+
+%% debug
+% [stm_i0, stt_i0, x_i_f0, x_t0, stm_t0, stt_t_i, t0, t_s0, stm_t_i0]  = createStateStmSttHistory(x, simparams);
+% % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+% figure
+% plotMultiSegTraj(x, x_t0, t_s0, simparams);
+
+

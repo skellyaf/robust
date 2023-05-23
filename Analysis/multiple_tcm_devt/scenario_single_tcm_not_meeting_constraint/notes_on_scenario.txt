@@ -1,0 +1,6 @@
+Regardless of when the TCM is executed in the second portion of the trajectory (PLF to NRHO insertion), it is not possible to meet the target position dispersion constraint. However, when two TCMs are implemented, it becomes possible.
+
+Things I've investigated
+-Negating the TCM execution error makes it possible to meet the constraint, but only toward the end of the trajectory.
+-Choosing the minimum from negating the TCM execution error (simparams.R), then line searching for the second TCM and implementing two TCMs with the execution error added back in makes it possible to meet the dispersion constraint.
+

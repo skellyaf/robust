@@ -7,6 +7,13 @@ if nargout == 2 && nargin == 6
     assert(0,'You forgot to input the STT cell structure!');
 end
 
+if length(total_idx_start) > 1
+    total_idx_start = total_idx_start(1);
+end
+if length(total_idx_end) > 1
+    total_idx_end = total_idx_end(1);
+end
+
 
 if nargout == 2
     stt_flag = 1;
