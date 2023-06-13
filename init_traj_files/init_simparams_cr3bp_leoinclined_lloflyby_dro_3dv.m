@@ -273,7 +273,9 @@ simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_dro_target;
 
 
 
-
+%% LOAD THE DETERMINISTIC OPTIMAL
+load('leo_plf_dro_det_opt.mat');
+simparams.x0 = x_opt;
 
 
 % Single parameter vector
