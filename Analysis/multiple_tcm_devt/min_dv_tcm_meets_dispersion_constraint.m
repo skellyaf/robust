@@ -45,6 +45,9 @@ if isempty(tcm_total_t_meets_constraint)
     tcm_feasibleMin_time = t(tcm_feasibleMin_idx);
     
     minTcmDV_meets_constraint = tcm_dv_t(tcm_feasibleMin_idx);
+
+
+    assert(0); % until I come back and keep working on this
     
 else
 

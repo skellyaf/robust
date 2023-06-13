@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_nri_flexX0_det_start_robust'];
+savename = ['leo_plf_dro_robust'];
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -61,9 +61,13 @@ saveOutput = true; % bool for saving the output or not, true or false
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
+
+
+
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_flex0_leo_lloflyby_nri_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_flex0_leo_lloflyby_nri_3dv';
 
 
 
@@ -127,11 +131,9 @@ toc
 %% View optimal solution
 
 % Calculate optimal TCM time and delta V values
-% [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x_opt, simparams);
 [stm_i, stt_i, x_i_f, x_t, stm_t, stt_t_i, t, t_s, stm_t_i]  = createStateStmSttHistory(x_opt, simparams);
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, x_i_f, simparams);
-% [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
 [tcm_time,tcm_idx,min_tcm_dv] = opt_multiple_tcm(x_opt, t, t_s, stm_t, simparams);
 totalDV = deltaV + 3*min_tcm_dv
 
@@ -139,6 +141,7 @@ totalDV = deltaV + 3*min_tcm_dv
 
 solfig = figure;
 plotMultiSegTraj(x_opt, x_t, t_s, simparams, tcm_idx);
+% plotMultiSegTraj(x_opt, x_t, t_s, simparams);
 title('optim_solution')
 solfig.CurrentAxes.Title.Visible="off";
 
@@ -163,7 +166,7 @@ if saveOutput
     outputPath = strcat('./sims/',dateString,'_',savename);
     mkdir(outputPath);
     outputPathName = strcat('./',outputPath,'/video.avi');
-
+ 
     % Save workspace    
     save(strcat('./',outputPath,'/workspace.mat'));
     saveallfigs(strcat('./',outputPath),0)
@@ -208,5 +211,58 @@ end
 % % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 % figure
 % plotMultiSegTraj(x, x_t0, t_s0, simparams);
+
+
+
+
+
+
+
+%% investigating apse constraint
+% v_I = zeros(3,length(t));
+% 
+% rdotv = zeros(1,length(t));
+% r_m_sc_mag = rdotv;
+% 
+% for i = 1:length(t)
+% 
+%     omega_SI_nd = [0; 0; 1];
+%     r_m = [1-mu; 0; 0];
+% 
+%     % Get inertial velocity
+%     
+%     v_S = x_t(i,4:6)';
+%     r_S = x_t(i,1:3)';
+%     v_I(:,i) = v_S + cross(omega_SI_nd, r_S);
+% 
+% 
+%     r_m_sc = r_S - r_m;
+%     r_m_sc_mag(i) = vecnorm(r_m_sc);
+%     i_r_m_sc = r_m_sc/vecnorm(r_m_sc);
+% 
+%     i_v_I = v_I(:,i)/vecnorm(v_I(:,i));
+% 
+%     rdotv(i) = i_r_m_sc' * i_v_I;
+% 
+%     
+% end
+% 
+% 
+% figure
+% plot(rdotv)
+% hold on;
+% yline(0)
+% plot(r_m_sc_mag)
+
+
+% 
+% test_dot = abs(rdotv(4100:4300));
+% [minv,minidx] = min(test_dot);
+% 
+% rdotv(4100+minidx-1)
+% 
+% 
+% 
+% plot3(x_t(4100+minidx-1,1),x_t(4100+minidx-1,2),x_t(4100+minidx-1,3),'.','MarkerSize',25)
 
 

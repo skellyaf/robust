@@ -32,7 +32,7 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 0
+if 1
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);
@@ -46,12 +46,18 @@ if 0
         [~,pertCeq] = constraint_min_tcm(xdx, simparams);
     
         testGradceq(:,end+1) = (  pertCeq - nonpCeq  )/dxd; 
+
+        if j == 127
+            pp=1;
+        end
     
     end
     testGradceq
     [~, ~, ~, ceqGrad_an] = constraint_min_tcm(x, simparams)
     ceqGrad_an = ceqGrad_an';
     diffGradceq = testGradceq - ceqGrad_an
+
+    
 
 end
 
@@ -63,10 +69,17 @@ dx = sqrt(eps);
 
 testGradcin = [];
     for j = 1:length(x(:)) %3
+
+        if j == 127
+            ppp=1;
+        end
+
         xdx = x;
         xdx(j) = x(j) + dx;
         [pertCin] = constraint_min_tcm(xdx, simparams);        
         testGradcin(:,end+1) = (  pertCin - nonpCin  )/dx; 
+
+        
         
     end
 

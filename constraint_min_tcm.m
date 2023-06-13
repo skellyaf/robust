@@ -31,7 +31,8 @@ function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 
 num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 
-ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
+ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
+% ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
 
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
@@ -49,6 +50,8 @@ end
 % here if want it to be an inequlity constraint, or back to ceq_length if
 % want it to be an equality constraint.
 cin_length = n + simparams.constrain_flyby_radius;
+% cin_length = n + simparams.constrain_flyby_radius * 3;
+% cin_length = n + simparams.constrain_flyby_radius * 4;  % for debugging
 
 cin = zeros(1,cin_length);
 
@@ -59,7 +62,7 @@ end
 %% Pre-calculate/propagate states/STMs before assembling constraints
 
 % Create the state and stm history:
-[stm_i, x_i_f, ~, stm_t, t] = createStateStmHistory(x, simparams);
+[stm_i, x_i_f, x_t, ~, t, t_s, stm_t_i] = createStateStmHistory(x, simparams);
 
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);   
@@ -192,7 +195,7 @@ end
 % Powered flyby node distance from moon constraint
 
 if simparams.constrain_flyby_radius
-    r_b = [1+simparams.mu; 0; 0]; % Position of the moon
+    r_b = [1-simparams.mu; 0; 0]; % Position of the moon
     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
     r_d = r_n - r_b;
     d = vecnorm(r_d);
@@ -216,6 +219,168 @@ if simparams.constrain_flyby_radius
 %     neq = neq+1;
     niq = niq+1;
 end
+
+% Powered flyby node constraint options to ensure other points are not passing within the lunar surface
+% Option 1: the vector from the moon to the spacecraft (r_m_sc) is
+% orthogonal to the velocity vector (with or without the delta V?)
+%%%%%% not really working with the delta V added in...trying subtracting it
+
+if simparams.constrain_flyby_radius
+
+    x_flyby = x(1:6,simparams.flyby_node); % State at powered flyby
+    r_b = [1-simparams.mu; 0; 0]; % Position of the moon
+
+    xf_pre_flyby = x_i_f(1:6,simparams.flyby_node - 1); % State at the node prior to the flyby node
+    stm_prev = stm_i(:,:,simparams.flyby_node - 1);
+
+
+
+
+
+
+
+
+%     dv_to_subtract = x_flyby(4:6) - x_i_f(4:6,simparams.flyby_node-1)
+
+    [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint_prev_vel_S(x_flyby, xf_pre_flyby, r_b, stm_prev, simparams);
+%     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint(x_flyby, r_b);
+
+    % Apse constraint as an equality constraint
+    ceq(neq+1) = apse_constraint_eqn;
+
+    if outputCGradients
+        k = simparams.flyby_node;
+    
+        % Apse equality constraint gradient
+        ceqGrad(neq+1,(k-2)*7 + 1 : k*7) = apse_constraint_gradient;
+    end
+
+    neq = neq + 1;
+
+end
+
+
+
+
+
+% Option 2: enforce that the position at the powered flyby is closer to the
+% moon than the state (not node) immediately before it or after it
+%%%% having trouble getting the option 2 numerical gradients to match...
+
+% if simparams.constrain_flyby_radius
+% 
+%     % Find the time of the powered flyby
+%     t_flyby = sum(x(7,1:simparams.flyby_node-1));
+%     idx_flyby = find(t==t_flyby);
+% 
+%     rm = [1-mu; 0; 0];
+% 
+%     r_sc_flyby = x(1:3,simparams.flyby_node);
+% 
+%     r_m_sc_flyby =  r_sc_flyby - rm;
+%     
+%     dist_flyby = vecnorm(r_m_sc_flyby);
+% 
+%     % How many indices are in the segment after the flyby
+%     num_ind_before = sum(simparams.flyby_node-1 == t_s);
+%     num_ind_before = 25;
+% %     idx_before = floor(idx_flyby - .2 * num_ind_before); % Go 1/4 of the way into the segment
+%     idx_before = floor(idx_flyby - num_ind_before); % testing a gradient bug
+% 
+%     r_sc_beforeFlyby = x_t(idx_before, 1:3)';
+%     r_m_sc_beforeFlyby = r_sc_beforeFlyby - rm;
+%     dist_beforeFlyby = vecnorm(r_m_sc_beforeFlyby);
+% 
+% 
+%     % How many indices are in the segment after the flyby
+%     num_ind_after = sum(simparams.flyby_node == t_s);
+%     idx_after = floor(idx_flyby + .2 * num_ind_after); % Go 1/4 of the way into the segment
+% 
+% 
+%     r_sc_afterFlyby = x_t(idx_after, 1:3)';
+% 
+%     r_m_sc_afterFlyby = r_sc_afterFlyby - rm;
+%     dist_afterFlyby = vecnorm(r_m_sc_afterFlyby);
+% 
+% 
+% 
+% 
+%     % Distance < distance_before
+%     cin(niq+1) = dist_flyby - dist_beforeFlyby;
+% 
+%     % Distance < distance_after constraint
+%     cin(niq+2) = dist_flyby - dist_afterFlyby;
+% 
+% 
+% 
+%     %%%% Debugging - 3 constraints to test which is messing up
+% 
+% 
+% 
+% %     cin(niq+1) = dist_beforeFlyby;
+% %     cin(niq+2) = dist_afterFlyby;
+% %     cin(niq+3) = dist_flyby;
+% 
+% 
+%     %%%% Debugging
+%     
+% 
+%     
+% 
+% 
+% 
+% 
+%     % Option 2 gradient
+%     if outputCGradients
+%         k = simparams.flyby_node;
+%         % Find the index for the first node of the segment before the flyby segment
+%         idx_pre_flyby = find(t_s==k-1);
+%         idx_pre_flyby_start = idx_pre_flyby(1);
+% 
+%         %%%%%% WEIRD THING HAPPENED HERE...NEED TO REMEMBER IF THAT IS HOW
+%         %%%%%% I SET IT UP ON PURPOSE. WHEN EVALAUTING t_s(t==sum(x(7,1:simparams.flyby_node-2)))
+%         %%%%%% , THE TIME ALONG THE TRAJECTORY AT THE END(?) OF SEGMENT 12,
+%         %%%%%% IT IS SLIGHTLY DIFFERENT THAN THE TIME AT THE BEGINNING OF
+%         %%%%%% SEGMENT 13: t(idx_pre_flyby_start)
+% 
+%         
+%         i_r_m_sc_flyby = r_m_sc_flyby / dist_flyby;
+%         i_r_m_sc_afterFlyby = r_m_sc_afterFlyby / dist_afterFlyby;
+%         i_r_m_sc_beforeFlyby = r_m_sc_beforeFlyby / dist_beforeFlyby;
+%         
+% %         stmCkClast = dynCellCombine(t, t_s, tClast_idx, tCk_idx, simparams, stm_t_i);
+% 
+%         stm_after_flyby = dynCellCombine(t, t_s, idx_flyby, idx_after, simparams, stm_t_i);
+%         stm_flyby_before = dynCellCombine(t, t_s, idx_pre_flyby_start, idx_before, simparams, stm_t_i);
+% 
+%         % Partial derivative wrt previous segment
+%         cinGrad(niq+1, (k-2)*7 + 1 : (k-2)*7 + 6) =  i_r_m_sc_beforeFlyby' * stm_flyby_before(1:3,:);
+% 
+%         % Partial derivative wrt current segment
+%         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)];
+%         cinGrad(niq+2, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)] + i_r_m_sc_afterFlyby' * stm_after_flyby(1:3,:);
+% 
+% 
+% 
+% 
+% 
+% %         % d dist_beforeflyby / d prev segment
+% %         cinGrad(niq+1, (k-2)*7 + 1 : (k-2)*7 + 6) = i_r_m_sc_beforeFlyby' * stm_flyby_before(1:3,:);
+% % 
+% %         % d dist_afterFlyby / d curr segment
+% %         cinGrad(niq+2, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_afterFlyby' * stm_after_flyby(1:3,:);
+% % 
+% %         % d dist_flyby / d curr segment
+% %         cinGrad(niq+3, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)];
+%         
+%     end
+% 
+% 
+% 
+% 
+%     niq = niq + 2;
+% end
+
 
 
 

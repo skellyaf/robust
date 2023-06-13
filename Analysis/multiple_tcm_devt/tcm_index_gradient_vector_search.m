@@ -10,6 +10,19 @@ function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_sear
 %     P_i = varargin{1};
 % end
 
+
+
+
+% if length(TCMr_idx_best) == 4
+%     output = 1;
+%     counter = 1;
+%     fileID = fopen('4_tcm_gradient_steps.txt','w');
+% else
+%     output = 0;
+% end
+
+
+
 TCMr_time_best = t(TCMr_idx_best)';
 
 improving = 1;
@@ -152,6 +165,32 @@ while improving
 
         % Check against the saved individual mods for the lowest
         [minDV, minIdx] = min(minDV_save);
+
+
+%         if output
+%             load('orbital_params.mat');
+%             Rm = moon.a; 
+%             n = sqrt((earth.mu + moon.mu)/Rm^3);
+%             
+%             ndTime2sec = 1/n;
+%             ndTime2hrs = 1/n/3600;
+%             ndTime2days = 1/n/3600/24;
+%             ndDist2km = Rm;
+%             ndVel2kms = Rm * n;
+% 
+%             outline = [counter, t(TCMr_idx_test_save(minIdx,:))'*ndTime2hrs, minDV*ndVel2kms*1000];
+% 
+% 
+%             fprintf(fileID,'%7.6f %7.6f %7.6f %7.6f %7.6f %7.6f\r\n',outline);
+% 
+% 
+%             counter = counter + 1;
+% 
+% 
+%         end
+
+
+
         TCMr_idx_best = TCMr_idx_test_save(minIdx,:);
         TCMr_time_best = t(TCMr_idx_best)';
 
@@ -160,6 +199,10 @@ while improving
 
 end
 
+% if output
+%     fclose(fileID);
+%     ppp=1;
+% end
 
 
 end

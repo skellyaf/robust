@@ -44,7 +44,8 @@ if exist('tcm_idx')
         seg_idxs = find(t_s==corrSeg);
 
         if tcm_idx(i) == seg_idxs(end)
-            plot3(tcm_pos(1), tcm_pos(2), tcm_pos(3),'o','MarkerSize',10,'Color','Black','DisplayName','TCMr Location');
+%             plot3(tcm_pos(1), tcm_pos(2), tcm_pos(3),'o','MarkerSize',10,'Color','Black','DisplayName','TCMr Location');
+            plot3(tcm_pos(1), tcm_pos(2), tcm_pos(3),'^','MarkerSize',12,'Color','Black','DisplayName','TCMr Location');
         else
             plot3(tcm_pos(1), tcm_pos(2), tcm_pos(3),'^','MarkerSize',12,'Color','Black','DisplayName','Correction Location');
         end
@@ -97,6 +98,14 @@ elseif strcmp(dynSys,'cr3bp')
     xlabel('X (nd)')
     ylabel('Y (nd)')
     zlabel('Z (nd)')
+
+
+
+    moon_radius=1737/384400;
+    % Plot location of moon
+    [xunit,yunit,zunit]=sphere;
+    m = surf(xunit*moon_radius + (1-simparams.mu),yunit*moon_radius,zunit*moon_radius);
+    colormap('gray');
 end
 
 % 
@@ -115,15 +124,18 @@ end
 
 ip1=plot3(simparams.x_init(1),simparams.x_init(2),simparams.x_init(3),'.','Color','Green','MarkerSize',25,'DisplayName','Initial Position');
 
-if simparams.target_final_maneuver
-    finalManeuverSeg = simparams.maneuverSegments(end)-1;
-    r_finalMnvrSeg = x_t(t_s==finalManeuverSeg,1:3);
-    target = r_finalMnvrSeg(end,:);
 
-    plot3(target(1),target(2),target(3),'.','Color','Red','MarkerSize',25,'DisplayName','Target Position');
-else
-    plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),'.','Color','Red','MarkerSize',25,'DisplayName','Target Position');
-end
+
+% % Commenting out the red dot that gets plotted on the final TCM target
+% if simparams.target_final_maneuver
+%     finalManeuverSeg = simparams.maneuverSegments(end)-1;
+%     r_finalMnvrSeg = x_t(t_s==finalManeuverSeg,1:3);
+%     target = r_finalMnvrSeg(end,:);
+% 
+%     plot3(target(1),target(2),target(3),'.','Color','Red','MarkerSize',25,'DisplayName','Target Position');
+% else
+%     plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),'.','Color','Red','MarkerSize',25,'DisplayName','Target Position');
+% end
 
 
 
@@ -136,7 +148,7 @@ end
 
 % Plot the end of the trajectory (target after the final coast in most
 % instances)
-plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),"square",'MarkerSize',10,'MarkerFaceColor','Red','MarkerEdgeColor','Black')
+plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),"square",'MarkerSize',5,'MarkerFaceColor','Red','MarkerEdgeColor','Black')
 
 
 
