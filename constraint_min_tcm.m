@@ -31,8 +31,8 @@ function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 
 num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 
-ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
-% ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
+% ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
+ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
 
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
@@ -223,41 +223,42 @@ end
 % Powered flyby node constraint options to ensure other points are not passing within the lunar surface
 % Option 1: the vector from the moon to the spacecraft (r_m_sc) is
 % orthogonal to the velocity vector (with or without the delta V?)
-%%%%%% not really working with the delta V added in...trying subtracting it
 
-if simparams.constrain_flyby_radius
+% Works, but may be over constrained / suboptimal
 
-    x_flyby = x(1:6,simparams.flyby_node); % State at powered flyby
-    r_b = [1-simparams.mu; 0; 0]; % Position of the moon
-
-    xf_pre_flyby = x_i_f(1:6,simparams.flyby_node - 1); % State at the node prior to the flyby node
-    stm_prev = stm_i(:,:,simparams.flyby_node - 1);
-
-
-
-
-
-
-
-
-%     dv_to_subtract = x_flyby(4:6) - x_i_f(4:6,simparams.flyby_node-1)
-
-    [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint_prev_vel_S(x_flyby, xf_pre_flyby, r_b, stm_prev, simparams);
-%     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint(x_flyby, r_b);
-
-    % Apse constraint as an equality constraint
-    ceq(neq+1) = apse_constraint_eqn;
-
-    if outputCGradients
-        k = simparams.flyby_node;
-    
-        % Apse equality constraint gradient
-        ceqGrad(neq+1,(k-2)*7 + 1 : k*7) = apse_constraint_gradient;
-    end
-
-    neq = neq + 1;
-
-end
+% % % % if simparams.constrain_flyby_radius
+% % % % 
+% % % %     x_flyby = x(1:6,simparams.flyby_node); % State at powered flyby
+% % % %     r_b = [1-simparams.mu; 0; 0]; % Position of the moon
+% % % % 
+% % % %     xf_pre_flyby = x_i_f(1:6,simparams.flyby_node - 1); % State at the node prior to the flyby node
+% % % %     stm_prev = stm_i(:,:,simparams.flyby_node - 1);
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % % %     dv_to_subtract = x_flyby(4:6) - x_i_f(4:6,simparams.flyby_node-1)
+% % % % 
+% % % %     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint_prev_vel_S(x_flyby, xf_pre_flyby, r_b, stm_prev, simparams);
+% % % % %     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint(x_flyby, r_b);
+% % % % 
+% % % %     % Apse constraint as an equality constraint
+% % % %     ceq(neq+1) = apse_constraint_eqn;
+% % % % 
+% % % %     if outputCGradients
+% % % %         k = simparams.flyby_node;
+% % % %     
+% % % %         % Apse equality constraint gradient
+% % % %         ceqGrad(neq+1,(k-2)*7 + 1 : k*7) = apse_constraint_gradient;
+% % % %     end
+% % % % 
+% % % %     neq = neq + 1;
+% % % % 
+% % % % end
 
 
 
@@ -385,6 +386,61 @@ end
 
 
 
+% Option 3: Find perilune, constrain the distance from the moon to be
+% greater than or equal to the limit
+if simparams.constrain_flyby_radius
+
+    % Find the closest approach to the moon (perilune)
+    r_sc_t = x_t(:,1:3)';
+    r_m = [1-mu; 0; 0];
+    r_m_sc = r_sc_t - r_m;
+    d_m_sc = vecnorm(r_m_sc);
+    [d_perilune, idx_perilune] = min(d_m_sc);
+%     idx_perilune = 2426; % debug  REMOVE AFTER VERIFYING GRADIENTS!!!
+%     DIDN'T QUITE WORK. NEXT ATTEMPT - TRY AND ADD THE ACTUAL TIME WHERE PERILUNE OCCURRED INTO
+%     THE STM HISTORY, THEN FIND THE TIME IT OCCURS...INDICES ARE BEING
+%     UNRELIABLE/INCONSISTENT BETWEEN MODIFICATIONS
+%     d_perilune = d_m_sc(idx_perilune); % debug  REMOVE AFTER VERIFYING GRADIENTS!!!
+
+    % Constrain the closest approach to be > simparams.flyby_radius (simparams.flyby_radius - d_perilune < 0) 
+    cin(niq+1) = simparams.flyby_radius - d_perilune;
+
+    % Perilune distance inequality constraint gradient
+    if outputCGradients
+        % Find the segment
+        seg_perilune = t_s(idx_perilune);
+
+        %
+        i_m_sc = r_m_sc(:,idx_perilune) / d_perilune;
+
+        % Find the index at the beginning of the segment with perilune
+%         pSeg_indices = t_s == seg_perilune
+%         idx_start_pSeg = 
+
+
+
+        t0_pSeg = sum(x(7,1:seg_perilune-1));
+        idx_pSeg = find(t==t0_pSeg);
+
+
+        stm_perilune_seg0 = dynCellCombine(t, t_s, idx_pSeg, idx_perilune, simparams, stm_t_i);
+        k = seg_perilune;
+        cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 6) = -i_m_sc' * stm_perilune_seg0(1:3,:);
+
+
+
+
+
+
+
+    end
+
+
+
+    % Increment the number of inequality constraints
+    niq = niq+1;
+
+end
 
 
 

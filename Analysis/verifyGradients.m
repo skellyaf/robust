@@ -32,7 +32,7 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 1
+if 0
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);
@@ -70,7 +70,7 @@ dx = sqrt(eps);
 testGradcin = [];
     for j = 1:length(x(:)) %3
 
-        if j == 127
+        if j == 134
             ppp=1;
         end
 
