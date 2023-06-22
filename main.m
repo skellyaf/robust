@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_dro_robust_flybyopt3'];
+savename = ['leo_plf_nri_robust_flybyopt3'];
 saveOutput = true; % bool for saving the output or not, true or false
 
 
@@ -60,8 +60,8 @@ saveOutput = true; % bool for saving the output or not, true or false
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
-% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
 
 
 

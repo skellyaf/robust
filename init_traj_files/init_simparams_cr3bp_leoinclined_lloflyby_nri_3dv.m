@@ -235,6 +235,20 @@ load('lagrangeOrbitICs.mat');
 x0_nrho = lagrangeOrbitICs.L2_southern.state_nd(:,1);
 T_nrho = lagrangeOrbitICs.L2_southern.T_nd(1);
 
+%% Perform single differential correction to ensure it repeats
+
+% Design vector map and elements
+% Initial x & z position, y velocity (and appending time T later)
+designMap = [1, 0, 1, 0, 1, 0];
+
+% Constraint vector map and elements
+% Y position, x velocity, and z velocity all zero at subsequent x-z plane crossing
+constraintMap = [0, 1, 0, 1, 0, 1];
+
+[~, x0_nrho] = singleDifferentialCorrection(x0_nrho, designMap, constraintMap, T_nrho/2, 0, simparams);
+
+
+
 % Propagate the NRHO
 [~,x_nrho_t, t_nrho] = stateProp(x0_nrho, T_nrho*1.015, simparams);
 
