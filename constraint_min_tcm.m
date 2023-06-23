@@ -31,8 +31,8 @@ function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 
 num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 
-ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
-% ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
+% ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
+ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
 
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
@@ -186,45 +186,54 @@ end % end of the main for loop
 % Constrain sum of delta_t's to equal t_f if fixed_xfer_duration is
 % flagged
 
-total_time = sum(x(7,:));
+
 if fixed_xfer_duration
+    total_time = sum(x(7,:));
     ceq(neq+1) = total_time - t_f;
     neq = neq+1;
 end
 
-% Powered flyby node distance from moon constraint
 
-if simparams.constrain_flyby_radius
-    r_b = [1-simparams.mu; 0; 0]; % Position of the moon
-    r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
-    r_d = r_n - r_b;
-    d = vecnorm(r_d);
-    % As an equality constraint
-%     ceq(neq+1) = d - simparams.flyby_radius;
-    % As an inequality constraint
-    cin(niq+1) = simparams.flyby_radius - d;
-    
-
-    % Gradient addition
-    if outputCGradients
-        i_d = r_d / d;
-        k = simparams.flyby_node;
-        % Gradient if it is an equality constraint
-%         ceqGrad(neq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = i_d'; % Vector magnitude partial derivative
-
-        % Gradient if it is an inequality constraint
-        cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
-    end
-
-%     neq = neq+1;
-    niq = niq+1;
-end
 
 % Powered flyby node constraint options to ensure other points are not passing within the lunar surface
-% Option 1: the vector from the moon to the spacecraft (r_m_sc) is
+% Option 1: the powered flyby happens no closer than a certain distance to the moon and the vector from the moon to the spacecraft (r_m_sc) is
 % orthogonal to the velocity vector (with or without the delta V?)
 
+
 % Works, but may be over constrained / suboptimal
+
+
+
+% Powered flyby node distance from moon constraint
+
+% % % if simparams.constrain_flyby_radius
+% % %     r_b = [1-simparams.mu; 0; 0]; % Position of the moon
+% % %     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
+% % %     r_d = r_n - r_b;
+% % %     d = vecnorm(r_d);
+% % %     % As an equality constraint
+% % % %     ceq(neq+1) = d - simparams.flyby_radius;
+% % %     % As an inequality constraint
+% % %     cin(niq+1) = simparams.flyby_radius - d;
+% % %     
+% % % 
+% % %     % Gradient addition
+% % %     if outputCGradients
+% % %         i_d = r_d / d;
+% % %         k = simparams.flyby_node;
+% % %         % Gradient if it is an equality constraint
+% % % %         ceqGrad(neq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = i_d'; % Vector magnitude partial derivative
+% % % 
+% % %         % Gradient if it is an inequality constraint
+% % %         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
+% % %     end
+% % % 
+% % % %     neq = neq+1;
+% % %     niq = niq+1;
+% % % end
+
+
+
 
 % % % % if simparams.constrain_flyby_radius
 % % % % 

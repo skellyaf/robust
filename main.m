@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_nri_robust_flybyopt3'];
+savename = ['leo_plf_nri_robust_flybyopt3_noflybydistineqc'];
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 
