@@ -3,10 +3,13 @@ function [out] = plotIterationHistory(xhist,simparams)
 %trajectory to get to the final
 %   Detailed explanation goes here
 
-pp=figure;
+% pp=figure;
 hold on
 axis equal
 grid on
+color_gradient = winter(size(xhist,3));
+color_gradient = flipud(color_gradient);
+
 for i = 1:size(xhist,3)
     
 
@@ -15,6 +18,8 @@ for i = 1:size(xhist,3)
 
 
         p1=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'--','Color',[1 0 0 .5],'linewidth',5,'DisplayName','Initial Guess');
+%         p1=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'--','Color',[color_gradient(i,:) .75],'linewidth',4,'DisplayName','Initial Guess');
+%         p1=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) 1],'linewidth',4,'DisplayName','Initial Guess');
     elseif i==size(xhist,3)
 
 
@@ -23,10 +28,15 @@ for i = 1:size(xhist,3)
 
     
         p2=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[0 0 1 1],'linewidth',4,'DisplayName','Converged Trajectory');
+%         p2=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) 1],'linewidth',4,'DisplayName','Converged Trajectory');
     elseif i == 2
         p3=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[0 0 0 0.1],'linewidth',2,'DisplayName','Intermediate Steps');
+%         p3=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) 0.1],'linewidth',2,'DisplayName','Intermediate Steps');
+%         p3=plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) .25],'linewidth',2,'DisplayName','Intermediate Steps');
     else
         plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[0 0 0 0.1],'linewidth',2)
+%         plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) 0.1],'linewidth',2)
+%         plot3(xi_t(:,1), xi_t(:,2), xi_t(:,3),'Color',[color_gradient(i,:) .25],'linewidth',2)
     end
 
 
@@ -97,13 +107,12 @@ if strcmp(simparams.dynSys,'2bp')
 
 elseif strcmp(simparams.dynSys,'cr3bp')
 %     view([-75, 10]);
-%     view([80, 12]); %leo-nri view
+    view([80, 12]); %leo-nri view
 
-    view([0 90]); % planar
+%     view([0 90]); % planar
     xlabel('X (nd)')
     ylabel('Y (nd)')
     zlabel('Z (nd)')
-
 
 
     moon_radius=1737/384400;
@@ -111,6 +120,9 @@ elseif strcmp(simparams.dynSys,'cr3bp')
     [xunit,yunit,zunit]=sphere;
     m = surf(xunit*moon_radius + (1-simparams.mu),yunit*moon_radius,zunit*moon_radius);
     colormap('gray');
+
+    legend([p1, p2, p3, p4, p5], 'Location','NorthEast')
+
 end
 
 

@@ -32,8 +32,9 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_nri_robust_flybyopt3'];
+savename = ['leo_plf_nri_robust_flybyopt1'];
 saveOutput = true; % bool for saving the output or not, true or false
+saveVideo = false;
 
 
 %% Create simulation parameters structure by running initialization script
@@ -146,10 +147,6 @@ title('optim_solution')
 solfig.CurrentAxes.Title.Visible="off";
 
 
-% v2 = x_opt(11:13);
-% [~,~,i] = rv2orbel(r2,v2,simparams.mu);
-% xfer_inclination = i*180/pi
-
 
 
 
@@ -168,8 +165,9 @@ if saveOutput
     outputPathName = strcat('./',outputPath,'/video.avi');
  
     % Save workspace    
+    saveallfigs(strcat('./',outputPath),0);
     save(strcat('./',outputPath,'/workspace.mat'));
-    saveallfigs(strcat('./',outputPath),0)
+    
     
     % save main file backup
     FileNameAndLocation=[mfilename('fullpath')];
@@ -187,23 +185,50 @@ if saveOutput
     copyfile('./obj_min_tcm.m',newbackup);
     
     % save tcm optimization function backup
-    newbackup=strcat(outputPath,'/tcmPair_rv_backup.m');
-    copyfile('./Analysis/tcmPair_rv.m',newbackup);
+    newbackup=strcat(outputPath,'/opt_multiple_tcm_backup.m');
+    copyfile('./Analysis/multiple_tcm_devt/opt_multiple_tcm.m',newbackup);
+
+    % Analysis/multiple_tcm_devt/min_dv_tcm_meets_dispersion_constraint
+    newbackup=strcat(outputPath,'/min_dv_tcm_meets_dispersion_constraint_backup.m');
+    copyfile('./Analysis/multiple_tcm_devt/min_dv_tcm_meets_dispersion_constraint.m',newbackup);
+
+    % Analysis/multiple_tcm_devt/optimize_tcm_guess
+    newbackup=strcat(outputPath,'/optimize_tcm_guess_backup.m');
+    copyfile('./Analysis/multiple_tcm_devt/optimize_tcm_guess.m',newbackup);
+
+    % Analysis/multiple_tcm_devt/tcm_index_gradient_vector_search
+    newbackup=strcat(outputPath,'/tcm_index_gradient_vector_search_backup.m');
+    copyfile('./Analysis/multiple_tcm_devt/tcm_index_gradient_vector_search.m',newbackup);
+
+    % Analysis/multiple_tcm_devt/random_unit_search
+    newbackup=strcat(outputPath,'/random_unit_search_backup.m');
+    copyfile('./Analysis/multiple_tcm_devt/random_unit_search.m',newbackup);
+
+    % Analysis/calc_covariance_tcmdv
+    newbackup=strcat(outputPath,'/calc_covariance_tcmdv_backup.m');
+    copyfile('./Analysis/calc_covariance_tcmdv.m',newbackup);
+
     
     % save simulation parameters backup
-%     newbackup=strcat('./',outputPath,'/initialize_simulation_parameters_backup.m');
     newbackup=strcat(outputPath,'/initialize_simparams_backup.m');
     copyfile(strcat(init_fn,'.m'),newbackup);
 
 
 
-    optimHistoryMovie(history,outputPathName, simparams);
+    if saveVideo
+        optimHistoryMovie(history,outputPathName, simparams);
+    end
 
 
 end
 
+% Save iteration history .fig only
+iterhist = figure;
+plotIterationHistory(history.x,simparams)
+title('iteration_history')
+iterhist.CurrentAxes.Title.Visible="off";
 
-
+savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 
 %% debug
