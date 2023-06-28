@@ -259,14 +259,13 @@ x0_dro = lagrangeOrbitICs.distant_retrograde.state_nd(:,7);
 T_dro = lagrangeOrbitICs.distant_retrograde.T_nd(7);
 
 % Propagate the DRO
-% [~,x_dro_t, t_dro] = stateProp(x0_dro, T_dro*.5, simparams);
-[~,x_dro_t, t_dro] = stateProp(x0_dro, T_dro, simparams);
+[~,x_dro_t, t_dro] = stateProp(x0_dro, T_dro*1.25, simparams);
 
 % Indices from external tests
-arrive_idx = 80;
+arrive_idx = 175;
 T_coast_dro_target = t_dro(end) - t_dro(arrive_idx);
-% simparams.x_target = x_dro_t(end,:)';
-simparams.x_target = x0_dro;
+simparams.x_target = x_dro_t(end,:)';
+% simparams.x_target = x0_dro;
 simparams.T_target = T_dro;
 
 simparams.x0(1:6,simparams.maneuverSegments(3)) = x_dro_t(arrive_idx,:)';
@@ -275,8 +274,8 @@ simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_dro_target;
 
 
 %% LOAD THE DETERMINISTIC OPTIMAL
-% load('leo_plf_dro_det_opt.mat');
-% simparams.x0 = x_opt;
+load('leo_plf_dro3_detOpt.mat')
+simparams.x0 = x_opt;
 
 
 % Single parameter vector

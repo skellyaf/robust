@@ -152,7 +152,7 @@ x_3b_leo_depart_nd = [X_depart_leo_pre_mnvr(1:3); v_leo_nd];
 
 %% Create segments from LEO departure to LLO flyby
 % Propagate TLI portion
-t_tli = 3.8 / ndTime2days;
+t_tli = 3.75 / ndTime2days;
 [~,x_tli_flyby_t,t_tli_flyby] = stateProp(x_3b_leo_depart_nd, t_tli, simparams);
 
 num_tli_flyby_segments = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
@@ -190,7 +190,7 @@ simparams.x0(7,1) = simparams.T0 * simparams.seg1_coast_fraction;
 
 
 %% Generating LLO powered flyby to NRHO trajectory portion
-altitude_flyby = 1000; % Lunar altitude, km
+altitude_flyby = 5000; % Lunar altitude, km
 coe_flyby.a = altitude_flyby + moon.rad; % semimajor axis, km
 coe_flyby.ecc = 0.001; % eccentricity
 % Inclination of 27 degrees (27, 50, 76, & 86 enable extended LLO stays)
@@ -198,7 +198,7 @@ coe_flyby.ecc = 0.001; % eccentricity
 coe_flyby.inc = 180 * pi/180;
 coe_flyby.raan = .01 * pi/180; % Right ascension - (not used for equatorial orbits)
 coe_flyby.argp = 0.01; % arg of perigee, deg (not used for circular & equatorial orbits)
-coe_flyby.nu = 300 * pi/180; % true anomaly, deg (not used for circular orbits)
+coe_flyby.nu = 15 * pi/180; % true anomaly, deg (not used for circular orbits)
 % if initial orbit is circular/equatorial, the following are used.
 coe_flyby.truelon = 90; % deg, angle between x-axis and satellite (only for circular and equatorial)
 coe_flyby.arglat = 180; % deg, angle between ascending node and satellite position (only for circular inclined orbits)
@@ -213,7 +213,7 @@ v_2b_llo_nd = v_2b_llo / ndVel2kms;
 r_3b_llo = r_2b_llo_nd + [1-mu; 0; 0];
     
 X_init = [r_3b_llo; v_2b_llo_nd];
-T_init = 1.25/ndTime2hrs;
+T_init = 1/ndTime2hrs;
 
 % Propagate the LLO initial state to find LLO departure state
 [~,x_llo_t] = stateProp(X_init, T_init, simparams);
@@ -221,10 +221,10 @@ T_init = 1.25/ndTime2hrs;
 % The LLO departure
 j = 10;
 x_llo_depart = x_llo_t(j,:)';
-T_post_flyby = 2 / ndTime2days;
+T_post_flyby = 1.5 / ndTime2days;
 
 iv_depart = x_llo_depart(4:6)/norm(x_llo_depart(4:6));
-i=23; % from shooting test
+i=20; % from shooting test
 dv = i * .025 * iv_depart;
 
 x_flyby_depart = x_llo_depart + [0; 0; 0; dv];
