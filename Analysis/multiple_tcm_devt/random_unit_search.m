@@ -62,19 +62,27 @@ while improving
 
     if length(TCMr_time_test) ~= length(unique(TCMr_time_test))
         ppp=1;
+        x
+        range
+        TCMr_time_test
+        notImprovedCount = notImprovedCount + 1;
+    else
+
+        [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+        fevals = fevals + 1;
+        
+        if testDV <= minDV
+            TCMr_time_best = TCMr_time_test;
+            TCMr_idx_best = TCMr_idx_test;
+            minDV = testDV;
+        else
+            notImprovedCount = notImprovedCount + 1;
+        end
+
     end
 
 %     [~, testDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
-    [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
-    fevals = fevals + 1;
-    
-    if testDV <= minDV
-        TCMr_time_best = TCMr_time_test;
-        TCMr_idx_best = TCMr_idx_test;
-        minDV = testDV;
-    else
-        notImprovedCount = notImprovedCount + 1;
-    end
+
 
 
 %     if abs(minDV - 111.537939828886) < .0000001
