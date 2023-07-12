@@ -75,10 +75,34 @@ if ~skip
 %         if t(total_idx_end) < seg_times(end)
         if total_idx_end < seg_idx_end
             % Don't go all the way to the end of the current cell
+
             end_logical = t(t_s==i)==t(total_idx_end);
-            if size(end_logical,2) ~= size(stm_t_i{i})
+
+
+            %%%%% TODO: WHAT WAS THIS NEXT SECTION OF CODE FOR? THERE
+            %%%%% APPEARS TO BE A BUG IN THE LOGIC OF THE SIZE COMPARISON
+            %%%%% IN THE NEXT IF STATEMENT....COMMENTING OUT FOR NOW TO
+            %%%%% SEE IF IT CAUSES AN ERROR SOMEWHERE ELSE.
+
+
+
+            %%%%%%% POTENTIAL ANSWER: I THINK IT WAS FOR THE FACT THAT t_s
+            %%%%%%% IS STORED WITH A DIFFERENT NUMBER OF INDICES THAN
+            %%%%%%% stm_t_i{} CONTAINS. t and t_s start at 0, then go to 1,
+            %%%%%%% 2, 3, 4 sequentially regardless of whether or not it is
+            %%%%%%% a new trajectory segment or not. stm_t_i, on the other
+            %%%%%%% hand, effectively starts at 0 at the beginning of each
+            %%%%%%% segment.
+
+            if size(end_logical,1) ~= size(stm_t_i{i},3)
                 end_logical = [false; end_logical];
             end
+
+%%%%%%%%%%%%%%%%%%%----------------------------
+
+
+
+
             if stt_flag
                 stt_if_i0 = stt_t_i{i}(:,:,:,end_logical);
             end

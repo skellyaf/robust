@@ -1,4 +1,4 @@
-function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess(x, t, t_s, stm_t, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, P_i, simparams)
+function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess(x, t, t_s, stm_t, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaV, P_i, range, simparams)
 %optimize_tcm_guess takes the single final TCM to meet the position
 %dispersion constraint and incrementally adds a TCM and optimizes the TCMs
 %until the lowest TCM magnitude is found (stops searching when adding a TCM
@@ -24,37 +24,64 @@ tcm_idx_cell{1} = tcm_idx;
 improving = 1;
 while improving
 
+    
     tcm_time = tcm_time_cell{end};
     tcm_idx = tcm_idx_cell{end};
 
     % Add a maneuver at the lowest delta V time option
     
     % Create a logical array of indices to test
-    test_logical = true(1,length(t));
+    test_step_size = 10; %%%%%%%%% INSTEAD OF SEARCHING EVERY INDEX ALONG THE LINE, ONLY SEARCH EVERY X INDICES, THEN GRADIENT DESCEND TO THE MIN IN THE NEXT STEP 
+    
+    test_logical = false(1,length(t));
+    test_logical(1:test_step_size:end-1) = true;
+    test_logical(1:25) = true;
+
+%     test_logical(range(1):test_step_size:range(2)-1) = true;
+%     test_logical(range(1):range(1)+25) = true;
+
+    % Don't test where nominal maneuvers are if we're already correcting
+    % the nominal maneuvers there
+    if simparams.correct_nominal_dvs
+        for i = 1:length(simparams.maneuverSegments)
+            maneuverSegIdx = t_s==simparams.maneuverSegments(i);
+            maneuverIdx = find(maneuverSegIdx,1)-1; % the time of the maneuver occurs at the intersection of 1 and 2, and the previous segment gets the final time index
+            test_logical(maneuverIdx) = false;
+        end
+    end
+
+
+
 
     if length(tcm_idx) == 1
         test_logical(tcm_idx:end) = false;
     else
-        test_logical(tcm_idx) = false;
-        test_logical(1:tcm_idx(1)) = false;
-        test_logical(tcm_idx(end)+1:end) = false;
+        test_logical(tcm_idx) = false; % Don't test on top of other TCMs
+        test_logical(1:tcm_idx(1)) = false; % Don't test before the first TCM
+        test_logical(tcm_idx(end)+1:end) = false; % Don't test after the last TCM
     end
 
+
     plusOneTCMr_totalDV_t = ones(1,length(t)) * nan;
-%     plusOneTCMr_totalDV_t = ones(1,length(t)) * 1e8;
 
     % Test each index in the logical array
 
     if sum(test_logical)==0
-        [~, min_tcm_dv] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time, vel_disp_flag, P_i, simparams);
+%         [~, min_tcm_dv] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaV, P_i, range, simparams);
+        [~, min_tcm_dv] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time, vel_disp_flag, deltaV, P_i, range, simparams);
 
         improving = 0;
     else
+        
         for i = find(test_logical)
             tcm_new_i = t(i);
             tcm_time_test = sort([tcm_time, tcm_new_i]);
-            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time_test, vel_disp_flag, P_i, simparams);         
+%             [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time_test, vel_disp_flag, deltaV, P_i, range, simparams);         
+            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time_test, vel_disp_flag, deltaV, P_i, range, simparams);         
         end
+        
+
+        
        
 
         % Find the minimum
@@ -65,26 +92,17 @@ while improving
     
         % Perform gradient descent on the indices
 
-        %%%%% NEW STUFF, IN TESTING
-        % CREATING AN IMPROVEMENT THRESHOLD (set in init_params but
-        % currently at 3 sigma of the TCM execution error magnitude)
+        [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
 
-        if minDV + simparams.add_tcm_improvement_threshold < tcm_num_option_DVs(end)
+        if length(tcm_idx_test) > 2
+            % Perform stochastic gradient descent to get double indices
+            [tcm_idx_test] = random_unit_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
 
-        %%%%%
-
-            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
-            
-            if length(tcm_idx_test) > 2
-                % Perform stochastic gradient descent to get double indices
-                [tcm_idx_test] = random_unit_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
-            
-                % Perform gradient descent one more time on the indices
-                [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, P_i, simparams);
-            end
-        
-
+            % Perform gradient descent one more time on the indices
+            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
         end
+    
+
 
         % Save it as the minimum:
         % Save the TCM times in a structure

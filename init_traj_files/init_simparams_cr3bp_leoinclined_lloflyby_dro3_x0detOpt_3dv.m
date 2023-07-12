@@ -97,9 +97,6 @@ simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a 
 simparams.fixed_xfer_duration = 0; % Flag for a fixed total transfer duration (total transfer duration stored in .tf)
 % simparams.tf is set inside generateInitialXfer.m;
 
-simparams.idv_tcmR_method = 0; % A flag to use either the traditional position covariance trace method vs the unit vector approximation when the tcm and delta V are concurrent
-simparams.idv_tcmV_method = 0;
-
 simparams.seg1_coast_fraction = 0.2; % percent of orbital period to coast in the first segment for initial segment guess
 %  TODO: add if statement to determine the coast period if there's a
 %  maneuver at the beginning of the first segment. same for last.
@@ -110,9 +107,12 @@ simparams.segn_coast_fraction = 0.25; % percent of orbital period to coast in th
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
+simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
+
+simparams.correct_nominal_dvs = 1; % flag to incorporate a dispersion correction with the nominal delta Vs or not
+
 simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 
-simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
 %% Orbit parameters
 %% Initial orbit - currently circular inclined

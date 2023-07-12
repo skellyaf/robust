@@ -1,4 +1,4 @@
-function [tcm_time_combined, tcm_idx_combined, min_tcm_dv_total, P_i_minus, P_i_plus, tcm_dv_each] = opt_multiple_tcm(x, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams)
+function [tcm_time_combined, tcm_idx_combined, min_tcm_dv_total, P_i_minus, P_i_plus, tcm_dv_each] = opt_multiple_tcm(x, deltaVs_nom, t, t_s, stm_t, stm_t_i, tcm_time, simparams)
 %opt_multiple_tcm Determines the optimal number of TCMs to perform along a
 %trajectory, the times to perform them, and total 1 SIGMA TCM delta V.
 %% MODIFICATION 23 MAR 23: IMPLEMENTING A MID-TRAJECTORY POSITION DISPERSION CONSTRAINT
@@ -43,9 +43,9 @@ for i = 1:length(simparams.P_constrained_nodes)
             target_idx = target_idx(1);
         end
 
-        t_eval = t(start_idx:target_idx);
-        t_s_eval = t_s(start_idx:target_idx);
-        stm_t_eval = stm_t(:,:,start_idx:target_idx);
+%         t_eval = t(start_idx:target_idx);
+%         t_s_eval = t_s(start_idx:target_idx);
+%         stm_t_eval = stm_t(:,:,start_idx:target_idx);
 %         stm_t_i_eval = stm_t_i(1:target_node - 1);
 
         
@@ -66,8 +66,8 @@ for i = 1:length(simparams.P_constrained_nodes)
             target_idx = target_idx(1);
         end
 
-        t_eval = t(start_idx:target_idx);
-        t_s_eval = t_s(start_idx:target_idx);
+%         t_eval = t(start_idx:target_idx);
+%         t_s_eval = t_s(start_idx:target_idx);
 
         % Want the STM from the beginning of the current correction portion (M)
         % to the end of the current correction portion (N): stmNtM
@@ -77,8 +77,8 @@ for i = 1:length(simparams.P_constrained_nodes)
 %         if size(testStm,3) ~= 1
 %             ppp=1; % debug
 %         end
-        stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
-        stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
+%         stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
+%         stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
 %         stm_t_i_eval = stm_t_i(start_node:target_node-1);
 
     end
@@ -101,7 +101,6 @@ for i = 1:length(simparams.P_constrained_nodes)
 %     [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint(x(:), t_eval, t_s_eval, stm_t_eval, stm_t_i_eval, vel_disp_flag, deltaVs_nom_eval, P, simparams);
     range = [start_idx, target_idx];
 %     [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint_v2(x(:), t, t_s, stm_t, stm_t_i, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
-    [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint_v2(x(:), t_eval, t_s_eval, stm_t_eval, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 
 % % % %     % If concurrent TCM and DV at the beginning, add them to the tcm_time
 % % % %     % and tcm_index arrays
@@ -113,7 +112,7 @@ for i = 1:length(simparams.P_constrained_nodes)
 % % % %     end
     
     %% Find the optimal number and time of TCMs
-    [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t_eval, t_s_eval, stm_t_eval, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
+%     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t_eval, t_s_eval, stm_t_eval, stm_t_i_eval, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 %     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t, t_s, stm_t, stm_t_i, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 
    
@@ -124,8 +123,10 @@ for i = 1:length(simparams.P_constrained_nodes)
     % the beginning of the next TCM coast portion
 
 
+
+    tcm_time_portion = tcm_time(tcm_time >= t(start_idx) & tcm_time < target_time);
 %     [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t_eval, t_s_eval, stm_t_eval, stm_t_i_eval, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
-    [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
+    [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t, t_s, stm_t, stm_t_i, tcm_time_portion, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 
 
     if i == 1
@@ -137,13 +138,9 @@ for i = 1:length(simparams.P_constrained_nodes)
     end
 
     %% Store in output data structures
-    tcm_time_combined = [tcm_time_combined, tcm_time];
-    if range(1) > 1
-        tcm_idx_combined = [tcm_idx_combined, tcm_idx + start_idx - 1];
-    else
-        tcm_idx_combined = [tcm_idx_combined, tcm_idx];
-    end
-    min_tcm_dv_total = min_tcm_dv_total + min_tcm_dv;
+    tcm_time_combined = [tcm_time_combined, tcm_time_portion];
+%     tcm_idx_combined = [tcm_idx_combined, tcm_idx];
+    min_tcm_dv_total = min_tcm_dv_total + tcm_dv_total;
 
 %     tcm_dv_each = [tcm_dv_each, tcm_dv(1:end-1+vel_disp_flag)];
     tcm_dv_each = [tcm_dv_each, tcm_dv];

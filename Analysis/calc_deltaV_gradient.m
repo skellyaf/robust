@@ -34,7 +34,7 @@ for i = 1:n
         deltaV_gradient(i*m-6:i*m-1) = deltaV_gradient(i*m-6:i*m-1) + dDVndx_minus';
 
         % Partial of deltaV magnitude at end of current segment
-        % with respect to final time for segment
+        % with respect to final time for segment 
         % ex: partial norm ( v0,2 - vf,1 ) / partial tf,1
         xdot_xif = stateDot(x_i_f(:,i), mu, dynSys);
         vdot_xif = xdot_xif(4:6);

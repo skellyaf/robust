@@ -1,4 +1,4 @@
-function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, P_i, simparams)
+function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
 %tcm_index_gradient_search Alters the time index of each individual TCM in
 %each direction (earlier and later) to search for an improvement in the
 %total delta V
@@ -21,13 +21,13 @@ function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_sear
 %     output = 0;
 % end
 
-
+counter = 0;
 
 TCMr_time_best = t(TCMr_idx_best)';
 
 improving = 1;
 
-[~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
+% [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
 
 while improving
 % for j = 1:nIter
@@ -36,7 +36,8 @@ while improving
     TCMr_idx_test_save = zeros(length(TCMr_time_best)-1 + 1); % One more than the loop below to add the gradient method to the last element
     minDV_save = ones(1,length(TCMr_time_best)-1 + 1) * 1e8;
 
-    for i = 1:length(TCMr_time_best) - 1
+
+    for i = 1:length(TCMr_time_best)
 
         TCMr_time_test = TCMr_time_best;
         TCMr_idx_test = TCMr_idx_best;
@@ -48,58 +49,55 @@ while improving
         % baseline, then go on to the next.
     
         % Modify the i-th element backwards
-%         iter = 1;
         improved = 0;
-%         while iter
+
+        % To prevent the gradient from searching backwards on top of a
+        % previous TCM
         if i == 1
             compare = 0;
         else
             compare = TCMr_idx_test(i-1);
         end 
 
+
         if TCMr_idx_test(i)-1 > compare
+            % Moving one index to the left for the TCM DV test
             TCMr_idx_test(i) = TCMr_idx_test(i)-1;
             TCMr_time_test(i) = t(TCMr_idx_test(i));
 
-            if length(TCMr_idx_test) ~= length(unique(TCMr_idx_test))
-                ppp=1;
-            end
+            % Testing with the updated TCM 
+%             [P_target, testDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+            [P_target, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
 
-            [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
-
+            % Checking if it was cheaper
             if testDV < minDV
-                TCMr_idx_test_save(i,:) = TCMr_idx_test;
-                minDV_save(i) = testDV;
-%                     TCMr_time_best = TCMr_time_test;
-%                     TCMr_idx_best = TCMr_idx_test;
-%                     minDV = testDV;
+                if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
+                    % If it is the final element and the covariance
+                    % constraint is violated
 
-                gradient_vector(i) = -1;
+                else
+                    TCMr_idx_test_save(i,:) = TCMr_idx_test;
+                    minDV_save(i) = testDV;
+    
+                    gradient_vector(i) = -1;
+    
+                    improved = 1;
+                end
 
-                improved = 1;
 
-%             else
-%                 iter = 0; % 
-            end
-%             end
-     
-              
+            end  
         end
         
-    
-    
-    
+         
         % if going backwards didn't result in an improvement, try going
         % forwards instead
     
         if improved == 0
-%             iter = 1;
-    
-%             while iter
 
             TCMr_idx_test = TCMr_idx_best;
             TCMr_time_test = TCMr_time_best;
 
+            % Preventing the test from going forward on top of the next TCM 
             if i == length(gradient_vector)
                 compare = 1e8;
             else
@@ -107,65 +105,53 @@ while improving
             end
 
             if TCMr_idx_test(i)+1 < compare
+                % Modifying forward one index
                 TCMr_idx_test(i) = TCMr_idx_test(i)+1;
                 TCMr_time_test(i) = t(TCMr_idx_test(i));
 
-                if length(TCMr_idx_test) ~= length(unique(TCMr_idx_test))
-                    ppp=1;
-                end
-
-
-
-                [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, P_i, simparams); 
+                % Calculating the TCM DV of the test index
+%                 [P_target, testDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+                [P_target, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
     
+                % Comparing
                 if testDV < minDV
-                    TCMr_idx_test_save(i,:) = TCMr_idx_test;
-                    minDV_save(i) = testDV;
-%                     TCMr_time_best = TCMr_time_test;
-%                     TCMr_idx_best = TCMr_idx_test;
+                    if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
+                    else
+                        TCMr_idx_test_save(i,:) = TCMr_idx_test;
+                        minDV_save(i) = testDV;
+    
+                        gradient_vector(i) = 1;
+                        minDV = testDV;
+                    end
 
-                    gradient_vector(i) = 1;
-                    minDV = testDV;
-                else
-                    
-                    iter = 0; % 
                 end
     
             end
     
-%             end
-    
-    
-    
         end
-    
-    
     
     end
 
     
 
-%     if minDV >= testDV || sum(gradient_vector) == 0
     if isempty(find(gradient_vector~=0))
         improving = 0;
     else
+        % Taking a step in the gradient direction
         TCMr_idx_best = TCMr_idx_best + gradient_vector;
         TCMr_time_best = t(TCMr_idx_best)';
 
 
-        if length(TCMr_idx_best) ~= length(unique(TCMr_idx_best))
-            ppp=1;
-        end
-
-
-
-        [~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, P_i, simparams); 
+        % Storing a new min DV after the step
+%         [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
+        [~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
         TCMr_idx_test_save(end,:) = TCMr_idx_best;
         minDV_save(end) = minDV;
 
         % Check against the saved individual mods for the lowest
         [minDV, minIdx] = min(minDV_save);
 
+        % Leaving this commented code here to output the search to a file.
 
 %         if output
 %             load('orbital_params.mat');
@@ -193,6 +179,9 @@ while improving
 
         TCMr_idx_best = TCMr_idx_test_save(minIdx,:);
         TCMr_time_best = t(TCMr_idx_best)';
+
+
+        counter = counter + 1;
 
     end
 

@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_dro3_robust_startfromdetopt_flybyopt3'];
+savename = ['leo_plf_nri_robust_notcorrectedNominals_debug'];
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 
@@ -61,12 +61,13 @@ saveVideo = false;
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
-% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro2_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro3_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro4_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro3_x0detOpt_3dv';
+
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro3_x0detOpt_3dv';
 
 
 
@@ -83,10 +84,10 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
 % load('eed_leo_planar_13day.mat');
-% load('nri_det_opt.mat');
+load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
-% simparams.x0 = x_opt;
+simparams.x0 = x_opt;
 
 
 %% Initialize transfer segments
@@ -101,15 +102,15 @@ run(init_fn);
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0,x_i_f0,simparams);
 % [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
 
-
-[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
- 
+tic
+[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+toc
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
 
 figure;
 if simparams.perform_correction    
-    [~,tcm_idx0] = opt_multiple_tcm(simparams.x0, t0, t_s0, stm_t0, simparams);
+%     [~,tcm_idx0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams);
     plotMultiSegTraj(simparams.x0, x_t0, t_s0, simparams, tcm_idx0);
 else
     plotMultiSegTraj(simparams.x0, x_t0, t_s0, simparams);
@@ -139,7 +140,7 @@ toc
 [stm_i, stt_i, x_i_f, x_t, stm_t, stt_t_i, t, t_s, stm_t_i]  = createStateStmSttHistory(x_opt, simparams);
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, x_i_f, simparams);
-[tcm_time,tcm_idx,min_tcm_dv] = opt_multiple_tcm(x_opt, t, t_s, stm_t, simparams);
+[tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
 totalDV = deltaV + 3*min_tcm_dv
 
 

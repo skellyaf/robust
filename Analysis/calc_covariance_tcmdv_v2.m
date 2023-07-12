@@ -1,4 +1,4 @@
-function [P_target, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus, P_t] = calc_covariance_tcmdv(x, t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, P_i, simparams)
+function [P_target, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaV, P_i, range, simparams)
 %calc_covariance_tcmdv Calculates the final dispersion covariance and the
 %total delta V of the position corrections occuring along the nominal
 %trajectory at each entry in the array tcm_time, as well as calculating the
@@ -10,7 +10,17 @@ if length(tcm_time)~=length(unique(tcm_time))
     assert(0,'Error: you likely input duplicate TCM times in your tcm_time array');
 end
 
-assert(t_s(end)-t_s(1)+1 == size(stm_t_i,2), 'Probably the wrong portion of stm_t_i was passed to the function.')
+% For the comparison below, at the intersection of segments, a node is
+% shared amongst both segments. The way it is currently set up has the end
+% of the segment including the node. So the first node of a segment in t_s
+% will show up as a the last segment. This applies for all but the first
+% segment.
+assert(t_s(end)-t_s(2)+1 == size(stm_t_i,2), 'Probably the wrong portion of stm_t_i was passed to the function.')
+
+
+% Make sure only a single deltaV vector was passed
+assert(size(deltaV,2)==1);
+
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
@@ -27,14 +37,17 @@ G = [zeros(3,3); eye(3,3)];
 
 % [event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
 
-[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
+[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams, range);
 
 % STM from beginning of trajectory to the end of the current stm history
 % % This code is frequently called such that the end of the stm history is
 % already the target. Additionally, the function define_events does not
 % include the target as an event. Therefore, the final propagation outside
 % the while loop brings the final "event" post covariance to the target.
-stmN0 = stm_t(:,:,end);
+% stmN0 = stm_t(:,:,end);
+start_idx = range(1);
+target_idx = range(2);
+stmN0 = dynCellCombine(t, t_s, start_idx, target_idx, simparams, stm_t_i);
 
 % Empty structure to store the tcm_dv RSS magnitudes (not 3 sigma). It is
 % one longer than the tcm_time because the velocity correction occurs at
@@ -43,10 +56,7 @@ num_tcm = length(tcm_time);
 % tcm_dv = zeros(1,length(tcm_time)+1);
 tcm_dv = [];
 
-if nargout == 6
-    P_t = zeros(6,6,length(t));
-    P_t(:,:,1) = P_i;
-end
+
 
 
 %% Logic if no events (zero length)
@@ -58,9 +68,6 @@ if isempty(event_times)
     P_i_plus = nan;
     tcm_dv_total = 0;
 
-    if nargout == 6
-        P_t(:,:,1:end) = tmult(stm_t, tmult(P_i, stm_t, [0 1]));
-    end
 
 else % Otherwise, if there are events, do:
 
@@ -68,13 +75,11 @@ else % Otherwise, if there are events, do:
     % Test which segment has the correction
     
     event_idx_logical = logical(sum(t'==event_times', 1));    
-%     if nargout == 6
     event_idxs = find(event_idx_logical);
-%     end
 
-    % Extract STMs for calculations
-    % A tensor of STMs from the beginning of the trajectory to each correction
-    stmC0 = stm_t(:,:,event_idx_logical);
+%     % Extract STMs for calculations
+%     % A tensor of STMs from the beginning of the trajectory to each correction
+%     stmC0 = stm_t(:,:,event_idx_logical);
 
     % Modified for events, not just TCMs
 
@@ -85,8 +90,7 @@ else % Otherwise, if there are events, do:
 
     P_i_plus = zeros(6,6,length(unique(event_times))); % no plus one, it is the dispersion covariance after each event        
     
-%     j = 1;
-%     dup_cnt = 0;
+
     %% Compute the covariance only at the correction(s) and the final
     for i = 1:length(event_times)
 %     while j <= length(unique(event_times))
@@ -97,43 +101,29 @@ else % Otherwise, if there are events, do:
         % Propagate dispersion covariance from previous event to i
 
         if i == 1
-%             stmCiClast = stmC0(:,:,i);
-            
-            idx_Clast = 1;
+            idx_Clast = range(1);
         else
-            idx_Clast = event_idxs(i-1);
-            
-%             stmCi0 = stmC0(:,:,i);
-%             stmCiClast = stmCi0 * stm0C;
+            idx_Clast = event_idxs(i-1);            
         end 
 
-        idx_Ci = event_idxs(i);
-        stmCiClast = dynCellCombine(t, t_s, idx_Clast, idx_Ci, simparams, stm_t_i);
+        idx_Ci = event_idxs(i);   
 
 
 
-        if i == 1 && event_idx_logical(1)
-%         if i == 1
+        if i == 1 && event_idx_logical(range(1))
             P_i_minus(:,:,i) = P_i;
 
-            stm0C = eye(6);
         else
+            stmCiClast = dynCellCombine(t, t_s, idx_Clast, idx_Ci, simparams, stm_t_i);
             P_i_minus(:,:,i) = stmCiClast * P_i * stmCiClast';
-            stm0C = invert_stm(stmC0(:,:,i), simparams);
-            if nargout == 6
-                stm_t_portion = tmult(stm_t(:,:,idx_Clast:idx_Ci),stm0C);
-                P_t(:,:,idx_Clast:idx_Ci) = tmult(stm_t_portion, tmult(P_t(:,:,idx_Clast), stm_t_portion, [0 1]));
-            end
             
         end
 
 
         
-%         stmNC = stmN0 * stm0C;
-        idx_target = length(t);
-        stmNC = dynCellCombine(t, t_s, idx_Ci, idx_target, simparams, stm_t_i);
+        stmNC = dynCellCombine(t, t_s, idx_Ci, target_idx, simparams, stm_t_i);
 
-        % Is it a nominal maneuver (0), TCM (1), or both (2)?
+        % Is it a nominal maneuver (0), TCM (1), both simultaneously (2), or a corrected nominal maneuver (3)?
 
         if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
 
@@ -142,66 +132,36 @@ else % Otherwise, if there are events, do:
             N = [zeros(3,6); T];
             IN = eye(6) + N;
 
-            if event_indicator(i) == 2 
-                % If there is a nominal maneuver also turn on the nominal maneuver error 
-                rdv_mult = 1;
+            if event_indicator(i) == 3 % Corrected nominal maneuver
+                % Corrected nominal applies the nominal maneuver execution error
+                P_tcm = T * P_i_minus(:,:,i) * T'; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
+                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_dv*G';
+
+                % Get i_dv
+                i_dv = deltaV / vecnorm(deltaV);
+                tcm_dv(end+1) = sqrt(i_dv' * P_tcm * i_dv);
+            elseif event_indicator(i) == 1 % TCM by itself
+                P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
+                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G';
+                tcm_dv(end+1) = sqrt(trace(P_tcm));
+            elseif event_indicator(i) == 2 % Concurrent nominal maneuver and TCM performed separately
+                P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
+                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G';
+                tcm_dv(end+1) = sqrt(trace(P_tcm));
             else
-                % If it is only a TCM, turn off the nominal maneuver error
-                rdv_mult = 0;
+                assert(0,'Something happened that we did not plan for!');
             end
 
+            
             % Covariance update (TCM, nominal maneuver is turned on/off with rdv_mult)       
-            P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G' * rdv_mult;
             P_i_plus(:,:,i) = P_i;
 
-            if nargout == 6
-                P_t(:,:,idx_Ci) = P_i;
-            end
-    
-            P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
-    %         P_tcm = T * P_i_minus(:,:,i) * T'; % without error in tcm_dv magnitude calc 
-
-%             tcm_idx = find(find(event_is_tcm)==i);
-%             if isempty(tcm_idx)
-%                 tcm_idx = find(find(event_is_tcm)==i+1);
-%             end
-%             tcm_dv(i) = sqrt(trace(P_tcm));
-
-            tcm_dv(end+1) = sqrt(trace(P_tcm));
-
-
-%             dup_cnt = dup_cnt + 1;
-
-%             i = i+1;
-
-% % %         elseif event_indicator(i) == 1 % otherwise, if it is a TCM
-% % %             % Perform the TCM update    
-% % %         
-% % %             T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
-% % %             N = [zeros(3,6); T];
-% % %             IN = eye(6) + N;
-% % %        
-% % %             P_i = IN * P_i_minus(:,:,j) * IN' + R_tcm;
-% % %             P_i_plus(:,:,j) = P_i;
-% % %     
-% % %             P_tcm = T * P_i_minus(:,:,i) * T' + simparams.R; % with error in tcm_dv magnitude calc 
-% % %     %         P_tcm = T * P_i_minus(:,:,i) * T'; % without error in tcm_dv magnitude calc 
-% % % %             tcm_idx = find(find(event_is_tcm)==i);
-% % % 
-% % % %             tcm_dv(tcm_idx) = sqrt(trace(P_tcm));
-% % %             tcm_dv(end+1) = sqrt(trace(P_tcm));
 
         else % otherwise, it must be a nominal maneuver only
             % Add maneuver execution error 
             P_i = P_i_minus(:,:,i) + G*R_dv*G';
             P_i_plus(:,:,i) = P_i;
 
-            if nargout == 6
-                
-                P_t(:,:,idx_Ci) = P_i;
-            end
-
-            
 
         end
 
@@ -219,17 +179,17 @@ else % Otherwise, if there are events, do:
     P_target = stmNC * P_i * stmNC';
     P_i_minus(:,:,i+1) = P_target;
 
-    if nargout == 6
-        stm_t_portion = tmult(stm_t(:,:,idx_Ci:idx_target),stm0C);
-        P_t(:,:,idx_Ci:idx_target) =  tmult(stm_t_portion, tmult(P_t(:,:,idx_Ci), stm_t_portion, [0 1]));
-    end
 
 
-    if event_idx_logical(1)
-        % No need to store a P_i_minus for the first "event" if it is the
-        % initial covariance / nominal maneuver occurs at the initial time
-        P_i_minus = P_i_minus(:,:,2:end);
-    end
+
+    %%%%%% TODO: COMMENTED THIS OUT. I THINK IT MAY HAVE BEEN SCREWING UP
+    %%%%%% INDEXING IN THE GRADIENT FUNCTION LATER.
+
+%     if event_idx_logical(1)
+%         % No need to store a P_i_minus for the first "event" if it is the
+%         % initial covariance / nominal maneuver occurs at the initial time
+%         P_i_minus = P_i_minus(:,:,2:end);
+%     end
 
 
 

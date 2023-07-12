@@ -1,4 +1,4 @@
-function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_k_minus, P_k_plus, simparams)
+function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_k_minus, P_k_plus, deltaVs_nom, simparams)
 %calc_tcm_gradient Computes and returns the analytical tcm gradient
 
 
@@ -36,6 +36,9 @@ tcm_gradient_v = zeros(n*m, 1);
 
 % Find the first TCM target time
 target_time = sum(x(7,1:simparams.P_constrained_nodes(1)-1));
+target_node = simparams.P_constrained_nodes(1);
+target_leg = 1;
+previous_target_node = 1;
 
 % event_time_not_tcm = event_times(event_indicator~=1);
 % target_time = event_time_not_tcm(1);
@@ -43,6 +46,10 @@ target_idx = find(t==target_time);
 
 num_events = length(event_times);
 
+
+%% Nominal delta V unit vectors and magnitude
+DV_norms = vecnorm(deltaVs_nom);
+i_DVs = deltaVs_nom./DV_norms;
 
 
 %% Loop through the corrections for each of the following sets of calcs
@@ -207,7 +214,16 @@ for k = 1:num_events - 1
                 dPCkminusdxi(:,:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastdxi, simparams.R, Tlast, dTlastdxi, PClast_minus, dPClast_minus_dxi);
                 dPCkminusddti(:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastddti, simparams.R, Tlast, dTlastddti, PClast_minus, dPClast_minus_ddti);
     
-            else                   
+            elseif event_indicator(k-1) == 3
+                % A corrected nominal maneuver
+
+                dTlastdxi = dTkdxi(:,:,:,k-1,i);
+                dTlastddti = dTkddti(:,:,k-1,i);
+
+                dPCkminusdxi(:,:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastdxi, simparams.R_dv, Tlast, dTlastdxi, PClast_minus, dPClast_minus_dxi);
+                dPCkminusddti(:,:,k,i) = calc_dPckMinus(stmCkClast, dstmCkClastddti, simparams.R_dv, Tlast, dTlastddti, PClast_minus, dPClast_minus_ddti);
+
+            else
 
                 % Adding the impact of nominal maneuver execution error
                 dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, PClast_minus, dPClast_minus_dxi, R_dv);
@@ -216,13 +232,95 @@ for k = 1:num_events - 1
         end       
 
 
-        if event_indicator(k) > 0
+        if event_indicator(k) == 1 || event_indicator(k) == 2
             % Assemble gradient
             % dxi
             tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
     
             % ddti
             tcm_gradient_r(i*7,tcm_idx) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
+
+        elseif event_indicator(k) == 3
+            if i < target_node && i >= previous_target_node
+
+                % Ptcm
+                Ptcm = Tk * P_k_minus(:,:,k) * Tk';
+                % dPtcm
+                dPtcmdxi = calc_dABA(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
+                dPtcmddti = calc_dABA(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
+%                 % dPtcm_minus
+%                 if i == 1
+%                     dPtcmdxi_minus = zeros(3,3,6);
+%                     dPtcmddti_minus = zeros(3,3);
+%                 else
+%                     dPtcmdxi_minus = calc_dABA(Tk, dTkdxi(:,:,:,k,i-1), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i-1));
+%                     dPtcmddti_minus = calc_dABA(Tk, dTkddti(:,:,k,i-1), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i-1));
+%                 end
+
+                % dDVdx initialization / for use when not at a delta V node
+                
+
+                if ismember(i+1, simparams.maneuverSegments) || ismember(i, simparams.maneuverSegments)
+
+                    % i_DV
+                    % What # maneuver is it
+%                     dv_seg = t_s(event_times(k)==t) + 1; % the segment that the nominal DV occurs at the beginning of
+                    
+%                     deltaV = deltaVs_nom(:,dv_seg == simparams.maneuverSegments);
+                    i_DV = i_DVs(:,target_leg);
+                    dv_mag = DV_norms(target_leg);
+                    
+%                     dv_mag = vecnorm(deltaV);
+%                     i_DV = deltaV/dv_mag;
+        
+                    % di_DV
+                    di_DVdDV = calc_diDVdDV(deltaVs_nom(:,target_leg), dv_mag);     
+                end
+
+
+%                 if ismember(i+1, simparams.maneuverSegments)
+                if i+1 == simparams.maneuverSegments(target_leg)
+                    dDVdx = - stm_i(4:6,:,i);
+                    
+                    xdot_xif_minus = stateDot(x_i_f(:,i), mu, simparams.dynSys);
+                    vdot_xif_minus = xdot_xif_minus(4:6);
+                    dDVdt = -vdot_xif_minus;
+%                 elseif ismember(i, simparams.maneuverSegments)                    
+                elseif i == simparams.maneuverSegments(target_leg)
+                    dDVdx = [zeros(3,3), eye(3,3)];
+                else
+                    dDVdt = zeros(3,1);
+                    dDVdx = zeros(3,6);
+                    di_DVdDV = zeros(3,3);
+                end
+
+    
+                    
+                di_DVddt = di_DVdDV * dDVdt;
+
+
+                
+                di_DVdx = di_DVdDV * dDVdx;
+
+
+
+                % Into the gradient structure
+                % Previous segment
+                % ddti_minus
+                tcm_gradient_r((i)*7,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVddt, Ptcm, dPtcmddti);
+                % dxi_minus
+%                 tcm_gradient_r((i-2)*7+1:(i-2)*7+6,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx_minus, Ptcm, dPtcmdxi_minus);
+
+                % Current segment
+                tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx, Ptcm, dPtcmdxi);
+
+
+    
+                
+            end
+
+
+
         end
 
         % The final tcmV gradient
@@ -268,6 +366,11 @@ for k = 1:num_events - 1
         future_targets = event_times(event_times>target_time & event_indicator~=1);
         target_time = min(future_targets);
         target_idx = find(t==target_time);    
+
+        target_leg = target_leg + 1;
+        if target_leg <= length(simparams.P_constrained_nodes)
+            target_node = simparams.P_constrained_nodes(target_leg);
+        end
     end
         
 %     if event_indicator(k+1) ~= 1

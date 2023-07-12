@@ -1,4 +1,4 @@
-function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = min_dv_tcm_meets_dispersion_constraint(x, t, t_s, stm_t, vel_disp_flag, P_i, simparams)
+function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = min_dv_tcm_meets_dispersion_constraint(x, t, t_s, stm_t, stm_t_i, vel_disp_flag, deltaV, P_i, range, simparams)
 %min_dv_tcm_meets_dispersion_constraint Finds all feasible TCM options that
 %meet the target dispersion constraint, then selects the lowest DV option
 %of those and returns the time and time index.
@@ -11,16 +11,22 @@ function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = 
 % end
 
 
-tcm_dv_t = zeros(1,length(t));
+% tcm_dv_t = zeros(1,length(t));
+tcm_dv_t = zeros(1, range(2) - range(1) + 1);
 tcm_dv_t(end) = 1e8; % the loop below skips the final time index...a correction once at the final time doesn't make sense.
-rP_tcm_time_t = zeros(1,length(t));
+% rP_tcm_time_t = zeros(1,length(t));
+rP_tcm_time_t = zeros(1, range(2) - range(1) + 1);
 
 
 % Loop through the time options, save the target position dispersion and
 % the TCM delta V RSS if execute at that time
-for i = 1:length(t) - 1
-    tcm_time_i = t(i);
-    [Pn_tcm_time_i, tcm_dv_t(i)] = calc_covariance_tcmdv(x, t, t_s, stm_t, tcm_time_i, vel_disp_flag, P_i, simparams);
+% for i = 1:length(t) - 1
+for i = 1:range(2) - range(1)
+    tcm_idx = range(1) + i -1;
+    tcm_time_i = t(tcm_idx);
+%     tcm_time_i = t(i);
+
+    [Pn_tcm_time_i, tcm_dv_t(i)] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time_i, vel_disp_flag, deltaV, P_i, range, simparams);
     rP_tcm_time_t(i) = sqrt(trace(Pn_tcm_time_i(1:3,1:3)));
 end
 
@@ -57,6 +63,7 @@ else
     % the find the minimum, and the index of the minimum
     [minTcmDV_meets_constraint, min_meets_idx] = min(tcm_total_t_meets_constraint);
     % find the corresponding time index of all tcm options that meet the constraint
+    min_meets_idx = min_meets_idx + range(1) - 1;
     t_meets = t(rP_meets_constraint_logical);
     % get the time from the feasible set index and feasible set time array
     tcm_feasibleMin_time = t_meets(min_meets_idx);

@@ -110,6 +110,8 @@ simparams.segn_coast_fraction = 0.25; % percent of orbital period to coast in th
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
+simparams.correct_nominal_dvs = 0; % flag to incorporate a dispersion correction with the nominal delta Vs or not
+
 simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
