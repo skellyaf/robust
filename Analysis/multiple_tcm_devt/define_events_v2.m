@@ -1,4 +1,4 @@
-function [event_times, event_indicator] = define_events_v2(x, t, tcm_time, simparams, range)
+function [event_times, event_indicator] = define_events_v2(x, t, tcm_time, simparams)
 %define_events Finds the nominal maneuvers, their times, and defining which events are TCMs
 
 % In event_indicator:

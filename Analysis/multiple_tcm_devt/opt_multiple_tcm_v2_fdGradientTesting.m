@@ -43,10 +43,10 @@ for i = 1:length(simparams.P_constrained_nodes)
             target_idx = target_idx(1);
         end
 
-%         t_eval = t(start_idx:target_idx);
-%         t_s_eval = t_s(start_idx:target_idx);
-%         stm_t_eval = stm_t(:,:,start_idx:target_idx);
-%         stm_t_i_eval = stm_t_i(1:target_node - 1);
+        t_eval = t(start_idx:target_idx);
+        t_s_eval = t_s(start_idx:target_idx);
+        stm_t_eval = stm_t(:,:,start_idx:target_idx);
+        stm_t_i_eval = stm_t_i(1:target_node - 1);
 
         
 
@@ -54,7 +54,7 @@ for i = 1:length(simparams.P_constrained_nodes)
     else
 
         start_idx = target_idx;
-%         start_node = target_node;
+        start_node = target_node;
 
         target_node = simparams.P_constrained_nodes(i);
         target_time = sum(x(7,1:target_node - 1));
@@ -66,8 +66,8 @@ for i = 1:length(simparams.P_constrained_nodes)
             target_idx = target_idx(1);
         end
 
-%         t_eval = t(start_idx:target_idx);
-%         t_s_eval = t_s(start_idx:target_idx);
+        t_eval = t(start_idx:target_idx);
+        t_s_eval = t_s(start_idx:target_idx);
 
         % Want the STM from the beginning of the current correction portion (M)
         % to the end of the current correction portion (N): stmNtM
@@ -77,9 +77,9 @@ for i = 1:length(simparams.P_constrained_nodes)
 %         if size(testStm,3) ~= 1
 %             ppp=1; % debug
 %         end
-%         stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
-%         stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
-%         stm_t_i_eval = stm_t_i(start_node:target_node-1);
+        stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
+        stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
+        stm_t_i_eval = stm_t_i(start_node:target_node-1);
 
     end
 

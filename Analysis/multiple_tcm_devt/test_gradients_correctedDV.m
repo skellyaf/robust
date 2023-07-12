@@ -58,7 +58,7 @@ second_maneuver_seg = simparams.maneuverSegments(2);
 % range(2) = find(t_s==second_maneuver_seg,1);
 range(2) = length(t);
 
-[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams, range);
+[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
 event_idx_logical = logical(sum(t'==event_times', 1));    
 event_idxs = find(event_idx_logical);
 
@@ -160,7 +160,9 @@ parfor i = 1:simparams.m*simparams.n
     [x_t1dx, stm_t1dx, stm_t_i1dx stt_t_i1dx, t1dx, t_s1dx] = addToStateStmSttHistory(x_t1dx, stm_t1dx, stm_t_i1dx, stt_t_i1dx, t1dx, t_s1dx, [event_times], simparams);
 
     [deltaV1dx, deltaVs_nom1dx] = calcDeltaV(x1dx,x_i_f1dx,simparams);
-    [tcm_time1dx, ~, min_tcm_dv1dx, P_i_minus1dx, P_i_plus1dx, tcm_dv_each1dx] = opt_multiple_tcm_v2_fdGradientTesting(x1dx, deltaVs_nom1dx, t1dx, t_s1dx, stm_t1dx, stm_t_i1dx, tcm_time, simparams);
+%     [tcm_time1dx, ~, min_tcm_dv1dx, P_i_minus1dx, P_i_plus1dx, tcm_dv_each1dx] = opt_multiple_tcm_v2_fdGradientTesting(x1dx, deltaVs_nom1dx, t1dx, t_s1dx, stm_t1dx, stm_t_i1dx, tcm_time, simparams);
+
+    [~, min_tcm_dv1dx, tcm_dv_each1dx, P_i_minus1dx, P_i_plus1dx] = calc_covariance_tcmdv_v3(x1dx(:), t1dx, t_s1dx, stm_t1dx, stm_t_i1dx, tcm_time, 1, deltaVs_nom1dx, simparams.P_initial, simparams);
 
 
 %     [tcm_time1dx,tcm_idx1dx,min_tcm_dv1dx,~,~,tcm_num_option_DVs1dx] = opt_multiple_tcm(x1dx, t1dx, stm_t1dx, simparams);

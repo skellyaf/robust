@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_nri_robust_notcorrectedNominals_debug'];
+savename = ['leo_plf_nri_robust_correctedNominals_increasedNomError'];
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 

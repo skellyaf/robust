@@ -46,7 +46,7 @@ for i = 1:length(simparams.P_constrained_nodes)
         t_eval = t(start_idx:target_idx);
         t_s_eval = t_s(start_idx:target_idx);
         stm_t_eval = stm_t(:,:,start_idx:target_idx);
-%         stm_t_i_eval = stm_t_i(1:target_node - 1);
+        stm_t_i_eval = stm_t_i(1:target_node - 1);
 
         
 
@@ -54,7 +54,7 @@ for i = 1:length(simparams.P_constrained_nodes)
     else
 
         start_idx = target_idx;
-%         start_node = target_node;
+        start_node = target_node;
 
         target_node = simparams.P_constrained_nodes(i);
         target_time = sum(x(7,1:target_node - 1));
@@ -79,7 +79,7 @@ for i = 1:length(simparams.P_constrained_nodes)
 %         end
         stm0M = invert_stm(stm_t(:,:,start_idx), simparams);
         stm_t_eval = tmult(stm_t(:,:,start_idx:target_idx), stm0M);
-%         stm_t_i_eval = stm_t_i(start_node:target_node-1);
+        stm_t_i_eval = stm_t_i(start_node:target_node-1);
 
     end
 
@@ -101,6 +101,9 @@ for i = 1:length(simparams.P_constrained_nodes)
 %     [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint(x(:), t_eval, t_s_eval, stm_t_eval, stm_t_i_eval, vel_disp_flag, deltaVs_nom_eval, P, simparams);
     range = [start_idx, target_idx];
 %     [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint_v2(x(:), t, t_s, stm_t, stm_t_i, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
+
+
+
     [tcm_time,tcm_idx,tcm_num_option_DVs] = min_dv_tcm_meets_dispersion_constraint_v2(x(:), t_eval, t_s_eval, stm_t_eval, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 
 % % % %     % If concurrent TCM and DV at the beginning, add them to the tcm_time
@@ -115,26 +118,31 @@ for i = 1:length(simparams.P_constrained_nodes)
     %% Find the optimal number and time of TCMs
     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t_eval, t_s_eval, stm_t_eval, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 %     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t, t_s, stm_t, stm_t_i, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
-
+    P = calc_covariance_tcmdv(x(:), t_eval, t_s_eval, stm_t_eval, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
    
 
 
 
     % Calculate the covariance at the end of the coast portion to use at
     % the beginning of the next TCM coast portion
+    Pprev=P;
 
 
 %     [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t_eval, t_s_eval, stm_t_eval, stm_t_i_eval, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
-    [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
+%     [P, tcm_dv_total, tcm_dv, P_i_minus_portion, P_i_plus_portion] = calc_covariance_tcmdv_v2(x(:), t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
 
-
-    if i == 1
-        P_i_minus = P_i_minus_portion;
-        P_i_plus = P_i_plus_portion;
-    else
-        P_i_minus(:,:,end+1:end+size(P_i_minus_portion,3)) = P_i_minus_portion;
-        P_i_plus(:,:,end+1:end+size(P_i_plus_portion,3)) = P_i_plus_portion;
+    if isnan(P(1))
+        ppp=1;
     end
+
+
+%     if i == 1
+%         P_i_minus = P_i_minus_portion;
+%         P_i_plus = P_i_plus_portion;
+%     else
+%         P_i_minus(:,:,end+1:end+size(P_i_minus_portion,3)) = P_i_minus_portion;
+%         P_i_plus(:,:,end+1:end+size(P_i_plus_portion,3)) = P_i_plus_portion;
+%     end
 
     %% Store in output data structures
     tcm_time_combined = [tcm_time_combined, tcm_time];
@@ -146,9 +154,18 @@ for i = 1:length(simparams.P_constrained_nodes)
     min_tcm_dv_total = min_tcm_dv_total + min_tcm_dv;
 
 %     tcm_dv_each = [tcm_dv_each, tcm_dv(1:end-1+vel_disp_flag)];
-    tcm_dv_each = [tcm_dv_each, tcm_dv];
+%     tcm_dv_each = [tcm_dv_each, tcm_dv];
 
 end
+
+
+% Recalcluate with more accurate function (shorter STM segment portions vs
+% reaching back to the beginning of the trajectory like
+% calc_covariance_tcmdv does above)
+
+
+
+[P, min_tcm_dv_total, tcm_dv_each, P_i_minus, P_i_plus] = calc_covariance_tcmdv_v3(x(:), t, t_s, stm_t, stm_t_i, tcm_time_combined, vel_disp_flag, deltaVs_nom, simparams.P_initial, simparams);
 
 
 

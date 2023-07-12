@@ -15,8 +15,11 @@ end
 % of the segment including the node. So the first node of a segment in t_s
 % will show up as a the last segment. This applies for all but the first
 % segment.
+
 assert(t_s(end)-t_s(2)+1 == size(stm_t_i,2), 'Probably the wrong portion of stm_t_i was passed to the function.')
 
+% hack
+t_s = t_s - t_s(1) + 1;
 
 % Make sure only a single deltaV vector was passed
 assert(size(deltaV,2)==1);
@@ -37,17 +40,21 @@ G = [zeros(3,3); eye(3,3)];
 
 % [event_times, event_is_tcm] = define_events(x(:), t, tcm_time, simparams);
 
-[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams, range);
+[event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
 
 % STM from beginning of trajectory to the end of the current stm history
 % % This code is frequently called such that the end of the stm history is
 % already the target. Additionally, the function define_events does not
 % include the target as an event. Therefore, the final propagation outside
 % the while loop brings the final "event" post covariance to the target.
-% stmN0 = stm_t(:,:,end);
-start_idx = range(1);
-target_idx = range(2);
-stmN0 = dynCellCombine(t, t_s, start_idx, target_idx, simparams, stm_t_i);
+stmN0 = stm_t(:,:,end);
+
+
+% start_idx = range(1);
+% target_idx = range(2);
+target_idx = length(t);
+
+% stmN0 = dynCellCombine(t, t_s, start_idx, target_idx, simparams, stm_t_i);
 
 % Empty structure to store the tcm_dv RSS magnitudes (not 3 sigma). It is
 % one longer than the tcm_time because the velocity correction occurs at
@@ -101,7 +108,8 @@ else % Otherwise, if there are events, do:
         % Propagate dispersion covariance from previous event to i
 
         if i == 1
-            idx_Clast = range(1);
+%             idx_Clast = range(1);
+            idx_Clast = 1;
         else
             idx_Clast = event_idxs(i-1);            
         end 
@@ -110,7 +118,8 @@ else % Otherwise, if there are events, do:
 
 
 
-        if i == 1 && event_idx_logical(range(1))
+        if i == 1 && event_idx_logical(1)
+%         if i == 1 && event_idx_logical(range(1))
             P_i_minus(:,:,i) = P_i;
 
         else

@@ -54,6 +54,12 @@ while iter
         else   
         
             tcm_idx = tcm_idx - stepSize;
+            if tcm_idx < 1
+                tcm_idx = 1;
+                mode = 2; % a TCM at the first index satisfies the constraint
+            end
+
+
         
             i = i+1;
         end
