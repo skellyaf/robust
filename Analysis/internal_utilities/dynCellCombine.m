@@ -140,7 +140,7 @@ if ~skip
                 stt_i_i0 = stt_t_i{i}(:,:,:,cell_idx_start);
                 
                 % Invert stt_i_0 to combine in subsequent step
-                stt_i0_i = invert_stt(stm_i_i0,stt_i_i0);
+                stt_i0_i = invert_stt(stm_i_i0,stt_i_i0,simparams);
         
                 % Then combine STTs to get stt_if_i
                 stt_if_i = tensorCombine(stm_i0_i, stt_i0_i, stm_if_i0, stt_if_i0);
@@ -177,7 +177,7 @@ if ~skip
     
     if invert_at_end
         if stt_flag
-            stt_combined = invert_stt(stm_combined, stt_combined);
+            stt_combined = invert_stt(stm_combined, stt_combined, simparams);
         end
         stm_combined = invert_stm(stm_combined, simparams);
     

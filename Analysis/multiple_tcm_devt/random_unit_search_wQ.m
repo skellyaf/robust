@@ -1,4 +1,4 @@
-function [TCMr_idx_best, fevals] = random_unit_search(x, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
+function [TCMr_idx_best, fevals] = random_unit_search_wQ(x, x_t, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
 %random_unit_search Creates a random unit vector to modify the time index
 %elements of the TCM index array to search for an improved delta V solution
 
@@ -97,7 +97,7 @@ while improving
         notImprovedCount = notImprovedCount + 1;
     else
 
-        [~, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+        [~, testDV] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
         fevals = fevals + 1;
         
         if testDV <= minDV

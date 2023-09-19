@@ -50,7 +50,7 @@ elseif t0_i <= tClast && tf_i <= tCk
     stmifClast = dynCellCombine(t, t_s, tClast_idx, ip_idx, simparams, stm_t_i, stt_t_i);
     
 %     dstmCkClastddti = stmCkip * r2bp_A_matrix(x_i_f(:,i),mu) * stmifClast;
-    dstmCkClastddti = stmCkip * stmDot(x_i_f(:,i),simparams) * stmifClast;
+    dstmCkClastddti = stmCkip * A_matrix(x_i_f(:,i),simparams) * stmifClast;
     
 
 %% Logic case 3: [t0,i < tClast < tCk < tf,i] (TESTED - IS WORKING!)
@@ -112,7 +112,7 @@ elseif tf_i <= tCk
 
     dstmCkClastdxi = tmult(stmCkip, tmult(stti, stmi0Clast));
 
-    dstmCkClastddti = stmCkip * stmDot(x_i_f(:,i),simparams) * stmi * stmi0Clast;
+    dstmCkClastddti = stmCkip * A_matrix(x_i_f(:,i),simparams) * stmi * stmi0Clast;
 
 %% Something is messed up if we're here
 else

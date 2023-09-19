@@ -10,10 +10,8 @@ stm = reshape(x(7:42), 6,6);
 stt2 = reshape(x(43:258),6,6,6);
 
 
-f = [zeros(3,3), eye(3,3); 
-    -mu/norm(r)^3 * eye(3,3), zeros(3,3)];
-
-xdot = f * [r; v];
+rdot = v;
+vdot = -mu * r / norm(r)^3;
 
 % Partial wrt state vector
 A = r2bp_A_matrix([r; v], mu);
@@ -24,18 +22,10 @@ Fab = r2bp_stt2_tensor([r;v], mu);
 % STM propagation equation
 stmdot = A*stm;
 
-% STT propagation equation
-% stt2dot = zeros(6,6,6);
-% for i = 1:6
-%     stt2dot(:,:,i) = A*stt2(:,:,i) + Fab(:,:,i)*stm*stm;
-% end
-
-
-
 stt2dot = tensorCombine(stm,stt2,A,Fab);
 
 % Return
-xstmdot = [xdot; stmdot(:); stt2dot(:)];
+xstmdot = [rdot; vdot; stmdot(:); stt2dot(:)];
         
 
 end

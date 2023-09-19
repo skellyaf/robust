@@ -59,26 +59,17 @@ else
     % Using saved dynamics, calculate the 3 sigma TCM pair
 
     if simparams.perform_correction
-        % Function to find the minimum pair along the trajectory
-%         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
-
+        % Function to optimize the number and location of TCMs along the trajectory 
         [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus] = opt_multiple_tcm(x, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
-
-%         % Loop over TCM portions (also each of the nominal maneuvers after the first) with different targets and pass the
-%         % final dispersion covariance as the initial to the next
-
-%         P_i = simparams.P_initial;
-%         for i = 1:length(simparams.P_constrained_nodes)
-%         end
-
-%         [~, ~, tcm_dv_each, P_i_minus, P_i_plus] = calc_covariance_tcmdv(x, t, stm_t, tcm_time, simparams);
-
+        
+        % Multiply the TCM RSS by 3
         tcm_3sigma = 3*min_tcm_dv;
 
-
+        % Calculate the process noise and process noise sensitivity tensors
+        [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
     
-        % TCM gradient
-        tcm_gradient = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_i_minus, P_i_plus, deltaVs_nom, simparams);
+        % Calculate the TCM gradient
+        tcm_gradient = calc_multiple_tcm_gradient_wQ(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
         tcm_gradient = 3*tcm_gradient;
     else
         tcm_3sigma = 0;

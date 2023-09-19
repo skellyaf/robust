@@ -3,7 +3,6 @@ function Xdot = cr3bp_sFrame_nd_de(t, X, mu)
 % and state transition matrix in the circular restricted 3 body problem
 % STM differential equation: stmdot = A*stm_last
 
-% global muE muM
 
 x = X(1);
 y = X(2);
@@ -12,7 +11,6 @@ vx = X(4);
 vy = X(5);
 vz = X(6);
 
-% mu = muM/(muE + muM);
 
 r1 = sqrt(  (x + mu)^2 + y^2 + z^2  );
 r2 = sqrt(  (x-1+mu)^2 + y^2 + z^2  );

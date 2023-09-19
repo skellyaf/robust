@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['leo_plf_nri_robust_correctedNominals_increasedNomError'];
+savename = ['testing_correctedNominals_fixedAbug'];
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 
@@ -62,6 +62,7 @@ saveVideo = false;
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro2_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro3_3dv';
@@ -84,10 +85,10 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
 % load('eed_leo_planar_13day.mat');
-load('nri_det_opt.mat');
+% load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
-simparams.x0 = x_opt;
+% simparams.x0 = x_opt;
 
 
 %% Initialize transfer segments

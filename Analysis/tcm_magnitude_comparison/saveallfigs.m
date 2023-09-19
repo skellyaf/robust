@@ -1,4 +1,4 @@
-function saveallfigs(output_path, tikz_flag)
+function saveallfigs(output_path, tikz_flag, pdf_flag)
 % SAVEALLFIGS  Saves and exports all open figures to FIG and PNG files.
 %   SAVEALLFIGS saves all the figures in the current folder.
 %
@@ -60,7 +60,11 @@ for jj=1:length(all_figures)
             matlab2tikz('figurehandle',current_fig,'filename',strcat(filename, '.tikz'), 'showInfo', false)
         end
         % export as pdf
-		exportgraphics(current_fig,strcat(filename, '.pdf'),'ContentType','vector')
+        if nargin == 3
+            exportgraphics(current_fig,strcat(filename, '.pdf'),'ContentType','image')
+        else
+		    exportgraphics(current_fig,strcat(filename, '.pdf'),'ContentType','vector')
+        end
         
         %restore visibility status
         set(current_fig, 'Visible', old_state);

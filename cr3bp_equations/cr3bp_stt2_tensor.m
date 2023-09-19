@@ -1,6 +1,7 @@
 function A = cr3bp_stt2_tensor(x, mu)
 
 % global mu;
+% derivation in C:\Users\skell\OneDrive - USU\Documents\PhD\research\stochastics\gradients\gradient_partials.m
 x_state = x;
 % r = [x(1); x(2); x(3)];
 % v = [x(4); x(5); x(6)];

@@ -36,7 +36,8 @@ simparams.options = odeset('AbsTol',1e-12,'RelTol',1e-12);
 % Units km, km/hr, km/hr^2
 
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
 % zero
@@ -68,14 +69,18 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-% simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
-simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
 simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
+
+
+
+simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001;
 
 %% Load saved trajectory parameters
 

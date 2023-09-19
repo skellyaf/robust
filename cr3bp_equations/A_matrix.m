@@ -1,4 +1,4 @@
-function [stmdot] = stmDot(x, phi, simparams)
+function [A] = A_matrix(x, simparams)
 
 
 mu = simparams.mu;
@@ -13,7 +13,6 @@ elseif strcmp(dynSys,'cr3bp')
     A = cr3bp_sFrame_nd_Amatrix(x, mu);
 end
 
-stmdot = A * phi;
 
 
 end

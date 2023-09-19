@@ -1,4 +1,4 @@
-function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search(x, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
+function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search_wQ(x, x_t, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
 %tcm_index_gradient_search Alters the time index of each individual TCM in
 %each direction (earlier and later) to search for an improvement in the
 %total delta V
@@ -80,7 +80,7 @@ while improving
         
                     % Testing with the updated TCM 
 %                     [P_target, testDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
-                    [P_target, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+                    [P_target, testDV] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
         
                     % Checking if it was cheaper
                     if testDV < minDV
@@ -127,7 +127,7 @@ while improving
     
                     % Calculating the TCM DV of the test index
     %                 [P_target, testDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
-                    [P_target, testDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+                    [P_target, testDV] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
         
                     % Comparing
                     if testDV < minDV
@@ -162,7 +162,7 @@ while improving
 
         % Storing a new min DV after the step
 %         [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
-        [~, minDV] = calc_covariance_tcmdv(x, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
+        [~, minDV] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
         TCMr_idx_test_save(end,:) = TCMr_idx_best;
         minDV_save(end) = minDV;
 

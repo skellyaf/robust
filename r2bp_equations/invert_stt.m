@@ -1,4 +1,4 @@
-function [istt] = invert_stt(stm_f,stt_f)
+function [istt] = invert_stt(stm_f, stt_f, simparams)
 %invert_stt Takes a 2nd order state transition tensor in one direction (for
 %example forward in time) and reverses it to go the opposite direction
 %(like backwards in time)
@@ -8,11 +8,10 @@ function [istt] = invert_stt(stm_f,stt_f)
 %           stt_f: the forward stt for the corresponding timeframe
 
 
-% Symplectic unit matrix
-J = [zeros(3,3), eye(3,3); -eye(3,3), zeros(3,3)];
 
-% Calcuate the reverse stm for the corresponding timeframe using J
-stm_r = -J*stm_f'*J;
+
+% Calcuate the inverse stm for the corresponding timeframe
+stm_r = invert_stm(stm_f,simparams);
 
 
 % ATA = zeros(6,6,6);
@@ -24,7 +23,6 @@ A2 = stm_r;
 % N=length(ATA);
 
 
-%%%%%%%%%% VECTORIZE THIS SOMETIME/SOMEHOW %%%%%%%%%%
 
 % for i = 1:N
 %     for j = 1:N
@@ -40,6 +38,11 @@ A2 = stm_r;
 %         end
 %     end
 % end
+
+
+%%%%%%%%%% VECTORIZED EQUIVALENT %%%%%%%%%%
+
+
 
 pT = ipermute(T, [1, 4, 5, 2, 3]); %T
 pA1 = ipermute(A1, [4, 2, 1, 3, 5]); %A1
