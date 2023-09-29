@@ -46,7 +46,12 @@ while iter
                 % If this is already violated, it won't cross this
                 % threshold going in reverse. Probably in this case because
                 % something is wrong.
-                assert(0);
+%                 assert(0);
+
+                % Instead of throwing an error, trying picking this point
+                % and exiting, then allowing the final index to be modified
+                % in the optimization scheme
+                iter = 0;
 
             else
                 mode = 2; % Mode 2 = searching forward, counting by ones, from the point where the dispersion constraint was violated until it is no longer violated

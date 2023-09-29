@@ -1,30 +1,39 @@
-x = simparams.x0;
+% x = simparams.x0;
+x = x_opt(:);
 
 % % % 
 
 
-if 0
+if 1
 
     dx = sqrt(eps);
+%     dx = 1e-10;
     testGradJ = zeros(length(x(:)),1);
 
+    [obj_x, ~] = obj_min_tcm(x,simparams);
+
     for i = 1:length(x(:))
+%     parfor i = 1:length(x(:))
+        i
         if i == 59
             stopp = 1;
         end
 %     for i = length(x(:))
-    %         dxrand = dx*randn;
+%             dxrand = dx*randn;
             dxrand = dx*1;
 %             dxrand = dx*x(i);
             xdx = x;
             xdx(i) = x(i) + dxrand;
-            testGradJ(i) = (  obj_min_tcm(xdx,simparams) - obj_min_tcm(x,simparams)  )/dxrand; 
+%             testGradJ(i) = (  obj_min_tcm(xdx,simparams) - obj_min_tcm(x,simparams)  )/dxrand; 
+            [obj_xdx, ~] = obj_min_tcm(xdx,simparams);
+            testGradJ(i) = (  obj_xdx - obj_x  )/dxrand; 
 
     end
     testGradJ
     [~,analyticalGradJ] = obj_min_tcm(x,simparams);
 %     analyticalGradJ = analyticalGradJ'
 
+    [testGradJ, analyticalGradJ]
     p=2;
     
 end
@@ -32,7 +41,7 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 0
+if 1
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);

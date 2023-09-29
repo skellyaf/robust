@@ -91,10 +91,10 @@ if strcmp(dynSys,'2bp')
     ylabel('Y (km)')
     zlabel('Z (km)')
 elseif strcmp(dynSys,'cr3bp')
-%     view([-75, 10]);
+    view([-65, 15]); % nrho view
 %     view([80, 12]); %leo-nri view
 
-    view([0 90]); % planar
+%     view([0 90]); % planar
     xlabel('X (nd)')
     ylabel('Y (nd)')
     zlabel('Z (nd)')
@@ -141,16 +141,22 @@ ip1=plot3(simparams.x_init(1),simparams.x_init(2),simparams.x_init(3),'.','Color
 
 % Plot the nominal Delta V's
 for i = 1:length(simparams.maneuverSegments)
-    r_dv = x(1:3,simparams.maneuverSegments(i));
+    if simparams.maneuverSegments(i) == simparams.n + 1
+        r_dv = x_t(end,:)';
+    else
+        r_dv = x(1:3,simparams.maneuverSegments(i));
+    end
     plot3(r_dv(1),r_dv(2),r_dv(3),"pentagram",'MarkerSize',10,'MarkerFaceColor','Cyan','MarkerEdgeColor','Black');
 end
 
 
 % Plot the end of the trajectory (target after the final coast in most
 % instances)
-plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),"square",'MarkerSize',5,'MarkerFaceColor','Red','MarkerEdgeColor','Black')
+plot3(simparams.x_target(1),simparams.x_target(2),simparams.x_target(3),"square",'MarkerSize',20,'MarkerFaceColor','none','MarkerEdgeColor','Red')
 
-
+if isfield(simparams,'rdvz_flag')
+    plot3(simparams.x0_target(1),simparams.x0_target(2),simparams.x0_target(3),"square",'MarkerSize',20,'MarkerFaceColor','none','MarkerEdgeColor','Green')
+end
 
 
 % if exist('cp1')

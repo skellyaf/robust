@@ -14,14 +14,19 @@ end
 
 
 
-if seg ~= desired_seg 
-    if seg_index == size(stm_t_i{seg},3)
-        seg = seg+1;
-        seg_index = 1;
-    else
-        assert(0,['Error!'])
-    end
+if seg ~= desired_seg  && seg_index == size(stm_t_i{seg},3)
+    seg = seg+1;
+    seg_index = 1;
 end
+
+% if seg ~= desired_seg 
+%     if seg_index == size(stm_t_i{seg},3)
+%         seg = seg+1;
+%         seg_index = 1;
+%     else
+%         assert(0,['Error!'])
+%     end
+% end
 
 
 

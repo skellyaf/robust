@@ -1,4 +1,4 @@
-function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_k_minus, P_k_plus, deltaVs_nom, simparams)
+function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient(x, x_i_f, stm_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_k_minus, deltaVs_nom, simparams)
 %calc_tcm_gradient Computes and returns the analytical tcm gradient
 
 

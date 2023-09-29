@@ -45,8 +45,11 @@ event_idxs = find(event_idx_logical);
 % target_idxs = event_idxs(target_event_logic);
 
 target_idx_counter = 1;
-target_idx = find(traj.t_s==simparams.P_constrained_nodes(1),1) - 1; % minus one because the segment intersection is shared by both segments, but assigned to the previous segment in traj.t_s
-%
+if simparams.P_constrained_nodes(1) == simparams.n + 1
+    target_idx = length(traj.t);
+else
+    target_idx = find(traj.t_s==simparams.P_constrained_nodes(1),1) - 1; % minus one because the segment intersection is shared by both segments, but assigned to the previous segment in traj.t_s
+end
 
 maneuver_segments = simparams.maneuverSegments;
 
@@ -64,6 +67,8 @@ tcm_dv = [];
 %% Logic if no events (zero length)
 % if length(tcm_time) == 0
 if isempty(event_times)
+
+%     idx_start_P_growth = 
 
     stmN0 = dynCellCombine(traj.t, traj.t_s, 1, target_idx, simparams, traj.stm_t_i);
 
@@ -117,7 +122,11 @@ else % Otherwise, if there are events, do:
         if idx_Ci == target_idx && target_idx_counter < length(simparams.P_constrained_nodes)
 
                 target_idx_counter = target_idx_counter + 1;
-                target_idx = find(traj.t_s==simparams.P_constrained_nodes(target_idx_counter),1) - 1;
+                if simparams.P_constrained_nodes(target_idx_counter) == simparams.n + 1
+                    target_idx = length(traj.t);
+                else
+                    target_idx = find(traj.t_s==simparams.P_constrained_nodes(target_idx_counter),1) - 1;
+                end
         end       
 
 
@@ -176,8 +185,8 @@ else % Otherwise, if there are events, do:
         
     end
     
-    P_target = P_i_minus(:,:,end); %%%% Potential question - this currently is the final dispersion covariance without incorporating the final nominal maneuver execution error
-
+    P_target = P_i_minus(:,:,end); 
+    
     if vel_disp_flag
         tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6)));
     end

@@ -1,25 +1,41 @@
 function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 
+% Reshaping x so each column is a segment initial state and duration
+m = simparams.m; % the number of elements per segment
+n = simparams.n; % the number of segments   
+x = reshape(x,m,n);   
+
 %% Setup
-    x0 = simparams.x_init;
-    
+x0 = simparams.x_init;
+
+if ~isfield(simparams,'rdvz_flag')
+
     x_target = simparams.x_target;
-    mu = simparams.mu;
-    maneuverSegments = simparams.maneuverSegments;
-
-    fixed_xfer_duration = simparams.fixed_xfer_duration;
-    if fixed_xfer_duration
-        t_f = simparams.tf;
-    end
-
-    if nargout == 4
-        outputCGradients = 1;
+else
+    %%%% FLEXIBLE RENDEZVOUS TARGET
+    if simparams.rdvz_flag == 1
+        total_time = sum(x(7,:));
+        simparams.x_target = stateProp(simparams.x0_target, total_time, simparams);
+        x_target = simparams.x_target;
     else
-        outputCGradients = 0;
-    end        
-    
-    m = simparams.m; % the number of elements per segment
-    n = simparams.n; % the number of segments   
+        x_target = simparams.x_target;
+    end
+end
+mu = simparams.mu;
+maneuverSegments = simparams.maneuverSegments;
+
+fixed_xfer_duration = simparams.fixed_xfer_duration;
+if fixed_xfer_duration
+    t_f = simparams.tf;
+end
+
+if nargout == 4
+    outputCGradients = 1;
+else
+    outputCGradients = 0;
+end        
+
+
     
     
 %% Calculate the dimensions of the equality constraint vector
@@ -62,10 +78,9 @@ end
 %% Pre-calculate/propagate states/STMs before assembling constraints
 
 % Create the state and stm history:
-[stm_i, x_i_f, x_t, ~, t, t_s, stm_t_i] = createStateStmHistory(x, simparams);
+[stm_i, x_i_f, x_t, ~, t, t_s, stm_t_i] = createStateStmHistory(x(:), simparams);
 
-% Reshaping x so each column is a segment initial state and duration
-x = reshape(x,m,n);   
+
 
 
 %% Now assemble constraints with pre-calculated parameters
@@ -97,18 +112,58 @@ for i = 1:n
     % Constraint to allow an impulsive maneuver at end of first seg and
     % beginning of last seg
     if ismember(i+1,maneuverSegments)
-        %  Constrain end position with starting position of next segment
-        x_next = x(1:6,i+1); % Beginning state of next segment
-        ceq(neq+1:neq+3) = x_next(1:3) - x_i_final(1:3);
 
-        if outputCGradients
-            ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [-stm_i(1:3,:,i), -x_i_final(4:6)];
-            ceqGrad(neq+1:neq+3, i*7 + 1:(i+1)*7) = [eye(3), zeros(3,4)];
+        if i+1 == simparams.n+1 % No final coast segment
+            % Only constrain the ith segment final position to the target
+            % position
+            ceq(neq+1:neq+3) = x_i_final(1:3) - x_target(1:3);
+
+            if outputCGradients
+                % For now, only the gradient wrt the first half of the
+                % target position constraint equation (wrt x_i_final)
+                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [stm_i(1:3,:,i), x_i_final(4:6)];
+
+                % The only relevant partial derivative for x_target is wrt
+                % segment durations (it is a fixed propagation from the
+                % target's initial position by the total segment duration)
+
+                % Need to loop through and add time sensitivity to the
+                % appropriate constraint equation indices, but once we're
+                % outside the current for loop. Saving the
+                % target_constraint incides below to reference later.
+
+                t_idxs = logical(repmat([zeros(1,6), 1], 1, simparams.n));
+
+                ceqGrad(neq+1:neq+3, t_idxs) = ceqGrad(neq+1:neq+3, t_idxs) - ones(3,simparams.n) .* x_target(4:6);
+
+
+                
+
+            end
+
+            neq = neq + 3;
+
+
+
+
+        else
+
+    
+    
+    
+            %  Constrain end position with starting position of next segment
+            x_next = x(1:6,i+1); % Beginning state of next segment
+            ceq(neq+1:neq+3) = x_next(1:3) - x_i_final(1:3);
+    
+            if outputCGradients
+                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [-stm_i(1:3,:,i), -x_i_final(4:6)];
+                ceqGrad(neq+1:neq+3, i*7 + 1:(i+1)*7) = [eye(3), zeros(3,4)];
+            end
+    
+    
+    
+            neq = neq + 3;
         end
-
-
-
-        neq = neq + 3;
     
     %%%%%%%%%%%%%% ONE TIME TESTING CONSTRAINT - FORCE ALL PLANE CHANGE
     %%%%%%%%%%%%%% TO OCCUR ON FIRST BURN FOR SCENARIO 2
@@ -150,6 +205,19 @@ for i = 1:n
 
 
         neq = neq + 6;
+    elseif i == n % Final segment - constrained end to match target       
+        
+        % Constrain end of final segment to target state
+        ceq(neq+1:neq+6) = x_i_final - x_target;
+
+        
+
+        if outputCGradients
+            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [stm_i(:,:,i), stateDot(x_i_final, mu, simparams.dynSys)];
+        end
+
+        neq = neq+6;
+                               
     end
     
     % Moving forward in time inequality constraint (each seg time >= 0)
@@ -164,22 +232,13 @@ for i = 1:n
     
 
             
-    % Final segment - constrained end to match target
-    if i == n
-        % Constrain end of final segment to target state
-        ceq(neq+1:neq+6) = x_i_final - x_target;
-
-        if outputCGradients
-            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [stm_i(:,:,i), stateDot(x_i_final, mu, simparams.dynSys)];
-        end
-
-        neq = neq+6;
-                               
-    end  
+      
    
     
     
 end % end of the main for loop
+
+
 
 %% Single constraints
 
@@ -190,6 +249,11 @@ end % end of the main for loop
 if fixed_xfer_duration
     total_time = sum(x(7,:));
     ceq(neq+1) = total_time - t_f;
+    if outputCGradients
+        t_idxs = logical(repmat([zeros(1,6), 1], 1, simparams.n));
+        ceqGrad(neq+1, t_idxs) = 1;
+
+    end
     neq = neq+1;
 end
 

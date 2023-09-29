@@ -1,4 +1,4 @@
-function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, x_t, x_i_f, stm_i, stt_i, stm_t, stm_t_i, stt_t_i, t, t_s, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams)
+function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams)
 %calc_tcm_gradient Computes and returns the analytical tcm gradient
 
 
@@ -20,6 +20,15 @@ x = reshape(x,m,n);
 
 % Velocity mapping matrix
 Mv = G';
+
+% traj
+x_i_f = traj.x_i_f;
+stm_i = traj.stm_i;
+stm_t = traj.stm_t;
+stm_t_i = traj.stm_t_i;
+stt_t_i = traj.stt_t_i;
+t = traj.t;
+t_s = traj.t_s;
 
 % Store a gradient vector for each individual TCM (r and v)
 % Structure for each tcm gradient

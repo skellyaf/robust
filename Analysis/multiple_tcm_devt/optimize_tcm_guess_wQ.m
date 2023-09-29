@@ -1,4 +1,4 @@
-function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess_wQ(x, x_t, t, t_s, stm_t, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaV, P_i, range, simparams)
+function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_DVs] = optimize_tcm_guess_wQ(x, traj, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaV, P_i, simparams)
 %optimize_tcm_guess takes the single final TCM to meet the position
 %dispersion constraint and incrementally adds a TCM and optimizes the TCMs
 %until the lowest TCM magnitude is found (stops searching when adding a TCM
@@ -33,7 +33,7 @@ while improving
     % Create a logical array of indices to test
     test_step_size = 10; %%%%%%%%% INSTEAD OF SEARCHING EVERY INDEX ALONG THE LINE, ONLY SEARCH EVERY X INDICES, THEN GRADIENT DESCEND TO THE MIN IN THE NEXT STEP 
     
-    test_logical = false(1,length(t));
+    test_logical = false(1,length(traj.t));
     test_logical(1:test_step_size:end-1) = true;
     test_logical(1:25) = true;
 
@@ -44,7 +44,7 @@ while improving
     % the nominal maneuvers there
     if simparams.correct_nominal_dvs
         for i = 1:length(simparams.maneuverSegments)
-            maneuverSegIdx = t_s==simparams.maneuverSegments(i);
+            maneuverSegIdx = traj.t_s==simparams.maneuverSegments(i);
             maneuverIdx = find(maneuverSegIdx,1)-1; % the time of the maneuver occurs at the intersection of 1 and 2, and the previous segment gets the final time index
             test_logical(maneuverIdx) = false;
         end
@@ -62,22 +62,21 @@ while improving
     end
 
 
-    plusOneTCMr_totalDV_t = ones(1,length(t)) * nan;
+    plusOneTCMr_totalDV_t = ones(1,length(traj.t)) * nan;
 
     % Test each index in the logical array
 
     if sum(test_logical)==0
-%         [~, min_tcm_dv] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time, vel_disp_flag, deltaV, P_i, range, simparams);
-        [~, min_tcm_dv] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, tcm_time, vel_disp_flag, deltaV, P_i, range, simparams);
+        [~, min_tcm_dv] = calc_covariance_wQ_tcmdv(x, traj, tcm_time, vel_disp_flag, deltaV, P_i, simparams);
 
         improving = 0;
     else
         
         for i = find(test_logical)
-            tcm_new_i = t(i);
+            tcm_new_i = traj.t(i);
             tcm_time_test = sort([tcm_time, tcm_new_i]);
 %             [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time_test, vel_disp_flag, deltaV, P_i, range, simparams);         
-            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, tcm_time_test, vel_disp_flag, deltaV, P_i, range, simparams);         
+            [~, plusOneTCMr_totalDV_t(i)] = calc_covariance_wQ_tcmdv(x, traj, tcm_time_test, vel_disp_flag, deltaV, P_i, simparams);         
         end
         
 
@@ -87,19 +86,19 @@ while improving
         % Find the minimum
         [minDV, minIdx] = min(plusOneTCMr_totalDV_t);
         % Add the corresponding minimum time to a test vector
-        tcm_time_test = sort([tcm_time, t(minIdx)]);
+        tcm_time_test = sort([tcm_time, traj.t(minIdx)]);
         tcm_idx_test = sort([tcm_idx, minIdx]);
     
         % Perform gradient descent on the indices
 
-        [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search_wQ(x, x_t, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
+        [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search_wQ(x, traj, tcm_idx_test, vel_disp_flag, deltaV, P_i, minDV, simparams);
 
         if length(tcm_idx_test) > 2
             % Perform stochastic gradient descent to get double indices
-            [tcm_idx_test] = random_unit_search_wQ(x, x_t, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
+            [tcm_idx_test] = random_unit_search_wQ(x, traj, tcm_idx_test, vel_disp_flag, deltaV, P_i, minDV, simparams);
 
             % Perform gradient descent one more time on the indices
-            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search_wQ(x, x_t, t, t_s, stm_t, tcm_idx_test, vel_disp_flag, deltaV, P_i, range, minDV, simparams);
+            [tcm_idx_test, tcm_time_test, minDV] = tcm_index_gradient_vector_search_wQ(x, traj, tcm_idx_test, vel_disp_flag, deltaV, P_i, minDV, simparams);
         end
     
 

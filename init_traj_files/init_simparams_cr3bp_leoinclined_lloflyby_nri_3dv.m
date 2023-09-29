@@ -18,6 +18,7 @@ ndTime2sec = 1/n;
 ndTime2hrs = 1/n/3600;
 ndTime2days = 1/n/3600/24;
 ndDist2km = Rm;
+ndDist2m = Rm * 1000;
 ndVel2kms = Rm * n;
 
 % mu
@@ -45,16 +46,16 @@ simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 1e-12;
 
 % Small
-% simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
-% simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
+simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
 % Medium
 % simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
 % simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
-simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
-simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
+% simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
 % simparams.sig_vel = 10 / 1e5 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions converted to ND dist / ND time
 
 
@@ -70,6 +71,8 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
 simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+% simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
 % simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
@@ -80,21 +83,24 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 
 
-simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001;
+% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
+% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
+simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
 
 %% Load saved trajectory parameters
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 25; % number of trajectory segments
+% simparams.n = 25; % number of trajectory segments
+simparams.n = 20; % number of trajectory segments
 
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
 
-simparams.maneuverSegments = [2, 14, simparams.n]; % the segments with an impulsive maneuver at their beginning
+simparams.maneuverSegments = [2, 10, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
-simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
 simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a correction occurs (currently the first nominal maneuver); set to 0 to not tie to a nominal maneuver
@@ -306,7 +312,7 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 % Optimality and constraint satisfaction tolerances
 simparams.optoptions.OptimalityTolerance = 1e-6;
 simparams.optoptions.ConstraintTolerance = 2e-10 * simparams.n * simparams.m;
-simparams.optoptions.StepTolerance = 1e-14; 
+simparams.optoptions.StepTolerance = 1e-15; 
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
 % To use parallel processing
@@ -316,6 +322,7 @@ simparams.optoptions.StepTolerance = 1e-14;
 % simparams.optoptions.EnableFeasibilityMode = true;
 % simparams.optoptions.SubproblemAlgorithm = 'cg';
 
+simparams.optoptions.Display='iter';
 
 % To have matlab check the analytical gradient, if being used
 % simparams.optoptions = optimoptions('fmincon','Algorithm','interior-point','MaxFunctionEvaluations',3e5,'MaxIterations',1e4,'SpecifyObjectiveGradient',true,'CheckGradients',true,'FiniteDifferenceType','central','FiniteDifferenceStepSize',1e-8);

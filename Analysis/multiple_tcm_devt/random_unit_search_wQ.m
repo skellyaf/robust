@@ -1,4 +1,4 @@
-function [TCMr_idx_best, fevals] = random_unit_search_wQ(x, x_t, t, t_s, stm_t, TCMr_idx_best, vel_disp_flag, deltaV, P_i, range, minDV, simparams)
+function [TCMr_idx_best, fevals] = random_unit_search_wQ(x, traj, TCMr_idx_best, vel_disp_flag, deltaV, P_i, minDV, simparams)
 %random_unit_search Creates a random unit vector to modify the time index
 %elements of the TCM index array to search for an improved delta V solution
 
@@ -16,7 +16,7 @@ function [TCMr_idx_best, fevals] = random_unit_search_wQ(x, x_t, t, t_s, stm_t, 
 maneuver_seg = simparams.maneuverSegments;
 maneuver_idxs = nan*ones(1,length(maneuver_seg));
 for i = 1:length(maneuver_seg)
-    match = find(t_s==maneuver_seg(i),1)-1;
+    match = find(traj.t_s==maneuver_seg(i),1)-1;
     if ~isempty(match)
         maneuver_idxs(i) = match;
     end
@@ -32,7 +32,7 @@ startIdx = 1;
 
 fevals = 0;
 
-TCMr_time_best = t(TCMr_idx_best)';
+TCMr_time_best = traj.t(TCMr_idx_best)';
 % [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
 
 mod_logical = logical(zeros(1,length(TCMr_idx_best)));
@@ -72,8 +72,8 @@ while improving
     if TCMr_idx_test(1) < 1
         TCMr_idx_test(1) = 1;
     end
-    if TCMr_idx_test(end) > length(t)
-        TCMr_idx_test(end) = length(t);
+    if TCMr_idx_test(end) > length(traj.t)
+        TCMr_idx_test(end) = length(traj.t);
     end
 
 
@@ -85,19 +85,22 @@ while improving
         end
     end
 
+    lt1_idx = TCMr_idx_test<1;
+
+    TCMr_idx_test(lt1_idx) = 1:sum(lt1_idx);
+    TCMr_idx_test = sort(TCMr_idx_test);
 
 
-    TCMr_time_test = t(TCMr_idx_test)';
+    TCMr_time_test = traj.t(TCMr_idx_test)';
 
     if length(TCMr_time_test) ~= length(unique(TCMr_time_test))
         ppp=1;
-        x
-        range
-        TCMr_time_test
+%         x
+%         TCMr_time_test
         notImprovedCount = notImprovedCount + 1;
     else
 
-        [~, testDV] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, TCMr_time_test, vel_disp_flag, deltaV, P_i, range, simparams); 
+        [~, testDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, simparams); 
         fevals = fevals + 1;
         
         if testDV <= minDV

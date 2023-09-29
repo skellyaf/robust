@@ -1,7 +1,12 @@
-function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = min_dv_tcm_meets_dispersion_constraint_wQ_v2(x, x_t, t, t_s, stm_t, vel_disp_flag, deltaV, P_i, range, simparams)
+function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = min_dv_tcm_meets_dispersion_constraint_wQ_v2(x, traj, vel_disp_flag, deltaV, P_i, simparams)
 %min_dv_tcm_meets_dispersion_constraint Finds all feasible TCM options that
 %meet the target dispersion constraint, then selects the lowest DV option
 %of those and returns the time and time index.
+
+
+%%%% REPLACING INDIVIDUAL VARIABLES WITH TRAJ  
+% Variables removed/being used inside traj structure: x_t, t, t_s, stm_t
+
 
 
 
@@ -28,14 +33,14 @@ function [tcm_feasibleMin_time,tcm_feasibleMin_idx,minTcmDV_meets_constraint] = 
 
 iter = 1;
 % tcm_idx = range(2)-range(1);
-tcm_idx = length(t)-1;
+tcm_idx = length(traj.t)-1;
 stepSize = 25;
 i = 1;
 mode = 1; % Mode 1 = searching in reverse from the end in larger increments for the position dispersion constraint to be violated
 while iter
-    tcm_time(i) = t(tcm_idx);
+    tcm_time(i) = traj.t(tcm_idx);
 %     [Pn_tcm_time_i, tcm_dv_t(i)] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, tcm_time(i), vel_disp_flag, deltaV, P_i, range, simparams);
-    [Pn_tcm_time_i, tcm_dv_t(i)] = calc_covariance_wQ_tcmdv(x, x_t, t, t_s, stm_t, tcm_time(i), vel_disp_flag, deltaV, P_i, range, simparams);
+    [Pn_tcm_time_i, tcm_dv_t(i)] = calc_covariance_wQ_tcmdv(x, traj, tcm_time(i), vel_disp_flag, deltaV, P_i, simparams);
     rP_tcm_time_t(i) = sqrt(trace(Pn_tcm_time_i(1:3,1:3)));
     
     
@@ -46,7 +51,9 @@ while iter
                 % If this is already violated, it won't cross this
                 % threshold going in reverse. Probably in this case because
                 % something is wrong.
-                assert(0);
+%                 assert(0);
+
+                iter = 0;
 
             else
                 mode = 2; % Mode 2 = searching forward, counting by ones, from the point where the dispersion constraint was violated until it is no longer violated
@@ -74,7 +81,7 @@ while iter
 end
 
 
-tcm_feasibleMin_time = t(tcm_idx);
+tcm_feasibleMin_time = traj.t(tcm_idx);
 
 tcm_feasibleMin_idx = tcm_idx;
 minTcmDV_meets_constraint = tcm_dv_t(end);

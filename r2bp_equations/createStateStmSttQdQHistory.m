@@ -212,6 +212,8 @@ for i = 1:n
             x_t = [x_i_initial'];
             t = 0;
             t_s = i;
+            Q_t = zeros(6,6);
+
         end
     end
 

@@ -54,11 +54,13 @@ for k = 1:length(event_indicator)
 
 
                 %%%%% Qbar state sensitivity
-                if t_k < t0_i || tf_i < t_km1
+                if idx_k < idx_i || idx_fi < idx_km1 % attempt with indices to fix a bug
+%                 if t_k < t0_i || tf_i < t_km1
                     % Already populated with zeros, do nothing.
 %                     dQ_k_km1_dxi(:,:,:, k, i) = zeros(6,6,6);
 
-                elseif t0_i <= t_km1 && tf_i <= t_k % CASE 1 %%%%% NUMERICALLY VERIFIED
+                elseif idx_i <= idx_km1 && idx_fi <= idx_k % CASE 1 %%%%% NUMERICALLY VERIFIED
+%                 elseif t0_i <= t_km1 && tf_i <= t_k % CASE 1 %%%%% NUMERICALLY VERIFIED
                     
                     stm_k_fi = dynCellCombine(traj.t, traj.t_s, idx_fi, idx_k, simparams, traj.stm_t_i);
 
@@ -100,7 +102,8 @@ for k = 1:length(event_indicator)
 
 
 
-                elseif t0_i <= t_km1 && t_k < tf_i % CASE 2 %%%%% NUMERICALLY VERIFIED
+                elseif idx_i <= idx_km1 && idx_k < idx_fi % CASE 2 %%%%% NUMERICALLY VERIFIED
+%                 elseif t0_i <= t_km1 && t_k < tf_i % CASE 2 %%%%% NUMERICALLY VERIFIED
                     
 
                     k_i_idx = find_cell_t_i_idx_2(traj.t,traj.t_s,idx_k, traj.stm_t_i, i);
@@ -123,7 +126,8 @@ for k = 1:length(event_indicator)
                     % covered by CASE 1
                     
 
-                elseif t_km1 < t0_i && tf_i <= t_k % CASE 3 %%%%% NUMERICALLY VERIFIED
+                elseif idx_km1 < idx_i && idx_fi <= idx_k % CASE 3 %%%%% NUMERICALLY VERIFIED
+%                 elseif t_km1 < t0_i && tf_i <= t_k % CASE 3 %%%%% NUMERICALLY VERIFIED
 
                     % dQk_tfi_t0i_dx0i
                     dQ_fi_0i_dx0i = traj.dQ_t_i{i}(:,:,:,end);
@@ -199,7 +203,8 @@ for k = 1:length(event_indicator)
 
 
 
-                elseif t_km1 < t0_i && t_k < tf_i % CASE 4 %%%%% NUMERICALLY VERIFIED
+                elseif idx_km1 < idx_i && idx_k < idx_fi % CASE 4 %%%%% NUMERICALLY VERIFIED
+%                 elseif t_km1 < t0_i && t_k < tf_i % CASE 4 %%%%% NUMERICALLY VERIFIED
 
                     k_i_idx = find_cell_t_i_idx_2(traj.t,traj.t_s,idx_k, traj.stm_t_i, i);
 
@@ -228,7 +233,8 @@ for k = 1:length(event_indicator)
 
                 %%%%% Sensitivity to segment duration
                 if nargout > 1
-                    if t_km1 < tf_i && tf_i <= t_k
+                    if idx_km1 < idx_fi && idx_fi <= idx_k
+%                     if t_km1 < tf_i && tf_i <= t_k
                         Q_fi_km1 = Qcombine(traj, idx_km1, idx_fi, simparams);
                         x_fi = traj.x_t(idx_fi,:)';
                         stm_k_fi = dynCellCombine(traj.t, traj.t_s, idx_fi, idx_k, simparams, traj.stm_t_i);

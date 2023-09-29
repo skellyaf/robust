@@ -32,8 +32,9 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['first_test_wQ_nrho_3dv_1kmPrConstraint_4xQ_10maxTCMs'];
-% savename = ['rdzv_test_wQ_nrho_2dv'];
+% savename = ['first_test_wQ_nrho_3dv_1kmPrConstraint_highQ'];
+savename = ['rdvz_nrho_2dv_shortDuration_5minLead_robust_Qem8_4TcmMax_100mPmaxr_5seg'];
+scenario = 'NRHO rendezvous';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 
@@ -62,7 +63,7 @@ saveVideo = false;
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro2_3dv';
@@ -78,6 +79,11 @@ init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_flex0_leo_lloflyby_nri_3dv';
 
 
+% Rendezvous, nrho
+init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
+
+
+
 
 run(init_fn);
 
@@ -87,12 +93,14 @@ run(init_fn);
 
 % load('eed_leo_planar_13day.mat');
 % load('nri_det_opt.mat');
-load('nri_det_opt_20seg.mat');
+% load('nri_det_opt_20seg.mat');
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
 
 
-simparams.x0 = x_opt(:);
+% load('nrho_rdvz_gt1orbit.mat');
+% 
+% simparams.x0 = x_opt(:);
 
 
 %% Initialize transfer segments
@@ -104,9 +112,16 @@ simparams.x0 = x_opt(:);
 % [stm_i0, stt_i0, x_i_f0, x_t0, stm_t0, stt_t_i, t0, t_s0, stm_t_i0]  = createStateStmSttHistory(simparams.x0, simparams);
 traj0  = createStateStmSttQdQHistory(simparams.x0, simparams);
 
+if isfield(simparams,'rdvz_flag')
+    if simparams.rdvz_flag == 1
+        x0 = reshape(simparams.x0,simparams.m,simparams.n);
+        totalTime = sum(x0(7,:));
+        simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
+    end
+end
 
 % Calculate total impulsive delta V for initial guess trajectory
-[deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj0.x_i_f, simparams);
+[deltaV0, deltaVs_nom0, deletelatergradient] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
 
 tic
 % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
@@ -114,6 +129,9 @@ tic
 toc
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
+
+disp('Initial guess with optimal corrections')
+deltaV0*ndVel2kms*1000, 3*min_tcm_dv0*ndVel2kms*1000, totalDV0*ndVel2kms*1000
 
 figure;
 if simparams.perform_correction    
@@ -128,7 +146,7 @@ axis equal;
 
 %% Finite difference testing / gradient comparison
 
-% verifyGradients;
+verifyGradients;
 % test_tcm_time_gradient;
 
 %% TCM analysis development along initial guess trajectory
@@ -146,6 +164,15 @@ toc
 % [stm_i, stt_i, x_i_f, x_t, stm_t, stt_t_i, t, t_s, stm_t_i]  = createStateStmSttHistory(x_opt, simparams);
 traj = createStateStmSttQdQHistory(x_opt, simparams);
 
+
+if isfield(simparams,'rdvz_flag')
+    if simparams.rdvz_flag == 1
+        x_opt = reshape(x_opt,simparams.m,simparams.n);
+        totalTime = sum(x_opt(7,:));
+        simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
+    end
+end
+
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, traj.x_i_f, traj.stm_i, simparams);
 % [tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
@@ -153,14 +180,17 @@ traj = createStateStmSttQdQHistory(x_opt, simparams);
 
 
 
+
+
 totalDV = deltaV + 3*min_tcm_dv
 
 
-disp('Det opt with optimal corrections')
-deltaV0*ndVel2kms*1000, 3*min_tcm_dv0*ndVel2kms*1000, totalDV0*ndVel2kms*1000
 
-disp('Robust')
-deltaV*ndVel2kms*1000, 3*min_tcm_dv*ndVel2kms*1000, totalDV*ndVel2kms*1000
+
+disp('Optimal')
+deltaVmps = deltaV*ndVel2kms*1000
+tcmtotalmps = 3*min_tcm_dv*ndVel2kms*1000
+totalcostmps = totalDV*ndVel2kms*1000
 
 
 
@@ -277,6 +307,40 @@ iterhist.CurrentAxes.Title.Visible="off";
 
 savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
+%% Save to results summary file
+x_opt = reshape(x_opt,simparams.m,simparams.n);
+
+if 1
+    % Use the writetable function
+    data_out = table;
+    data_out.savename = savename;
+    data_out.Scenario = scenario;
+    data_out.dir = outputPath;
+    data_out.Robust = simparams.perform_correction;
+    data_out.TotalDV_mps = totalcostmps;
+    data_out.Nominal_DV_mps = deltaVmps;
+    data_out.TCM_cost_mps = tcmtotalmps;
+    data_out.Number_of_segments = simparams.n;
+    data_out.Initial_position_dispersion_per_axis_km = simparams.sig_pos * ndDist2km;
+    data_out.Initial_velocity_dispersion_per_axis_mps = simparams.sig_vel * ndDist2km / ndTime2sec * 1000;
+    data_out.Max_target_position_dispersion_rss = simparams.P_max_r * ndDist2km;
+    data_out.TCM_execution_error_mps = simparams.sig_tcm_error * ndDist2km / ndTime2sec * 1000;
+    data_out.Nominal_DV_execution_error_mps = simparams.sig_dv_error * ndDist2km / ndTime2sec * 1000;
+    data_out.Q_per_axis_m2_s3 = simparams.Qt(1,1) / ndTime2sec^3 * ndDist2m^2;
+    data_out.Correcting_nominal_maneuvers = simparams.correct_nominal_dvs;
+    data_out.Dynamical_system = simparams.dynSys;
+    writetable(data_out,'./sims/robust_results_summary.xlsx','WriteMode','append','WriteRowNames',false);
+    % writetable(data_out,'./sims/robust_results_summary.xlsx','WriteMode','append');
+    
+    data_out.NRHO_period_days = simparams.T0 * ndTime2days;
+    data_out.Chaser_initial_state_days_past_perilune = time_past_perilune_chaser0 * ndTime2days;
+    data_out.Target_initial_state_hours_past_chaser = time_past_chaser_target0 * ndTime2hrs;
+    data_out.Total_trajectory_duration_days = simparams.tf * ndTime2days;
+    data_out.Time_between_deltaVs_days = sum(x_opt(7,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1)) * ndTime2days;
+    data_out.Initial_guess_final_coast_days = extra_target_coast * ndTime2days;
+    writetable(data_out,'./sims/robust_results_nrho_rdvz_summary.xlsx','WriteMode','append','WriteRowNames',false);
+    % writetable(data_out,'./sims/robust_results_nrho_rdvz_summary.xlsx','WriteMode','append');
+end
 
 %% debug
 % [stm_i0, stt_i0, x_i_f0, x_t0, stm_t0, stt_t_i, t0, t_s0, stm_t_i0]  = createStateStmSttHistory(x, simparams);
@@ -287,8 +351,16 @@ savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 
 
+%% investigating natural motion of 
 
 
+[~, x_nofinalDV_t] = stateProp(x_opt(1:6,end-1),50/ndTime2days,simparams);
+
+figure
+axis equal
+grid on
+hold on
+plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
 
 %% investigating apse constraint
 % v_I = zeros(3,length(t));
@@ -338,3 +410,4 @@ savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 % plot3(x_t(4100+minidx-1,1),x_t(4100+minidx-1,2),x_t(4100+minidx-1,3),'.','MarkerSize',25)
 
 
+beep
