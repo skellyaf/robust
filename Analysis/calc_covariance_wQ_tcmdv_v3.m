@@ -48,7 +48,12 @@ target_idx_counter = 1;
 if simparams.P_constrained_nodes(1) == simparams.n + 1
     target_idx = length(traj.t);
 else
+    
     target_idx = find(traj.t_s==simparams.P_constrained_nodes(1),1) - 1; % minus one because the segment intersection is shared by both segments, but assigned to the previous segment in traj.t_s
+    if isempty(target_idx)
+        idxs_Pi_minus1 = find(traj.t_s == simparams.P_constrained_nodes(1)-1);
+        target_idx = idxs_Pi_minus1(end);
+    end
 end
 
 maneuver_segments = simparams.maneuverSegments;
@@ -97,87 +102,96 @@ else % Otherwise, if there are events, do:
     P_i_minus = zeros(6,6,length(unique(event_times))); 
 
     P_i_plus = zeros(6,6,length(unique(event_times)));        
+
+    start_time = sum(x(7,1:simparams.start_P_growth_node-1));
+    start_idx = find(traj.t == start_time);
+%     start_node = simparams.start_P_growth_node;
     
 
     %% Compute the covariance only at the correction(s) and the final
     for i = 1:length(event_times)
         % Propagate dispersion covariance from previous event to i
 
-        if i == 1
-            idx_Clast = 1;
-        else
-            idx_Clast = event_idxs(i-1);            
-        end 
-
-        idx_Ci = event_idxs(i);   
-
-        if i == 1 && event_idx_logical(1)
-            P_i_minus(:,:,i) = P_i;
-        else
-            Q_Ci = Q_k_km1(:,:,i);
-            stmCiClast = dynCellCombine(traj.t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
-            P_i_minus(:,:,i) = stmCiClast * P_i * stmCiClast' + Q_Ci;            
-        end
-
-        if idx_Ci == target_idx && target_idx_counter < length(simparams.P_constrained_nodes)
-
-                target_idx_counter = target_idx_counter + 1;
-                if simparams.P_constrained_nodes(target_idx_counter) == simparams.n + 1
-                    target_idx = length(traj.t);
-                else
-                    target_idx = find(traj.t_s==simparams.P_constrained_nodes(target_idx_counter),1) - 1;
-                end
-        end       
-
-
-
-        
-        
-
-        % Is it a nominal maneuver (0), TCM (1), both simultaneously (2), or a corrected nominal maneuver (3)?
-
-        if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
-
-            stmNC = dynCellCombine(traj.t, traj.t_s, idx_Ci, target_idx, simparams, traj.stm_t_i);
-
-            % Perform the TCM update matrix calculations     
-            T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
-            N = [zeros(3,6); T];
-            IN = eye(6) + N;
-
-            if event_indicator(i) == 3 % Corrected nominal maneuver
-                % Corrected nominal applies the nominal maneuver execution error
-                P_tcm = T * P_i_minus(:,:,i) * T'; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
-                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_dv*G';
-
-                % Get i_dv
-                deltaV = deltaVs_nom(:, maneuver_segments == traj.t_s(event_idxs(i)) + 1 );
-
-                i_dv = deltaV / vecnorm(deltaV);
-                tcm_dv(end+1) = sqrt(i_dv' * P_tcm * i_dv);
-            elseif event_indicator(i) == 1 % TCM by itself
-                P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
-                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G';
-                tcm_dv(end+1) = sqrt(trace(P_tcm));
-            elseif event_indicator(i) == 2 % Concurrent nominal maneuver and TCM performed separately
-                P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
-                P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G';
-                tcm_dv(end+1) = sqrt(trace(P_tcm));
+%         if traj.t_s(event_idxs(i)+1) >= simparams.start_P_growth_node || simparams.start_P_growth_node == 1
+            if i == 1
+                idx_Clast = 1;
             else
-                assert(0,'Something happened that we did not plan for!');
+                idx_Clast = event_idxs(i-1);            
+            end 
+    
+            idx_Ci = event_idxs(i);   
+    
+            % If there is an event at the very beginning of the trajectory
+            % OR we want the covariance growth to start at the first event
+            if i == 1 && event_idx_logical(1) || event_idxs(i) == start_idx
+%             if i == 1 && event_idx_logical(1) || traj.t_s(event_idxs(i)) == traj.t_s(event_idxs(i)+1) - 1 && traj.t_s(event_idxs(i)+1) == simparams.start_P_growth_node
+                P_i_minus(:,:,i) = P_i;
+            else
+                Q_Ci = Q_k_km1(:,:,i);
+                stmCiClast = dynCellCombine(traj.t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
+                P_i_minus(:,:,i) = stmCiClast * P_i * stmCiClast' + Q_Ci;            
             end
-
+    
+            if idx_Ci == target_idx && target_idx_counter < length(simparams.P_constrained_nodes)
+    
+                    target_idx_counter = target_idx_counter + 1;
+                    if simparams.P_constrained_nodes(target_idx_counter) == simparams.n + 1
+                        target_idx = length(traj.t);
+                    else
+                        target_idx = find(traj.t_s==simparams.P_constrained_nodes(target_idx_counter),1) - 1;
+                    end
+            end       
+    
+    
+    
             
-            % Covariance update (TCM, nominal maneuver is turned on/off with rdv_mult)       
-            P_i_plus(:,:,i) = P_i;
-
-
-        else % otherwise, it must be a nominal maneuver only
-            % Add maneuver execution error 
-            P_i = P_i_minus(:,:,i) + G*R_dv*G';
-            P_i_plus(:,:,i) = P_i;
-
-
+            
+    
+            % Is it a nominal maneuver (0), TCM (1), both simultaneously (2), or a corrected nominal maneuver (3)?
+    
+            if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
+    
+                stmNC = dynCellCombine(traj.t, traj.t_s, idx_Ci, target_idx, simparams, traj.stm_t_i);
+    
+                % Perform the TCM update matrix calculations     
+                T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
+                N = [zeros(3,6); T];
+                IN = eye(6) + N;
+    
+                if event_indicator(i) == 3 % Corrected nominal maneuver
+                    % Corrected nominal applies the nominal maneuver execution error
+                    P_tcm = T * P_i_minus(:,:,i) * T'; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
+                    P_i = IN * P_i_minus(:,:,i) * IN' + G*R_dv*G';
+    
+                    % Get i_dv
+                    deltaV = deltaVs_nom(:, maneuver_segments == traj.t_s(event_idxs(i)) + 1 );
+    
+                    i_dv = deltaV / vecnorm(deltaV);
+                    tcm_dv(end+1) = sqrt(i_dv' * P_tcm * i_dv);
+                elseif event_indicator(i) == 1 % TCM by itself
+                    P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
+                    P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G';
+                    tcm_dv(end+1) = sqrt(trace(P_tcm));
+                elseif event_indicator(i) == 2 % Concurrent nominal maneuver and TCM performed separately
+                    P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
+                    P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G';
+                    tcm_dv(end+1) = sqrt(trace(P_tcm));
+                else
+                    assert(0,'Something happened that we did not plan for!');
+                end
+    
+                
+                % Covariance update (TCM, nominal maneuver is turned on/off with rdv_mult)       
+                P_i_plus(:,:,i) = P_i;
+    
+    
+            else % otherwise, it must be a nominal maneuver only
+                % Add maneuver execution error 
+                P_i = P_i_minus(:,:,i) + G*R_dv*G';
+                P_i_plus(:,:,i) = P_i;
+    
+    
+%             end
         end
 
     

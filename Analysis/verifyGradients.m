@@ -1,13 +1,13 @@
-% x = simparams.x0;
-x = x_opt(:);
+x = simparams.x0;
+% x = x_opt(:);
 
 % % % 
 
 
 if 1
 
-    dx = sqrt(eps);
-%     dx = 1e-10;
+%     dx = sqrt(eps);
+    dx = 1e-10;
     testGradJ = zeros(length(x(:)),1);
 
     [obj_x, ~] = obj_min_tcm(x,simparams);

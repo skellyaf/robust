@@ -116,7 +116,7 @@ else % Otherwise, if there are events, do:
 
 
 
-        if i == 1 && event_idx_logical(1)
+        if i == 1 && event_idx_logical(1)  || traj.t_s(event_idxs(i)) == traj.t_s(event_idxs(i)+1) - 1 && traj.t_s(event_idxs(i)+1) == simparams.start_P_growth_node
             P_i_minus(:,:,i) = P_i;
         else
             stmCiClast = dynCellCombine(t, t_s, idx_Clast, idx_Ci, simparams, stm_t_i);

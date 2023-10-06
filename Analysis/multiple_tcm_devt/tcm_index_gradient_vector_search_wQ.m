@@ -45,7 +45,7 @@ while improving
 
     gradient_vector = zeros(1,length(TCMr_idx_best));
     TCMr_idx_test_save = zeros(length(TCMr_time_best)-1 + 1); % One more than the loop below to add the gradient method to the last element
-    minDV_save = ones(1,length(TCMr_time_best)-1 + 1) * 1e8;
+    minDV_save = ones(1,length(TCMr_time_best)-1 + 1) * 1e15;
 
 
     for i = 1:length(TCMr_time_best)
@@ -126,8 +126,8 @@ while improving
             end
 
             if TCMr_idx_test(i)+1 < compare
-                % is the TCM being moved on top of another maneuver?
-                if isempty(find(TCMr_idx_test(i)+1 == maneuver_idxs))
+                % is the TCM being moved on top of another maneuver or past the end of the trajectory?
+                if isempty(find(TCMr_idx_test(i)+1 == maneuver_idxs)) && TCMr_idx_test(i) + 1 < length(traj.t)
                     % Modifying forward one index
                     TCMr_idx_test(i) = TCMr_idx_test(i)+1;
                     TCMr_time_test(i) = traj.t(TCMr_idx_test(i));

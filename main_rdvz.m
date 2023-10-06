@@ -33,10 +33,10 @@ format longg;
 addpath(genpath('./'));
 
 % savename = ['first_test_wQ_nrho_3dv_1kmPrConstraint_highQ'];
-savename = ['rdvz_nrho_2dv_shortDuration_5minLead_robust_Qem8_4TcmMax_100mPmaxr_5seg'];
-scenario = 'NRHO rendezvous';
+savename = ['rdvz_nrho_2dv_NRIloc_100kmx0sep_testingIdeas'];
+scenario = 'NRHO rendezvous_testingIdeas';
 saveOutput = true; % bool for saving the output or not, true or false
-saveVideo = false;
+saveVideo = true;
 
 
 %% Create simulation parameters structure by running initialization script
@@ -97,7 +97,7 @@ run(init_fn);
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
 
-
+% load('nrho_rdvz_det_opt_12hrlead.mat');
 % load('nrho_rdvz_gt1orbit.mat');
 % 
 % simparams.x0 = x_opt(:);
@@ -146,7 +146,7 @@ axis equal;
 
 %% Finite difference testing / gradient comparison
 
-verifyGradients;
+% verifyGradients;
 % test_tcm_time_gradient;
 
 %% TCM analysis development along initial guess trajectory
@@ -308,38 +308,13 @@ iterhist.CurrentAxes.Title.Visible="off";
 savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 %% Save to results summary file
-x_opt = reshape(x_opt,simparams.m,simparams.n);
 
 if 1
-    % Use the writetable function
-    data_out = table;
-    data_out.savename = savename;
-    data_out.Scenario = scenario;
-    data_out.dir = outputPath;
-    data_out.Robust = simparams.perform_correction;
-    data_out.TotalDV_mps = totalcostmps;
-    data_out.Nominal_DV_mps = deltaVmps;
-    data_out.TCM_cost_mps = tcmtotalmps;
-    data_out.Number_of_segments = simparams.n;
-    data_out.Initial_position_dispersion_per_axis_km = simparams.sig_pos * ndDist2km;
-    data_out.Initial_velocity_dispersion_per_axis_mps = simparams.sig_vel * ndDist2km / ndTime2sec * 1000;
-    data_out.Max_target_position_dispersion_rss = simparams.P_max_r * ndDist2km;
-    data_out.TCM_execution_error_mps = simparams.sig_tcm_error * ndDist2km / ndTime2sec * 1000;
-    data_out.Nominal_DV_execution_error_mps = simparams.sig_dv_error * ndDist2km / ndTime2sec * 1000;
-    data_out.Q_per_axis_m2_s3 = simparams.Qt(1,1) / ndTime2sec^3 * ndDist2m^2;
-    data_out.Correcting_nominal_maneuvers = simparams.correct_nominal_dvs;
-    data_out.Dynamical_system = simparams.dynSys;
-    writetable(data_out,'./sims/robust_results_summary.xlsx','WriteMode','append','WriteRowNames',false);
-    % writetable(data_out,'./sims/robust_results_summary.xlsx','WriteMode','append');
+    save_to_excel;
+    save_to_excel_nrho_rdvz;
     
-    data_out.NRHO_period_days = simparams.T0 * ndTime2days;
-    data_out.Chaser_initial_state_days_past_perilune = time_past_perilune_chaser0 * ndTime2days;
-    data_out.Target_initial_state_hours_past_chaser = time_past_chaser_target0 * ndTime2hrs;
-    data_out.Total_trajectory_duration_days = simparams.tf * ndTime2days;
-    data_out.Time_between_deltaVs_days = sum(x_opt(7,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1)) * ndTime2days;
-    data_out.Initial_guess_final_coast_days = extra_target_coast * ndTime2days;
-    writetable(data_out,'./sims/robust_results_nrho_rdvz_summary.xlsx','WriteMode','append','WriteRowNames',false);
-    % writetable(data_out,'./sims/robust_results_nrho_rdvz_summary.xlsx','WriteMode','append');
+    
+
 end
 
 %% debug

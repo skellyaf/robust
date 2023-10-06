@@ -36,7 +36,8 @@ TCMr_time_best = traj.t(TCMr_idx_best)';
 % [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
 
 mod_logical = logical(zeros(1,length(TCMr_idx_best)));
-mod_logical(1:end-1) = true;
+mod_logical(1:end) = true; % Does modify the final TCM index
+% mod_logical(1:end-1) = true; % Does not modify the final TCM index
 
 lengthMod = sum(mod_logical);
 
@@ -55,9 +56,18 @@ while improving
 %     TCMr_idx_test(mod_logical) = TCMr_idx_best(mod_logical) + r1;
 
     % Method 2 - mod only 2 elements at a time, selected randomly
-    r1 = randi([0 1], 1, 2);
-    r1(r1==0) = -1;
+    %%%% edit - to modify by either 1 or 2
+%     r1 = randi([0 1], 1, 2);
+%     r1(r1==0) = -1;
+
+
     elements_to_mod = randperm(lengthMod,2)+startIdx-1;
+
+
+
+    select_from = setdiff(-2:2,0);
+    r1 = select_from(randi(length(select_from),2,1));
+
     mod_logical = logical(zeros(1,length(TCMr_idx_best)));
     mod_logical(elements_to_mod) = true;
 
@@ -85,25 +95,32 @@ while improving
         end
     end
 
+    % Check / remove any indices that are less than 1
     lt1_idx = TCMr_idx_test<1;
 
     TCMr_idx_test(lt1_idx) = 1:sum(lt1_idx);
     TCMr_idx_test = sort(TCMr_idx_test);
 
+    % Check / remove any indices that are more than the traj length
+    gtL_idx = TCMr_idx_test >= length(traj.t);
+    TCMr_idx_test(gtL_idx) = length(traj.t)-1;
+
+
 
     TCMr_time_test = traj.t(TCMr_idx_test)';
 
+    % Check for duplicates
     if length(TCMr_time_test) ~= length(unique(TCMr_time_test))
         ppp=1;
 %         x
 %         TCMr_time_test
         notImprovedCount = notImprovedCount + 1;
     else
-
-        [~, testDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, simparams); 
+        
+        [Pf, testDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, simparams);
         fevals = fevals + 1;
         
-        if testDV <= minDV
+        if testDV <= minDV && sqrt(trace(Pf(1:3,1:3))) <= simparams.P_max_r
             TCMr_time_best = TCMr_time_test;
             TCMr_idx_best = TCMr_idx_test;
             minDV = testDV;
@@ -122,7 +139,7 @@ while improving
 %         ppp=1;
 %     end
     
-    if notImprovedCount > 2*lengthMod^3
+    if notImprovedCount > 4*lengthMod^3
 
         improving = 0;
     end

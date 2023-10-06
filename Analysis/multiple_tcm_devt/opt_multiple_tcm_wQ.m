@@ -28,8 +28,10 @@ vel_disp_flag = 0;
 
 for i = 1:length(simparams.P_constrained_nodes)
     
-    if i == 1
+    if i == 1 && simparams.start_P_growth_node == 1
+
         start_idx = 1;
+
         target_node = simparams.P_constrained_nodes(i);
         target_time = sum(x(7,1:target_node - 1));
         target_idx = find(target_time == traj.t);
@@ -60,8 +62,14 @@ for i = 1:length(simparams.P_constrained_nodes)
         
     else
 
-        start_idx = target_idx;
-        start_node = target_node;
+        if i == 1
+            start_time = sum(x(7,1:simparams.start_P_growth_node-1));
+            start_idx = find(traj.t == start_time);
+            start_node = simparams.start_P_growth_node;
+        else
+            start_idx = target_idx;
+            start_node = target_node;
+        end
 
         target_node = simparams.P_constrained_nodes(i);
         target_time = sum(x(7,1:target_node - 1));
@@ -165,7 +173,7 @@ for i = 1:length(simparams.P_constrained_nodes)
 end
 
 
-% Recalcluate with more accurate function (shorter STM segment portions vs
+% Recalculate with more accurate function (shorter STM segment portions vs
 % reaching back to the beginning of the trajectory like
 % calc_covariance_tcmdv does above)
 

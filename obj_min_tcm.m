@@ -25,10 +25,11 @@ end
 
 if ~outputGradients
     % Propagate entire trajectory state and STM history; save dynamics at each time step
-    [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x, simparams);
+%     [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x, simparams);
+    traj = createStateStmQHistory(x, simparams);
 
     % Using saved dynamics, calculate total impulsive delta V
-    [deltaV, deltaVs_nom, deltaV_gradient] = calcDeltaV(x, x_i_f, stm_i, simparams);
+    [deltaV, deltaVs_nom, deltaV_gradient] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
 
     % Using saved dynamics, calculate the 3 sigma TCM pair
 
@@ -37,8 +38,9 @@ if ~outputGradients
 %         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
         % Function to find the optimal number of TCMs and times to perform
         % them along the nominal trajectory
-        [~,~,min_tcm_dv] = opt_multiple_tcm(x, t, t_s, stm_t, simparams);
-        tcm_3sigma = 3*min_tcm_dv;
+        [~, ~, min_tcm_dv] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
+%         [~,~,min_tcm_dv] = opt_multiple_tcm(x, t, t_s, stm_t, simparams);
+        tcm_3sigma = simparams.tcm_rss_factor * min_tcm_dv;
     else
         tcm_3sigma = 0;
     end
@@ -91,14 +93,14 @@ else
             % Optimize the number and location of TCMs with process noise
             [tcm_time, tcm_idx, min_tcm_dv, P_i_minus] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
             % Calculate the process noise and process noise sensitivity tensors
-            [~, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
+            [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
             tcm_gradient = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
         end
 
         % Multiply the TCM RSS by 3
-        tcm_3sigma = 3*min_tcm_dv;
+        tcm_3sigma = simparams.tcm_rss_factor * min_tcm_dv;
         
-        tcm_gradient = 3*tcm_gradient;
+        tcm_gradient = simparams.tcm_rss_factor * tcm_gradient;
     else
         tcm_3sigma = 0;
         tcm_gradient = 0 * x(:);
@@ -116,16 +118,16 @@ end
 %% 
 
 % Objective function sum
-% J = deltaV + tcm_3sigma;
+J = deltaV + tcm_3sigma;
 % J = deltaV;
 
-J = tcm_3sigma; %%%% DEBUGGING
+% J = tcm_3sigma; %%%% DEBUGGING
 
 % Gradient sum
 if outputGradients
-%     J_gradient = deltaV_gradient' + tcm_gradient;
+    J_gradient = deltaV_gradient' + tcm_gradient;
 %     J_gradient = deltaV_gradient';
-    J_gradient = tcm_gradient; %%%% DEBUGGING
+%     J_gradient = tcm_gradient; %%%% DEBUGGING
 end
 
 

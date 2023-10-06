@@ -1,4 +1,4 @@
-function [traj] = createStateStmSttQdQHistory(x, simparams)
+function [traj] = createStateStmQHistory(x, simparams)
 %createStateStmHistory Returns the history of the state, STM, and STT via
 %numerical integration of dynamics
 
@@ -41,13 +41,13 @@ x = reshape(x,m,n);
 
 % Preallocate
 stm_i = zeros(6,6,n);
-stt_i = zeros(6,6,6,n);
+% stt_i = zeros(6,6,6,n);
 Q_i = zeros(6,6,n);
-dQ_i = zeros(6,6,6,n);
+% dQ_i = zeros(6,6,6,n);
 stm_t_i = cell(1,n);
-stt_t_i = cell(1,n);
+% stt_t_i = cell(1,n);
 Q_t_i = cell(1,n);
-dQ_t_i = cell(1,n);
+% dQ_t_i = cell(1,n);
 
 
 
@@ -97,7 +97,7 @@ for i = 1:n
         % individual segment
 %         [x_i_final, stm_i(:,:,i), stt_i(:,:,:,i), xstmstt_t_i, t_i] = stateStmSttProp(x_i_initial, delta_t, simparams, eye(6), zeros(6,6,6));
         extra_dt_times = linspace(delta_t/simparams.num_time_idxs_add_per_seg, delta_t-delta_t/simparams.num_time_idxs_add_per_seg, simparams.num_time_idxs_add_per_seg);
-        [x_i_final, stm_i(:,:,i), stt_i(:,:,:,i), Q_i(:,:,i), dQ_i(:,:,:,i), xstmstt_t_i, t_i] = statestmsttQQ2Prop(x_i_initial, [extra_dt_times, delta_t], simparams);
+        [x_i_final, stm_i(:,:,i), Q_i(:,:,i), xstmstt_t_i, t_i] = statestmQProp(x_i_initial, [extra_dt_times, delta_t], simparams);
 
         x_i_f(:,i) = x_i_final;
 
@@ -108,7 +108,7 @@ for i = 1:n
             % time index
             stm_t = reshape( xstmstt_t_i(:,7:42)',6,6,[] );
             % STT history - cell structure - from the beginning of each segment to each time
-            stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
+%             stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
             % Mirroring the above with a STM history cell structure
             stm_t_i{i} = stm_t;
             % Time history
@@ -119,8 +119,8 @@ for i = 1:n
 
             % Process noise 
             
-            Q_t_i{i} = reshape( xstmstt_t_i(:,259:294)',6,6,[] );
-            dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
+            Q_t_i{i} = reshape( xstmstt_t_i(:,43:78)',6,6,[] );
+%             dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
 
             Q_t = Q_t_i{i};
 
@@ -145,15 +145,15 @@ for i = 1:n
             % single segment STT history only (not from the beginning of
             % entire trajectory)
 %             stt_t_i{i} = reshape( xstmstt_t_i(2:end,43:258)',6,6,6,[] );
-            stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
+%             stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
 
 
 
 
 
             % Process noise 
-            Q_t_i{i} = reshape( xstmstt_t_i(:,259:294)',6,6,[] );
-            dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
+            Q_t_i{i} = reshape( xstmstt_t_i(:,43:78)',6,6,[] );
+%             dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
 
 
 %             Q_t = [Q_t; tmult(    stm_i(:,:,i-1), tmult( Q_t_i{i}(:,:,2:end), stm_i(:,:,i-1), [0 1] )    ) ];
@@ -197,14 +197,14 @@ for i = 1:n
         x_i_final = x_i_initial;
         x_i_f(:,i) = x_i_final;
         stm_i(:,:,i) = eye(6);
-        stt_i(:,:,:,i) = zeros(6,6,6);
-        stt_t_i{i} = zeros(6,6,6);
+%         stt_i(:,:,:,i) = zeros(6,6,6);
+%         stt_t_i{i} = zeros(6,6,6);
         stm_t_i{i} = eye(6);
 
         Q_i(:,:,i) = zeros(6,6);
-        dQ_i(:,:,:,i) = zeros(6,6,6);
+%         dQ_i(:,:,:,i) = zeros(6,6,6);
         Q_t_i{i} = zeros(6,6);
-        dQ_t_i{i} = zeros(6,6,6);
+%         dQ_t_i{i} = zeros(6,6,6);
 
         if i == 1
             
@@ -232,10 +232,10 @@ end
 % Put together in a traj data structure
 % stm_i, stt_i, x_i_f, x_t, stm_t, stt_t_i, t, t_s, stm_t_i
 traj.stm_i = stm_i;
-traj.stt_i = stt_i;
+% traj.stt_i = stt_i;
 traj.x_i_f = x_i_f;
 traj.stm_t = stm_t;
-traj.stt_t_i = stt_t_i;
+% traj.stt_t_i = stt_t_i;
 traj.t = t;
 traj.t_s = t_s;
 traj.stm_t_i = stm_t_i;
@@ -243,8 +243,8 @@ traj.x_t = x_t;
 % NEW PROCESS NOISE STUFF
 traj.Q_i = Q_i;
 traj.Q_t_i = Q_t_i;
-traj.dQ_i = dQ_i;
-traj.dQ_t_i = dQ_t_i;
+% traj.dQ_i = dQ_i;
+% traj.dQ_t_i = dQ_t_i;
 traj.Q_t = Q_t;
 
 

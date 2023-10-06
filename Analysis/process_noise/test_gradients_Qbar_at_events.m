@@ -7,8 +7,8 @@ close all;
 clc;
 format longg;
 addpath(genpath('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust'));
-addpath(genpath('../'));
-addpath('C:\Users\skell\OneDrive - USU\Documents\PhD\research\directional state transition tensors');
+% addpath(genpath('../'));
+% addpath('C:\Users\skell\OneDrive - USU\Documents\PhD\research\directional state transition tensors');
 
 savename = ['testing_dv_stats_nri'];
 saveOutput = true; % bool for saving the output or not, true or false
@@ -18,7 +18,9 @@ saveVideo = false;
 %% Create simulation parameters structure by running initialization script
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
-init_fn = 'init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+% init_fn = 'init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
+
 run(init_fn);
 
 %% ONLY If using a previous reference trajectory as the initial guess:
@@ -26,9 +28,10 @@ run(init_fn);
 % load('.\init_traj_files\initial_guesses\polar_llo_to_nrho_apolune.mat')
 
 % load('eed_leo_planar_13day.mat');
-load('nri_det_opt.mat');
+% load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
+load('nrho_apolune_rdvz.mat');
 simparams.x0 = x_opt;
 
 
@@ -41,9 +44,12 @@ simparams.x0 = x_opt;
 % [~, x_i_f0, x_t0, stm_t0, t0, t_s0] = createStateStmHistory(simparams.x0, simparams);
 % [stm_i0, stt_i0, x_i_f0, x_t0, stm_t0, stt_t_i, t0, t_s0, stm_t_i0]  = createStateStmSttHistory(simparams.x0, simparams);
 [traj]  = createStateStmSttQdQHistory(simparams.x0, simparams);
+[deltaV, deltaVs_nom] = calcDeltaV(simparams.x0, traj.x_i_f, traj.stm_i, simparams);
 
-tcm_idx = [100, 1000, 2000, 5500, 6000];
-tcm_time = traj.t(tcm_idx)';
+% tcm_idx = [100, 1000, 2000, 5500, 6000];
+% tcm_time = traj.t(tcm_idx)';
+[tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(simparams.x0, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+
 
 
 Q_k_minus = calc_Q_events(traj, simparams.x0, tcm_time, simparams);
@@ -53,9 +59,9 @@ Q_k_minus = calc_Q_events(traj, simparams.x0, tcm_time, simparams);
 % [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0,x_i_f0,simparams);
 % [tcm_min, tcm_time, tcm_r, tcm_v, ~, ~, ~, ~, tcm_total_t] = tcmPair_rv(x_opt, t, stm_t, deltaVs_nom, simparams);
 
-tic
+
 % [tcm_time0, tcm_idx0, min_tcm_dv0, P_i_minus, P_i_plus, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-toc
+
 
 
 
@@ -79,7 +85,7 @@ event_idxs = find(event_idx_logical);
 
 [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
 
-[deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, simparams);
+[deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
 
 
 
@@ -121,8 +127,8 @@ dtcm_8_fd = zeros(length(x(:)),1);
 
 dtcm_total_fd = zeros(length(x(:)),1);
 
-% parfor i = 1:simparams.m*simparams.n
-for i = 1:simparams.m*simparams.n
+parfor i = 1:simparams.m*simparams.n
+% for i = 1:simparams.m*simparams.n
     i
     x1dx = x(:);
     x1dx(i) = x(i) + dx;
@@ -134,7 +140,7 @@ for i = 1:simparams.m*simparams.n
 
     Q_k_minus1dx = calc_Q_events(traj1dx, x1dx, tcm_time, simparams);
 
-    [deltaV1dx, deltaVs_nom1dx] = calcDeltaV(x1dx, traj1dx.x_i_f, simparams);
+    [deltaV1dx, deltaVs_nom1dx] = calcDeltaV(x1dx, traj1dx.x_i_f, traj1dx.stm_i, simparams);
 
 
     [P1dx, tcm_dv_total1dx, tcm_dv1dx, P_i_minus1dx, P_i_plus1dx] = calc_covariance_wQ_tcmdv_v3(x1dx, traj1dx, tcm_time, 1, deltaVs_nom1dx, simparams.P_initial, Q_k_minus1dx, simparams);
@@ -148,7 +154,7 @@ for i = 1:simparams.m*simparams.n
     dQ_5_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,5) - Q_k_minus(:,:,5)) ./ dx;
     dQ_6_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,6) - Q_k_minus(:,:,6)) ./ dx;
     dQ_7_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,7) - Q_k_minus(:,:,7)) ./ dx;
-    dQ_8_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,8) - Q_k_minus(:,:,8)) ./ dx;
+%     dQ_8_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,8) - Q_k_minus(:,:,8)) ./ dx;
 
 
     % Calculations
@@ -159,10 +165,20 @@ for i = 1:simparams.m*simparams.n
     dtcm_4_fd(i) = (tcm_dv1dx(4) - tcm_dv(4)) ./ dx;
     dtcm_5_fd(i) = (tcm_dv1dx(5) - tcm_dv(5)) ./ dx;
     dtcm_6_fd(i) = (tcm_dv1dx(6) - tcm_dv(6)) ./ dx;
-    dtcm_7_fd(i) = (tcm_dv1dx(7) - tcm_dv(7)) ./ dx;
-    dtcm_8_fd(i) = (tcm_dv1dx(8) - tcm_dv(8)) ./ dx;
+%     dtcm_7_fd(i) = (tcm_dv1dx(7) - tcm_dv(7)) ./ dx;
+%     dtcm_8_fd(i) = (tcm_dv1dx(8) - tcm_dv(8)) ./ dx;
 
     dtcm_total_fd(i) = (tcm_dv_total1dx - tcm_dv_total) ./ dx;
+
+
+    % Testing covariance matrices
+    P1_fd(:,:,i) = (P_i_minus1dx(:,:,1) - P_i_minus(:,:,1)) ./ dx;
+    P2_fd(:,:,i) = (P_i_minus1dx(:,:,2) - P_i_minus(:,:,2)) ./ dx;
+    P3_fd(:,:,i) = (P_i_minus1dx(:,:,3) - P_i_minus(:,:,3)) ./ dx;
+    P4_fd(:,:,i) = (P_i_minus1dx(:,:,4) - P_i_minus(:,:,4)) ./ dx;
+    P5_fd(:,:,i) = (P_i_minus1dx(:,:,5) - P_i_minus(:,:,5)) ./ dx;
+    P6_fd(:,:,i) = (P_i_minus1dx(:,:,6) - P_i_minus(:,:,6)) ./ dx;
+    P7_fd(:,:,i) = (P_i_minus1dx(:,:,7) - P_i_minus(:,:,7)) ./ dx;
 
 
     
@@ -195,11 +211,20 @@ end
 % save('Qbar_gradients.mat')
 % save('tcm_wQ_gradients.mat')
 
+
+%% covariance matrices
+P2_fd(:,:,1:6)
+P2_fd(:,:,8:13)
+P1_fd(:,:,1:6)
+P1_fd(:,:,7)
+
+P2_fd(:,:,7)
+
 %% Gradient comparison
 
 t_idx = 7:7:simparams.m*simparams.n;
 
-[tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj.x_t, traj.x_i_f, traj.stm_i, traj.stt_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, deltaVs_nom, simparams);
+[tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
 [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj.x_t, traj.x_i_f, traj.stm_i, traj.stt_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, zeros(6,6,6,8,simparams.m*simparams.n), deltaVs_nom, simparams);
 
 
@@ -240,9 +265,9 @@ dQ_k_km1_ddti(:,:,8,:) % 21-24 is populated
 [dtcm_2_fd, tcm_gradient_r(:,2)]
 [dtcm_3_fd, tcm_gradient_r(:,3)]
 [dtcm_4_fd, tcm_gradient_r(:,4)]
-[dtcm_8_fd, tcm_gradient_v(:,1)]
+[dtcm_6_fd, tcm_gradient_v(:,1)]
 
-[dtcm_total_fd', tcm_gradient]
+[dtcm_total_fd, tcm_gradient]
 
 
 

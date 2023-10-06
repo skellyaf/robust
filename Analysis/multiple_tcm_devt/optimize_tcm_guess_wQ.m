@@ -83,7 +83,7 @@ while improving
         
        
 
-        % Find the minimum
+        % Find the minimum...plot command: plot(traj.t(~isnan(plusOneTCMr_totalDV_t)), plusOneTCMr_totalDV_t(~isnan(plusOneTCMr_totalDV_t)))
         [minDV, minIdx] = min(plusOneTCMr_totalDV_t);
         % Add the corresponding minimum time to a test vector
         tcm_time_test = sort([tcm_time, traj.t(minIdx)]);

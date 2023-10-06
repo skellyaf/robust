@@ -41,7 +41,8 @@ tcm_gradient_v = zeros(n*m, 1);
 % node where both occur (2).
 
 [event_times, event_indicator] = define_events_v2(x(:), t, tcm_time, simparams);
-
+event_idx_logical = logical(sum(traj.t'==event_times', 1));    
+event_idxs = find(event_idx_logical);
 
 % Find the first TCM target time
 target_time = sum(x(7,1:simparams.P_constrained_nodes(1)-1));
@@ -138,10 +139,17 @@ for k = 1:num_events - 1
 
     % If the first iteration, the "last" TCM occured at t=0
     if k == 1
-        tClast = 0;
-        tClast_idx = 1;
-        tlast = 0;
-        tlast_idx = 1;
+        if simparams.start_P_growth_node > 1
+            tClast = sum(x(7,1:simparams.start_P_growth_node-1));
+            tClast_idx = find(t == tClast);
+            
+        else
+        
+            tClast = 0;
+            tClast_idx = 1;
+%             tlast = 0;
+%             tlast_idx = 1;
+        end
     end
     
     % Extract STMs for calculations    
@@ -201,6 +209,17 @@ for k = 1:num_events - 1
         % Assemble dPCkminusdxi
         if k == 1 %%%% if the first correction
             % Propagate dP to first event from P_initial
+% % % %             If P covariance growth doesn't start until the first nominal maneuver, don't grow dP 
+% % % %             if traj.t_s(event_idxs(k)) == traj.t_s(event_idxs(k)+1) - 1 && traj.t_s(event_idxs(k)+1) == simparams.start_P_growth_node
+% % % %                 Do nothing in this case, should be zeros
+% % % %                 p=1;
+% % % %                 dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(6,6,6), zeros(6,6)) + dQ_k_km1_dxi(:,:,:,k,i);
+% % % %                 dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6)) + dQ_k_km1_ddti(:,:,k,i);
+% % % %             else
+% % % %                 dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(6,6,6), zeros(6,6)) + dQ_k_km1_dxi(:,:,:,k,i);
+% % % %                 dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6)) + dQ_k_km1_ddti(:,:,k,i);
+% % % %             end
+
             dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(6,6,6), zeros(6,6)) + dQ_k_km1_dxi(:,:,:,k,i);
             dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6)) + dQ_k_km1_ddti(:,:,k,i);
         else

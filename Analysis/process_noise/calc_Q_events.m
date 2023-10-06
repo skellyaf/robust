@@ -21,10 +21,13 @@ if nargout > 1
 end
 
 
-
-
-idx_km1 = 1;
-t_km1 = 0;
+if simparams.start_P_growth_node > 1
+    t_km1 = sum(x(7,1:simparams.start_P_growth_node-1));
+    idx_km1 = find(traj.t == t_km1);
+elseif simparams.start_P_growth_node == 1
+    idx_km1 = 1;
+    t_km1 = 0;
+end
 
 for k = 1:length(event_indicator) 
     % If it a dispersion covariance modifying event
@@ -244,12 +247,7 @@ for k = 1:length(event_indicator)
 
 
 
-                        %%%%%%%%%%%% RETURN HERE TO VERIFY!!!!!!!!!!!!
-                        %%%%% MOST RECENT EDIT WAS THAT THIS IS ALL THE
-                        %%%%% TIME SENSITIVITY LOGIC REQUIRED. COME BACK TO
-                        %%%%% VERIFY. THE TIME SENSITIVITY STUFF IN THE
-                        %%%%% REMAINDER OF THE FOUR CASES IS COMMENTED OUT.
-                        %%%%% COME DO A FINITE DIFFERENCE RUN.
+        
                     end
                 end
 
@@ -264,6 +262,10 @@ for k = 1:length(event_indicator)
         t_km1 = event_times(k);
     end
 end
+
+
+
+
 
 
 

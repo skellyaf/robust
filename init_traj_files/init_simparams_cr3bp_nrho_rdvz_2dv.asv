@@ -14,12 +14,20 @@ Rm = moon.a;
 n = sqrt((earth.mu + moon.mu)/Rm^3);
 
 % Conversions from dim to ND
-ndTime2sec = 1/n;
-ndTime2hrs = 1/n/3600;
-ndTime2days = 1/n/3600/24;
-ndDist2km = Rm;
-ndDist2m = Rm * 1000;
-ndVel2kms = Rm * n;
+ndTime2sec = 1;
+ndTime2hrs = 1/3600;
+ndTime2days = 1/3600/24;
+ndDist2km = 1;
+ndDist2m = 1000;
+ndVel2kms = 1;
+
+% Conversions from dim to ND
+% ndTime2sec = 1/n;
+% ndTime2hrs = 1/n/3600;
+% ndTime2days = 1/n/3600/24;
+% ndDist2km = Rm;
+% ndDist2m = Rm * 1000;
+% ndVel2kms = Rm * n;
 
 % mu
 simparams.mu = moon.mu/(earth.mu + moon.mu);
@@ -39,7 +47,7 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
@@ -95,7 +103,7 @@ simparams.Qt = 1e-8 * eye(3);
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 8; % number of trajectory segments
+simparams.n = 5; % number of trajectory segments
 % simparams.n = 10; % number of trajectory segments
 
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
@@ -105,7 +113,7 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 % simparams.maneuverSegments = [2, simparams.n+1]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
-simparams.max_num_TCMs = 5; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 3; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
 simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a correction occurs (currently the first nominal maneuver); set to 0 to not tie to a nominal maneuver
@@ -133,6 +141,11 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 
 simparams.rdvz_flag = 0; % flag to identify a flexible final state for the rendezvous problem setup 
 
+% simparams.start_P_growth_node = simparams.maneuverSegments(1); % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+
+simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
+
 %% Orbit parameters
 
 
@@ -158,6 +171,8 @@ designMap = [1, 0, 1, 0, 1, 0];
 % Y position, x velocity, and z velocity all zero at subsequent x-z plane crossing
 constraintMap = [0, 1, 0, 1, 0, 1];
 
+x0_nrho(1:3) = x0_nrho(1:3) * 
+
 [~, x0_nrho] = singleDifferentialCorrection(x0_nrho, designMap, constraintMap, T_nrho/2, 0, simparams);
 
 
@@ -166,18 +181,30 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 
 
 %% Propagate the NRHO to get chaser and target initial states
-% time_past_perilune_chaser0 = .25 / ndTime2days;
-time_past_perilune_chaser0 = 2.25 / ndTime2days;
+% time_past_perilune_chaser0 = .15 / ndTime2days;
+% time_past_perilune_chaser0 = 2.25 / ndTime2days;
 % time_past_perilune_chaser0 = .5 / ndTime2days;
-% time_past_perilune_chaser0 = 1.5 / ndTime2days;
-% time_past_chaser_target0 = 1 / ndTime2hrs; 
+time_past_perilune_chaser0 = 1 / ndTime2days;
+% time_past_chaser_target0 = 1.5 / ndTime2hrs; 
+% time_past_chaser_target0 = 12 / ndTime2hrs; 
 time_past_chaser_target0 = 1 * 5/60 / ndTime2hrs; 
 
 [x0_chaser] = stateProp(x0_nrho, time_past_perilune_chaser0, simparams);
 [x0_target] = stateProp(x0_chaser, time_past_chaser_target0, simparams);
 
+% Extra segment 1 coast
+chaser_coast_before_dv1 = .25 / ndTime2days;
+[x_chaser_before_dv1] = stateProp(x0_chaser, chaser_coast_before_dv1, simparams);
+
 simparams.x0_target = x0_target;
 simparams.T_target = T_nrho;
+
+% Extra coast in the target orbit duration
+extra_target_coast = 1.15 / ndTime2days;
+% extra_target_coast = .1 / ndTime2days;
+% extra_target_coast = .25 / ndTime2days;
+% extra_target_coast = .21 / ndTime2days;
+% extra_target_coast = 2.1 / ndTime2days;
 
 % Adding these, but they seem superfluous
 simparams.x_init = x0_chaser;
@@ -187,9 +214,11 @@ simparams.T0 = T_nrho;
 
 % Initial transfer duration
 % total_transfer_duration = .7475 / ndTime2days;
-total_transfer_duration = 1.84 / ndTime2days;
-% total_transfer_duration = 1.8 / ndTime2days;
-% total_transfer_duration = 5.6 / ndTime2days;
+
+% total_transfer_duration = 1.84 / ndTime2days;
+total_transfer_duration = 5.4 / ndTime2days;
+
+% total_transfer_duration = 6.2 / ndTime2days;
 % total_transfer_duration = 5.3 / ndTime2days;
 % total_transfer_duration = 4 / ndTime2days;
 simparams.tf = total_transfer_duration;
@@ -199,21 +228,20 @@ simparams.tf = total_transfer_duration;
 % total_transfer_duration = 4 / ndTime2days;
 
 
-% Propagate target by total_transfer_duration
-simparams.x_target = stateProp(x0_target, total_transfer_duration, simparams);
+% Propagate target by total_transfer_duration minus the extra coast
+x_rdvz = stateProp(x0_target, total_transfer_duration - extra_target_coast, simparams);
+simparams.x_target = stateProp(x_rdvz, extra_target_coast, simparams);
 
-% Propagate chaser by total_transfer_duration
-[xf_chaser, x_nrho_t, t_nrho] = stateProp(x0_chaser, total_transfer_duration, simparams);
+% Propagate chaser by total_transfer_duration minus the coasts on either
+% end
+time_between_dvs = total_transfer_duration - chaser_coast_before_dv1 - extra_target_coast;
+
+% [xf_chaser, x_nrho_t, t_nrho] = stateProp(x_chaser_before_dv1, time_between_dvs, simparams);
 
 
 
 
-% Extra coast in the target orbit duration
-% extra_target_coast = .5 / ndTime2days;
-% extra_target_coast = .1 / ndTime2days;
-extra_target_coast = .25 / ndTime2days;
-extra_target_coast = .25 / ndTime2days;
-% extra_target_coast = 2.1 / ndTime2days;
+
 
 
 
@@ -230,14 +258,16 @@ constraintEl = logical([1 1 1 0 0 0]);
 
 
 
-X_curr = x0_chaser;
-T = total_transfer_duration;
+X_curr = x_chaser_before_dv1;
+T = time_between_dvs;
+
+x_corr_target = x_rdvz;
 
 tDesignFlag = 0;
 correction = 1;
 while correction
 
-    [x_final, stm, xstm_t] = stateStmProp(X_curr, total_transfer_duration, simparams);
+    [x_final, stm, xstm_t] = stateStmProp(X_curr, T, simparams);
 
 
 
@@ -270,7 +300,8 @@ while correction
     end    
     
     % Constraint vector - the elements being minimized 
-    fX_constraint = x_final(constraintEl) - simparams.x_target(constraintEl);
+%     fX_constraint = x_final(constraintEl) - simparams.x_target(constraintEl);
+    fX_constraint = x_final(constraintEl) - x_corr_target(constraintEl);
 
     
     % DF matrix - portions of the STM
@@ -321,7 +352,7 @@ end
 
 
 
-[xf_chaser_dv1, x_chaser_postdv1, t_chaser_postdv1] = stateProp(X_return, total_transfer_duration, simparams);
+[xf_chaser_dv1, x_chaser_postdv1, t_chaser_postdv1] = stateProp(X_return, T, simparams);
 
 
 
@@ -333,27 +364,28 @@ num_rdvz_segments = simparams.maneuverSegments(2) - simparams.maneuverSegments(1
 
 
 simparams.x0(1:6,1) = x0_chaser;
-simparams.x0(7,1) = 1e-10;
+simparams.x0(7,1) = chaser_coast_before_dv1;
 
 x_chaser_coast_postdv1 = subdivide_segment(x_chaser_postdv1, t_chaser_postdv1, num_rdvz_segments);
 simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = x_chaser_coast_postdv1;
-
+simparams.x0(1:6,end) = x_rdvz;
+simparams.x0(7,end) = extra_target_coast;
 
 % 
-if simparams.maneuverSegments(end) == simparams.n
-    % Then need to add coast to the target state
-    x_target_coast_start = simparams.x_target;
-    simparams.x_target = stateProp(x_target_coast_start, extra_target_coast, simparams);
-    simparams.tf = simparams.tf + extra_target_coast;
-
-    simparams.x0(:,end) = [x_target_coast_start; extra_target_coast];
-
-
-
-elseif simparams.maneuverSegments(end) == simparams.n + 1
-    % Then don't need a coast to the target state
-
-end
+% if simparams.maneuverSegments(end) == simparams.n
+%     % Then need to add coast to the target state
+%     x_target_coast_start = simparams.x_target;
+%     simparams.x_target = stateProp(x_target_coast_start, extra_target_coast, simparams);
+%     simparams.tf = simparams.tf + extra_target_coast;
+% 
+%     simparams.x0(:,end) = [x_target_coast_start; extra_target_coast];
+% 
+% 
+% 
+% elseif simparams.maneuverSegments(end) == simparams.n + 1
+%     % Then don't need a coast to the target state
+% 
+% end
 
 
 
@@ -371,7 +403,9 @@ end
 simparams.x0 = simparams.x0(:);
 
 %% Reset numerical propagation options
-simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
+% simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
+simparams.options = odeset('AbsTol',1e-12,'RelTol',1e-12);
+% simparams.options.MaxStep = 60 / ndTime2sec;
 
 
 %% Fmincon optimization options

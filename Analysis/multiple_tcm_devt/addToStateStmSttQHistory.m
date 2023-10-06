@@ -19,7 +19,10 @@ for i = 1:length(add_times)
         seg = t_s(idx_before_add_i);
         % Error checking - if the segment before and the segment after gap
         % a node
-        assert(seg == t_s(idx_before_add_i + 1),'Need to incoroprate some additional logic if this fails');
+%         assert(seg == t_s(idx_before_add_i + 1),'Need to incoroprate some additional logic if this fails');
+        if seg + 1 == t_s(idx_before_add_i + 1)
+            seg = seg+1;
+        end
 
         % state before
         x_before = x_t(idx_before_add_i,:)';
@@ -31,7 +34,8 @@ for i = 1:length(add_times)
 
 
         % find the corresponding stt_t_i{i} index
-        stt_idx_before = find_stt_t_i_idx(t, t_s, stt_t_i, idx_before_add_i);
+%         stt_idx_before = find_stt_t_i_idx(t, t_s, stt_t_i, idx_before_add_i);
+        stt_idx_before = find_cell_t_i_idx_2(t, t_s, idx_before_add_i, stm_t_i, seg);
         % stt before the new time increment
         stt_before = stt_t_i{seg}(:,:,:,stt_idx_before);
 

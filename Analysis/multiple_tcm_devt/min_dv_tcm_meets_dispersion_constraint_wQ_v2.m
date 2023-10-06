@@ -133,6 +133,11 @@ end
 
 % 
 % % COME BACK HERE AND SHOW DR GELLER FIGURE 3
+% range = [1, length(traj.t)];
+% 
+% stm_t = traj.stm_t;
+% t = traj.t;
+% t_s = traj.t_s;
 % 
 % %%%%%% DEBUGGING:
 % % Covariance growth without any maneuvers or modifications
@@ -147,6 +152,7 @@ end
 % 
 % for i = 1:length(t(range(1):range(2)))
 %     if i > 1
+% %         P_t_dvError(:,:,i) = calc_covariance_tcmdv(x, t(1:i), t_s(1:i), stm_t(:,:,1:i), [], vel_disp_flag, P_i, simparams);
 %         P_t_dvError(:,:,i) = calc_covariance_tcmdv(x, t(1:i), t_s(1:i), stm_t(:,:,1:i), [], vel_disp_flag, P_i, simparams);
 %     end
 %     Pmag_t_dvError(i) = sqrt(trace(P_t_dvError(1:3,1:3,i)));
@@ -188,7 +194,7 @@ end
 % plot(tcm_feasibleMin_time, minTcmDV_meets_constraint,'.','MarkerSize',25)
 % title('TCM magnitude options that meet the target position dispersion constraint')
 % 
-% 
+
 % 
 % % Adding a second TCM
 % 
