@@ -1,4 +1,4 @@
-function [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams)
+function [tcm_gradient, tcm_gradient_r, tcm_gradient_v, dPCkminusdxi, dPCkminusddti] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams)
 %calc_tcm_gradient Computes and returns the analytical tcm gradient
 
 
@@ -115,7 +115,8 @@ tcm_idx = 0;
 %% Construct gradients loop
 
 % while k < num_events
-for k = 1:num_events - 1
+% for k = 1:num_events - 1
+for k = 1:num_events
 
     if event_indicator(k) > 0
         tcm_idx = tcm_idx + 1;
@@ -190,6 +191,10 @@ for k = 1:num_events - 1
         % -----     dINdxi (includes T partial, which is already calculated)---T partial needs updating for multiple TCMs
         % -----     dstmCkCminusdxi (a complicated one, needs 5 logic options
         %               based on t0,i, tf,i, tCk, tClast)
+
+        if i == 7 && k == 5
+            debug=1;
+        end
 
         
         [dstmCkClastdxi, dstmCkClastddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tClast, i, simparams); % verified numerically
@@ -407,15 +412,17 @@ for k = 1:num_events - 1
     end
 
     % Assign new target time
+    if k+1 <= num_events
     
-    if event_times(k+1) == target_time
-        future_targets = event_times(event_times>target_time & event_indicator~=1);
-        target_time = min(future_targets);
-        target_idx = find(t==target_time);    
-
-        target_leg = target_leg + 1;
-        if target_leg <= length(simparams.P_constrained_nodes)
-            target_node = simparams.P_constrained_nodes(target_leg);
+        if event_times(k+1) == target_time
+            future_targets = event_times(event_times>target_time & event_indicator~=1);
+            target_time = min(future_targets);
+            target_idx = find(t==target_time);    
+    
+            target_leg = target_leg + 1;
+            if target_leg <= length(simparams.P_constrained_nodes)
+                target_node = simparams.P_constrained_nodes(target_leg);
+            end
         end
     end
         

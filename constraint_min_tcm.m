@@ -77,8 +77,55 @@ end
     
 %% Pre-calculate/propagate states/STMs before assembling constraints
 
-% Create the state and stm history:
-[stm_i, x_i_f, x_t, ~, t, t_s, stm_t_i] = createStateStmHistory(x(:), simparams);
+if existsAndTrue('target_Pr_constraint_on',simparams) && ~outputCGradients
+    % Create the state and stm history:
+    if sum(sum(simparams.Qt)) == 0
+        traj = createStateStmHistory(x(:), simparams);
+    else
+        traj = createStateStmQHistory(x(:), simparams);
+        [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
+
+        % Assign TCM times to their assigned nodes (ALTERNATIVE METHOD)
+        tcm_time = zeros(1, length(simparams.tcm_nodes));
+
+        for i = 1:length(simparams.tcm_nodes)                
+            tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
+        end
+        tcm_idx = find(traj.t == tcm_time)';
+
+        Q_k_km1 = calc_Q_events(traj, x, tcm_time, simparams);
+        P_target = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
+    end
+else
+    if sum(sum(simparams.Qt)) == 0
+        % No need to propagate process noise
+        traj  = createStateStmSttHistory(x, simparams);
+
+        % TODO: Need structures of zeros for : [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti]
+        
+    else
+        % Need to propagate process noise
+        traj = createStateStmSttQdQHistory(x, simparams);
+        [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
+
+        % Assign TCM times to their assigned nodes (ALTERNATIVE METHOD)
+        tcm_time = zeros(1, length(simparams.tcm_nodes));
+
+        for i = 1:length(simparams.tcm_nodes)                
+            tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
+        end
+        tcm_idx = find(traj.t == tcm_time)';
+
+        % Calculate the process noise and process noise sensitivity tensors
+        [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
+
+
+    end
+    [P_target, ~, ~, P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+    [~, ~, ~, dPCkminusdxi, dPCkminusddti] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
+
+end
 
 
 
@@ -92,7 +139,7 @@ for i = 1:n
     
     % Extract from segment vector
     x_i_initial = x(1:6,i);
-    x_i_final = x_i_f(:,i); % used for dynamics constraints        
+    x_i_final = traj.x_i_f(:,i); % used for dynamics constraints        
     delta_t = x(7,i);
     
     % Constraints on the first segment
@@ -121,7 +168,7 @@ for i = 1:n
             if outputCGradients
                 % For now, only the gradient wrt the first half of the
                 % target position constraint equation (wrt x_i_final)
-                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [stm_i(1:3,:,i), x_i_final(4:6)];
+                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [traj.stm_i(1:3,:,i), x_i_final(4:6)];
 
                 % The only relevant partial derivative for x_target is wrt
                 % segment durations (it is a fixed propagation from the
@@ -156,7 +203,7 @@ for i = 1:n
             ceq(neq+1:neq+3) = x_next(1:3) - x_i_final(1:3);
     
             if outputCGradients
-                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [-stm_i(1:3,:,i), -x_i_final(4:6)];
+                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [-traj.stm_i(1:3,:,i), -x_i_final(4:6)];
                 ceqGrad(neq+1:neq+3, i*7 + 1:(i+1)*7) = [eye(3), zeros(3,4)];
             end
     
@@ -199,7 +246,7 @@ for i = 1:n
         
 
         if outputCGradients
-            ceqGrad(neq+1:neq+6, (i-1)*7 + 1:i*7) = [-stm_i(:,:,i), -stateDot(x_i_final, mu, simparams.dynSys)];
+            ceqGrad(neq+1:neq+6, (i-1)*7 + 1:i*7) = [-traj.stm_i(:,:,i), -stateDot(x_i_final, mu, simparams.dynSys)];
             ceqGrad(neq+1:neq+6, i*7 + 1:(i+1)*7) = [eye(6), zeros(6,1)];
         end
 
@@ -213,7 +260,7 @@ for i = 1:n
         
 
         if outputCGradients
-            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [stm_i(:,:,i), stateDot(x_i_final, mu, simparams.dynSys)];
+            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [traj.stm_i(:,:,i), stateDot(x_i_final, mu, simparams.dynSys)];
         end
 
         neq = neq+6;
@@ -458,7 +505,7 @@ end
 if simparams.constrain_flyby_radius
 
     % Find the closest approach to the moon (perilune)
-    r_sc_t = x_t(:,1:3)';
+    r_sc_t = traj.x_t(:,1:3)';
     r_m = [1-mu; 0; 0];
     r_m_sc = r_sc_t - r_m;
     d_m_sc = vecnorm(r_m_sc);
@@ -475,7 +522,7 @@ if simparams.constrain_flyby_radius
     % Perilune distance inequality constraint gradient
     if outputCGradients
         % Find the segment
-        seg_perilune = t_s(idx_perilune);
+        seg_perilune = traj.t_s(idx_perilune);
 
         %
         i_m_sc = r_m_sc(:,idx_perilune) / d_perilune;
@@ -487,10 +534,10 @@ if simparams.constrain_flyby_radius
 
 
         t0_pSeg = sum(x(7,1:seg_perilune-1));
-        idx_pSeg = find(t==t0_pSeg);
+        idx_pSeg = find(traj.t==t0_pSeg);
 
 
-        stm_perilune_seg0 = dynCellCombine(t, t_s, idx_pSeg, idx_perilune, simparams, stm_t_i);
+        stm_perilune_seg0 = dynCellCombine(traj.t, traj.t_s, idx_pSeg, idx_perilune, simparams, traj.stm_t_i);
         k = seg_perilune;
         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 6) = -i_m_sc' * stm_perilune_seg0(1:3,:);
 
@@ -507,6 +554,37 @@ if simparams.constrain_flyby_radius
     % Increment the number of inequality constraints
     niq = niq+1;
 
+end
+
+% Target position covariance RSS inequality constraint
+if existsAndTrue('target_Pr_constraint_on',simparams)
+    M = [eye(3), zeros(3,3)];
+    cin(niq + 1) = sqrt(trace(M*P_target*M')) - simparams.P_max_r;
+
+    if outputCGradients
+        [event_times] = define_events_v2(x(:), traj.t, tcm_time, simparams);
+        m = length(event_times); % Total number of TCM modifying events / POTENTIALLY UNNECESSARY...
+        % Adding an assert here that the third dimension of P_k_minus
+        % equals m. If it never throws an error, can just index 'end' on
+        % the third for P_k_minus instead of m.
+
+
+        % Analytical Pr constraint gradient
+        for i = 1:simparams.n
+            for j = 1:6
+%                 dPr_an((i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusdxi(:,:,j,m,i)*M');
+                cinGrad(niq+1, (i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,m,i)*M');
+            end
+%                 dPr_an(i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusddti(:,:,m,i)*M');
+                cinGrad(niq+1, i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusddti(:,:,m,i)*M');
+        end
+
+
+
+
+    end
+
+    niq = niq + 1; % Increment inequality constraints total
 end
 
 

@@ -82,7 +82,7 @@ plot3(x_2(:,1), x_2(:,2), x_2(:,3),'Color','Black')
 
 axis equal; grid on;
 
-view([-20, 15]);
+% view([-20, 15]);
 
 
 if strcmp(dynSys,'2bp')
@@ -91,8 +91,8 @@ if strcmp(dynSys,'2bp')
     ylabel('Y (km)')
     zlabel('Z (km)')
 elseif strcmp(dynSys,'cr3bp')
-    view([-65, 15]); % nrho view
-%     view([80, 12]); %leo-nri view
+%     view([-65, 15]); % nrho view
+    view([80, 12]); %leo-nri view
 
 %     view([0 90]); % planar
     xlabel('X (nd)')

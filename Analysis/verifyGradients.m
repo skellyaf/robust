@@ -4,7 +4,7 @@ x = simparams.x0;
 % % % 
 
 
-if 1
+if 0
 
 %     dx = sqrt(eps);
     dx = 1e-10;
@@ -41,7 +41,7 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 1
+if 0
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);
@@ -94,7 +94,7 @@ testGradcin = [];
 
 [~, ~, cinGrad_an, ~] = constraint_min_tcm(x, simparams);
 
-
+cinGrad_an = cinGrad_an';
 
 
 pp=1;

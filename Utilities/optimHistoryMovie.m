@@ -8,7 +8,16 @@ writerObj = VideoWriter(outputFilepath);
 writerObj.FrameRate = 10;
 open(writerObj);
 
-for i = 1:size(x,3)
+nFrames = 50;
+
+if size(x,3) < nFrames
+    nFrames = size(x,3);
+
+end
+    
+
+for i = round(linspace(1,size(x,3),nFrames))
+% for i = 1:size(x,3)
 %     x_opt, x_t, t_s, simparams, tcm_idx
 %     [~, ~, x_t, stm_t, t, t_s] = createStateStmHistory(x(:,:,i), simparams);
     traj = createStateStmSttQdQHistory(x(:,:,i), simparams);

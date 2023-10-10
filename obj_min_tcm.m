@@ -5,11 +5,11 @@ function [J, J_gradient] = obj_min_tcm(x, simparams)
 
 
 
-% m = simparams.m; % the number of elements per segment
-% n = simparams.n; % the number of segments
+m = simparams.m; % the number of elements per segment
+n = simparams.n; % the number of segments
 
 % Reshaping x so each column is a segment initial state and duration
-% x = reshape(x,m,n);
+x = reshape(x,m,n);
 
 % The three parameters that form the objective function
 % deltaV, dvR3sigma, and dvV3sigma
@@ -53,10 +53,9 @@ else
         else
             traj = createStateStmSttQdQHistory(x, simparams);
         end
-        x_i_f = traj.x_i_f;
-        stm_i = traj.stm_i;
+        
     else
-        [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x, simparams);
+        traj = createStateStmHistory(x, simparams);
         
 
     end
@@ -71,7 +70,7 @@ else
 
     % Using saved dynamics, calculate total nominal impulsive delta V and
     % the delta V gradient
-    [deltaV, deltaVs_nom, deltaV_gradient] = calcDeltaV(x, x_i_f, stm_i, simparams);
+    [deltaV, deltaVs_nom, deltaV_gradient] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
 %     tst = calc_deltaV_gradient(x, x_i_f, stm_i, simparams);
 
     % Using saved dynamics, calculate the 3 sigma TCM pair
@@ -91,13 +90,30 @@ else
             tcm_gradient = calc_multiple_tcm_gradient(x, traj.x_i_f, traj.stm_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, deltaVs_nom, simparams);
         else
             % Optimize the number and location of TCMs with process noise
-            [tcm_time, tcm_idx, min_tcm_dv, P_i_minus] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
+%             [tcm_time, tcm_idx, min_tcm_dv, P_i_minus] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
+            % TCM at nodes alternative method
+            tcm_time = zeros(1, length(simparams.tcm_nodes));
+            tcm_idx = zeros(1, length(simparams.tcm_nodes));
+
+            for i = 1:length(simparams.tcm_nodes)                
+                tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
+            end
+            for i = 1:length(tcm_time)
+                tcm_idx(i) = find(traj.t == tcm_time(i))';
+            end
+
+
             % Calculate the process noise and process noise sensitivity tensors
             [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
+            % Calculate the TCM dv and dispersion covariance prior to each covariance modifying event (k)            
+            [~, min_tcm_dv, ~, P_i_minus] = calc_covariance_wQ_tcmdv_v3(x(:), traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
+
+            
             tcm_gradient = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
         end
 
-        % Multiply the TCM RSS by 3
+        % Multiply the TCM RSS by the factor (3 sigma mostly)
         tcm_3sigma = simparams.tcm_rss_factor * min_tcm_dv;
         
         tcm_gradient = simparams.tcm_rss_factor * tcm_gradient;

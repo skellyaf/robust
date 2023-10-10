@@ -1,4 +1,4 @@
-function [stm_i, x_i_f, x_t, stm_t, t, t_s, stm_t_i] = createStateStmHistory(x, simparams)
+function [traj] = createStateStmHistory(x, simparams)
 %createStateStmHistory Returns the history of the state and STM via numeric
 %integration of dynamics
 
@@ -84,7 +84,15 @@ for i = 1:n
 
 end
 
-
+% Put together in a traj data structure
+% stm_i, x_i_f, x_t, stm_t, t, t_s, stm_t_i
+traj.stm_i = stm_i;
+traj.x_i_f = x_i_f;
+traj.stm_t = stm_t;
+traj.t = t;
+traj.t_s = t_s;
+traj.stm_t_i = stm_t_i;
+traj.x_t = x_t;
 
 
 

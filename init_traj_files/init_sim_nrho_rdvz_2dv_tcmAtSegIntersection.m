@@ -95,7 +95,7 @@ simparams.Qt = 1e-8 * eye(3);
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 8; % number of trajectory segments
+simparams.n = 3; % number of trajectory segments
 % simparams.n = 10; % number of trajectory segments
 
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
@@ -127,7 +127,7 @@ simparams.target_final_maneuver = 1;
 
 simparams.correct_nominal_dvs = 0; % flag to incorporate a dispersion correction with the nominal delta Vs or not
 
-simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
@@ -139,6 +139,9 @@ simparams.start_P_growth_node = 2; % At which node to allow the covariance to gr
 simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
 
 simparams.tcm_rss_factor = 3;
+
+simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position dispersion (relevant when the TCMs are tied to nodes instead of optimized each iteration)
+
 
 
 %% Orbit parameters
@@ -354,6 +357,7 @@ end
 
 
 
+%% Build a nominal 3 segment trajectory
 
 num_rdvz_segments = simparams.maneuverSegments(2) - simparams.maneuverSegments(1);
 
@@ -367,33 +371,6 @@ simparams.x0(:,simparams.maneuverSegments(1):simparams.maneuverSegments(2)-1) = 
 simparams.x0(1:6,end) = x_rdvz;
 simparams.x0(7,end) = extra_target_coast;
 
-% 
-% if simparams.maneuverSegments(end) == simparams.n
-%     % Then need to add coast to the target state
-%     x_target_coast_start = simparams.x_target;
-%     simparams.x_target = stateProp(x_target_coast_start, extra_target_coast, simparams);
-%     simparams.tf = simparams.tf + extra_target_coast;
-% 
-%     simparams.x0(:,end) = [x_target_coast_start; extra_target_coast];
-% 
-% 
-% 
-% elseif simparams.maneuverSegments(end) == simparams.n + 1
-%     % Then don't need a coast to the target state
-% 
-% end
-
-
-
-
-% 
-% 
-% 
-% figure
-% plot3(x_nrho_t(230:280,1),x_nrho_t(230:280,2),x_nrho_t(230:280,3),'LineWidth',2)
-
-
-
 
 % Single parameter vector
 simparams.x0 = simparams.x0(:);
@@ -402,6 +379,57 @@ simparams.x0 = simparams.x0(:);
 simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.options = odeset('AbsTol',1e-12,'RelTol',1e-12);
 % simparams.options.MaxStep = 60 / ndTime2sec;
+
+%% Perform the initial trajectory history propagations
+% To calculate the optimal number of TCMs and place a segment at each TCM
+% intersection and modify how the optimization problem is constructed.
+traj0  = createStateStmSttQdQHistory(simparams.x0, simparams);
+
+if isfield(simparams,'rdvz_flag')
+    if simparams.rdvz_flag == 1
+        x0 = reshape(simparams.x0,simparams.m,simparams.n);
+        totalTime = sum(x0(7,:));
+        simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
+    end
+end
+
+% Calculate total impulsive delta V for initial guess trajectory
+[deltaV0, deltaVs_nom0, deletelatergradient] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
+
+% Calculate the optimal TCMs
+[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+
+simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
+
+%% Rebuild the trajectory segments for simparams.x0
+% Calculate the number of segments: 
+% 2 (initial and final coasts) + numTcms + 1 (transfer portion gets divided
+% n times into n+1 segments)
+simparams.n = 2 + length(tcm_time0) + 1;
+x0_new = zeros(simparams.m, simparams.n);
+% Assign initial segment
+x0_new(:,1) = simparams.x0(:,1);
+% Assign final segment
+x0_new(:,end) = simparams.x0(:,end);
+% Assign from DV1 to TCM 1 segment 
+x0_new(1:6,2) = simparams.x0(1:6,2);
+x0_new(7,2) = tcm_time0(1) - sum(x0_new(7,1));
+% Assign states from TCM 1 to TCM 3
+x0_new(1:6,3:3+length(tcm_time0)-1) = traj0.x_t(tcm_idx0,:)';
+
+for i = 1:length(tcm_time0)-1
+    x0_new(7,i+2) = tcm_time0(i+1) - sum(x0_new(7,1:i+1));
+end
+
+x0_new(7,end-1) = simparams.tf - sum(x0_new(7,:));
+simparams.x0 = x0_new(:);
+
+
+simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
+simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
+
+
+simparams.tcm_nodes = [3, 4, 5];
 
 
 %% Fmincon optimization options

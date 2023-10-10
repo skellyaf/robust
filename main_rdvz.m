@@ -32,9 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-% savename = ['first_test_wQ_nrho_3dv_1kmPrConstraint_highQ'];
-savename = ['rdvz_nrho_2dv_NRIloc_100kmx0sep_testingIdeas'];
-scenario = 'NRHO rendezvous_testingIdeas';
+savename = ['eed_llo_3dv_TcmAtNodes_robust'];
+scenario = 'EED_LLO TCMs at nodes update';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
@@ -60,7 +59,7 @@ saveVideo = true;
 
 % cr3bp, 3 nominal maneuvers
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
-% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
@@ -73,6 +72,8 @@ saveVideo = true;
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_dro3_x0detOpt_3dv';
 
 
+% 3 dv NRI, TCMs at nodes
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
 
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
@@ -80,9 +81,10 @@ saveVideo = true;
 
 
 % Rendezvous, nrho
-init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
 
-
+% Rendezvous, nrho, make the TCMs occur at segment intersections
+% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; %%%%%%%
 
 
 run(init_fn);
@@ -178,8 +180,22 @@ end
 % [tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
 [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
+tcm_time = zeros(1, length(simparams.tcm_nodes));
+
+x_opt = reshape(x_opt, simparams.m, simparams.n);
+for i = 1:length(simparams.tcm_nodes)                
+    tcm_time(i) = sum(x_opt(7,1:simparams.tcm_nodes(i)-1));
+end
 
 
+for i = 1:length(tcm_time)
+    tcm_idx(i) = find(traj.t == tcm_time(i))';
+end
+
+
+[Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x_opt, tcm_time, simparams);
+
+[P_target, min_tcm_dv, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x_opt, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
 
 
 totalDV = deltaV + 3*min_tcm_dv
@@ -311,17 +327,17 @@ savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 if 1
     save_to_excel;
-    save_to_excel_nrho_rdvz;
+%     save_to_excel_nrho_rdvz;
     
     
 
 end
 
 %% debug
-% [stm_i0, stt_i0, x_i_f0, x_t0, stm_t0, stt_t_i, t0, t_s0, stm_t_i0]  = createStateStmSttHistory(x, simparams);
+% [traj0]  = createStateStmSttHistory(x, simparams);
 % % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 % figure
-% plotMultiSegTraj(x, x_t0, t_s0, simparams);
+% plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
 
 
 

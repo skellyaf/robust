@@ -52,7 +52,8 @@ simparams.x0 = x_opt;
 
 [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(simparams.x0, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
-
+figure
+plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx)
 
 Q_k_minus = calc_Q_events(traj, simparams.x0, tcm_time, simparams);
 
@@ -95,7 +96,7 @@ event_idxs = find(event_idx_logical);
 
 
 [P, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
-[Pnoq, tcm_dv_totalnoq, tcm_dvnoq, P_i_minusnoq, P_i_plusnoq] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, zeros(6,6,8), simparams);
+% [Pnoq, tcm_dv_totalnoq, tcm_dvnoq, P_i_minusnoq, P_i_plusnoq] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, zeros(6,6,8), simparams);
 
 
 
@@ -105,7 +106,8 @@ event_idxs = find(event_idx_logical);
 x=reshape(x,simparams.m,simparams.n);
 
 
-dx = sqrt(eps);
+% dx = sqrt(eps);
+dx = 1e-5;
 % dx = 1e-10;
 
 dQ_1_minus_dx = zeros(6,6,length(x(:)));
@@ -121,13 +123,16 @@ dQ_8_minus_dx = zeros(6,6,length(x(:)));
 dtcm_1_fd = zeros(length(x(:)),1);
 dtcm_2_fd = zeros(length(x(:)),1);
 dtcm_3_fd = zeros(length(x(:)),1);
-dtcm_4_fd = zeros(length(x(:)),1);
-dtcm_5_fd = zeros(length(x(:)),1);
-dtcm_6_fd = zeros(length(x(:)),1);
-dtcm_7_fd = zeros(length(x(:)),1);
-dtcm_8_fd = zeros(length(x(:)),1);
+% dtcm_4_fd = zeros(length(x(:)),1);
+% dtcm_5_fd = zeros(length(x(:)),1);
+% dtcm_6_fd = zeros(length(x(:)),1);
+% dtcm_7_fd = zeros(length(x(:)),1);
+% dtcm_8_fd = zeros(length(x(:)),1);
 
 dtcm_total_fd = zeros(length(x(:)),1);
+M = [eye(3), zeros(3,3)];
+Pr_constraint = simparams.P_max_r - sqrt(trace(M*P*M'));
+
 
 parfor i = 1:simparams.m*simparams.n
 % for i = 1:simparams.m*simparams.n
@@ -236,7 +241,7 @@ parfor i = 1:simparams.m*simparams.n
     dQ_3_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,3) - Q_k_minus(:,:,3)) ./ dx;
     dQ_4_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,4) - Q_k_minus(:,:,4)) ./ dx;
     dQ_5_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,5) - Q_k_minus(:,:,5)) ./ dx;
-    dQ_6_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,6) - Q_k_minus(:,:,6)) ./ dx;
+%     dQ_6_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,6) - Q_k_minus(:,:,6)) ./ dx;
 %     dQ_7_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,7) - Q_k_minus(:,:,7)) ./ dx;
 %     dQ_8_minus_dx(:,:,i) = (Q_k_minus1dx(:,:,8) - Q_k_minus(:,:,8)) ./ dx;
 
@@ -247,8 +252,8 @@ parfor i = 1:simparams.m*simparams.n
     dtcm_2_fd(i) = (tcm_dv1dx(2) - tcm_dv(2)) ./ dx;
     dtcm_3_fd(i) = (tcm_dv1dx(3) - tcm_dv(3)) ./ dx;
     dtcm_4_fd(i) = (tcm_dv1dx(4) - tcm_dv(4)) ./ dx;
-    dtcm_5_fd(i) = (tcm_dv1dx(5) - tcm_dv(5)) ./ dx;
-    dtcm_6_fd(i) = (tcm_dv1dx(6) - tcm_dv(6)) ./ dx;
+%     dtcm_5_fd(i) = (tcm_dv1dx(5) - tcm_dv(5)) ./ dx;
+%     dtcm_6_fd(i) = (tcm_dv1dx(6) - tcm_dv(6)) ./ dx;
 %     dtcm_7_fd(i) = (tcm_dv1dx(7) - tcm_dv(7)) ./ dx;
 %     dtcm_8_fd(i) = (tcm_dv1dx(8) - tcm_dv(8)) ./ dx;
 
@@ -263,9 +268,13 @@ parfor i = 1:simparams.m*simparams.n
     P3_fd(:,:,i) = (P_i_minus1dx(:,:,3) - P_i_minus(:,:,3)) ./ dx;
     P4_fd(:,:,i) = (P_i_minus1dx(:,:,4) - P_i_minus(:,:,4)) ./ dx;
     P5_fd(:,:,i) = (P_i_minus1dx(:,:,5) - P_i_minus(:,:,5)) ./ dx;
-    P6_fd(:,:,i) = (P_i_minus1dx(:,:,6) - P_i_minus(:,:,6)) ./ dx;
-    P7_fd(:,:,i) = (P_i_minus1dx(:,:,7) - P_i_minus(:,:,7)) ./ dx;
+%     P6_fd(:,:,i) = (P_i_minus1dx(:,:,6) - P_i_minus(:,:,6)) ./ dx;
+%     P7_fd(:,:,i) = (P_i_minus1dx(:,:,7) - P_i_minus(:,:,7)) ./ dx;
 
+
+    Pr_constraint1dx = simparams.P_max_r-sqrt(trace(M*P1dx*M'));
+
+    dPr_constraint(i) = (Pr_constraint1dx - Pr_constraint) / dx;
 
 
 end
@@ -298,13 +307,55 @@ end
 t_idx = 7:7:simparams.m*simparams.n;
 
 
+
+[P, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
 [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
 
 
-[tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
-% [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj.x_t, traj.x_i_f, traj.stm_i, traj.stt_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
-% [tcm_gradient, tcm_gradient_r, tcm_gradient_v] = calc_multiple_tcm_gradient_wQ(x, traj.x_t, traj.x_i_f, traj.stm_i, traj.stt_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, zeros(6,6,6,8,simparams.m*simparams.n), deltaVs_nom, simparams);
+[tcm_gradient, tcm_gradient_r, tcm_gradient_v, dPCkminusdxi, dPCkminusddti] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_i_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
 
+%%%% POTENTIAL BUG
+% Do some debugging: The analytical dP for the 5th TCM event (the target)
+% minus, is coming up as zeros. Don't think that should be the case because
+% that is the target covariance (minus) and modifications to the trajectory
+% should be impacting the target covariance. Tried modifying the start P
+% growth node, maybe there was a misnumbering bug...no difference. 
+
+% Comparing the P fd and P analytical
+
+% dP dt
+
+P5_fd(:,:,t_idx)
+dPCkminusddti(:,:,5,:) % is making all zeros
+dPCkminusddti(:,:,4,:) % is not
+
+
+% These aren't matching
+P5_fd(:,:,t_idx(7))
+dPCkminusddti(:,:,5,7)
+
+% The following are matching
+P4_fd(:,:,t_idx(7))
+dPCkminusddti(:,:,4,7)
+
+
+
+
+
+
+
+
+
+% Analytical Pr constraint gradient
+for i = 1:simparams.n
+    for j = 1:6
+        dPr_an((i-1)*7 + j) = 1/2 * trace(M*P*M')^(-1/2) * -trace(M*dPCkminusdxi(:,:,j,5,i)*M');
+    end
+        dPr_an(i*7) = 1/2 * trace(M*P*M')^(-1/2) * -trace(M*dPCkminusddti(:,:,5,i)*M');
+end
+
+[dPr_constraint', [dPr_an]']
 
 
 
