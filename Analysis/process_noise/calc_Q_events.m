@@ -55,6 +55,13 @@ for k = 1:length(event_indicator)
                 tf_i = sum(x(7,1:i));
                 idx_fi = find(traj.t == tf_i);
 
+                if isempty(idx_fi)
+                    [~, idx_fi] = min(abs(traj.t-tf_i));
+                end
+                    
+
+
+
 
                 %%%%% Qbar state sensitivity
                 if idx_k < idx_i || idx_fi < idx_km1 % attempt with indices to fix a bug

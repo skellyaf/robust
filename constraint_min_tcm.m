@@ -94,7 +94,7 @@ if existsAndTrue('target_Pr_constraint_on',simparams) && ~outputCGradients
         tcm_idx = find(traj.t == tcm_time)';
 
         Q_k_km1 = calc_Q_events(traj, x, tcm_time, simparams);
-        P_target = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+        [P_target,~,~,P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
 
     end
 else
@@ -558,31 +558,83 @@ end
 
 % Target position covariance RSS inequality constraint
 if existsAndTrue('target_Pr_constraint_on',simparams)
+
+    [event_times, event_indicator] = define_events_v2(x(:), traj.t, tcm_time, simparams);
+
+    event_idx_logical = logical(sum(traj.t'==event_times', 1));    
+    event_idxs = find(event_idx_logical);
+
     M = [eye(3), zeros(3,3)];
-    cin(niq + 1) = sqrt(trace(M*P_target*M')) - simparams.P_max_r;
 
-    if outputCGradients
-        [event_times] = define_events_v2(x(:), traj.t, tcm_time, simparams);
-        m = length(event_times); % Total number of TCM modifying events / POTENTIALLY UNNECESSARY...
-        % Adding an assert here that the third dimension of P_k_minus
-        % equals m. If it never throws an error, can just index 'end' on
-        % the third for P_k_minus instead of m.
+    k_last = simparams.start_P_growth_node;
 
 
-        % Analytical Pr constraint gradient
-        for i = 1:simparams.n
-            for j = 1:6
-%                 dPr_an((i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusdxi(:,:,j,m,i)*M');
-                cinGrad(niq+1, (i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,m,i)*M');
+    for m = 1:length(simparams.P_constrained_nodes)
+        % Get the event index for the covariance at (minus) the P
+        % constrained node
+        t_k = sum(x(7,1:simparams.P_constrained_nodes(m)-1));
+        [~, k] = find(event_times == t_k);
+
+
+        % Ensuring it is a plain nominal maneuver (0) or a corrected
+        % nominal maneuver (3) w/the following assert:
+        assert(event_indicator(k) == 0 || event_indicator(k) == 3);
+
+        % Get the covariance of interest (minus):
+        P_k = P_k_minus(:,:,k);
+
+        % Create position dispersion constraint equation there 
+        % CURRENTLY THE SAME MAX P_R AT EACH K...COULD BE AN
+        % UPGRADE/CUSTOMIZATION
+        cin(niq+1) = sqrt(trace(M*P_k*M')) - simparams.P_max_r;
+
+        if outputCGradients    
+            % Analytical Pr constraint gradient
+            for i = 1:simparams.n
+                for j = 1:6
+                    cinGrad(niq+1, (i-1)*7 + j) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,k,i)*M');
+                end
+                    cinGrad(niq+1, i*7) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusddti(:,:,k,i)*M');
             end
-%                 dPr_an(i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusddti(:,:,m,i)*M');
-                cinGrad(niq+1, i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusddti(:,:,m,i)*M');
         end
 
 
 
+        niq = niq + 1; % Increment inequality constraints total
+
 
     end
+
+
+
+
+
+
+    
+% % % %     cin(niq + 1) = sqrt(trace(M*P_target*M')) - simparams.P_max_r;
+% % % % 
+% % % %     if outputCGradients
+% % % %         [event_times] = define_events_v2(x(:), traj.t, tcm_time, simparams);
+% % % %         m = length(event_times); % Total number of TCM modifying events / POTENTIALLY UNNECESSARY...
+% % % %         % Adding an assert here that the third dimension of P_k_minus
+% % % %         % equals m. If it never throws an error, can just index 'end' on
+% % % %         % the third for P_k_minus instead of m.
+% % % % 
+% % % % 
+% % % %         % Analytical Pr constraint gradient
+% % % %         for i = 1:simparams.n
+% % % %             for j = 1:6
+% % % % %                 dPr_an((i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusdxi(:,:,j,m,i)*M');
+% % % %                 cinGrad(niq+1, (i-1)*7 + j) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,m,i)*M');
+% % % %             end
+% % % % %                 dPr_an(i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * -trace(M*dPCkminusddti(:,:,m,i)*M');
+% % % %                 cinGrad(niq+1, i*7) = 1/2 * trace(M*P_target*M')^(-1/2) * trace(M*dPCkminusddti(:,:,m,i)*M');
+% % % %         end
+% % % % 
+% % % % 
+% % % % 
+% % % % 
+% % % %     end
 
     niq = niq + 1; % Increment inequality constraints total
 end

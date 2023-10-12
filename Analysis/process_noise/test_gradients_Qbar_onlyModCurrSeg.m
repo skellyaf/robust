@@ -19,7 +19,10 @@ saveVideo = false;
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 % init_fn = 'init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
+
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+
 
 run(init_fn);
 
@@ -31,9 +34,9 @@ run(init_fn);
 % load('nri_det_opt.mat');
 % load('nri_planar_det_opt.mat');
 % load('leo_plf_dro3_detOpt.mat')
-load('nrho_apolune_rdvz.mat');
+% load('nrho_apolune_rdvz.mat');
 
-simparams.x0 = x_opt;
+% simparams.x0 = x_opt;
 
 
 %% Initialize transfer segments
@@ -53,7 +56,7 @@ simparams.x0 = x_opt;
 [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(simparams.x0, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
 figure
-plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx)
+plotMultiSegTraj(simparams.x0, traj.x_t, traj.t_s, simparams, tcm_idx)
 
 Q_k_minus = calc_Q_events(traj, simparams.x0, tcm_time, simparams);
 
@@ -106,8 +109,8 @@ event_idxs = find(event_idx_logical);
 x=reshape(x,simparams.m,simparams.n);
 
 
-% dx = sqrt(eps);
-dx = 1e-5;
+dx = sqrt(eps);
+% dx = 1e-5;
 % dx = 1e-10;
 
 dQ_1_minus_dx = zeros(6,6,length(x(:)));
@@ -131,7 +134,8 @@ dtcm_3_fd = zeros(length(x(:)),1);
 
 dtcm_total_fd = zeros(length(x(:)),1);
 M = [eye(3), zeros(3,3)];
-Pr_constraint = simparams.P_max_r - sqrt(trace(M*P*M'));
+P_c1 = P_i_minus(:,:,6);
+Pr_constraint = sqrt(trace(M*P_c1*M')) - simparams.P_max_r;
 
 
 parfor i = 1:simparams.m*simparams.n
@@ -268,11 +272,12 @@ parfor i = 1:simparams.m*simparams.n
     P3_fd(:,:,i) = (P_i_minus1dx(:,:,3) - P_i_minus(:,:,3)) ./ dx;
     P4_fd(:,:,i) = (P_i_minus1dx(:,:,4) - P_i_minus(:,:,4)) ./ dx;
     P5_fd(:,:,i) = (P_i_minus1dx(:,:,5) - P_i_minus(:,:,5)) ./ dx;
-%     P6_fd(:,:,i) = (P_i_minus1dx(:,:,6) - P_i_minus(:,:,6)) ./ dx;
+    P6_fd(:,:,i) = (P_i_minus1dx(:,:,6) - P_i_minus(:,:,6)) ./ dx;
 %     P7_fd(:,:,i) = (P_i_minus1dx(:,:,7) - P_i_minus(:,:,7)) ./ dx;
 
 
-    Pr_constraint1dx = simparams.P_max_r-sqrt(trace(M*P1dx*M'));
+    P_c1_fd = P_i_minus1dx(:,:,6);
+    Pr_constraint1dx = sqrt(trace(M*P_c1_fd*M')) - simparams.P_max_r;
 
     dPr_constraint(i) = (Pr_constraint1dx - Pr_constraint) / dx;
 
@@ -342,6 +347,20 @@ dPCkminusddti(:,:,4,7)
 
 
 
+k=6;
+P6_fd(:,:,t_idx(k))
+dPCkminusddti(:,:,6,k)
+
+i=6
+P6_fd(:,:,(i-1)*7:i*7-1)
+dPCkminusdxi(:,:,1:6,6,6)
+
+
+
+P = P_i_minus(:,:,6);
+
+
+
 
 
 
@@ -350,9 +369,9 @@ dPCkminusddti(:,:,4,7)
 % Analytical Pr constraint gradient
 for i = 1:simparams.n
     for j = 1:6
-        dPr_an((i-1)*7 + j) = 1/2 * trace(M*P*M')^(-1/2) * -trace(M*dPCkminusdxi(:,:,j,5,i)*M');
+        dPr_an((i-1)*7 + j) = 1/2 * trace(M*P*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,6,i)*M');
     end
-        dPr_an(i*7) = 1/2 * trace(M*P*M')^(-1/2) * -trace(M*dPCkminusddti(:,:,5,i)*M');
+        dPr_an(i*7) = 1/2 * trace(M*P*M')^(-1/2) * trace(M*dPCkminusddti(:,:,6,i)*M');
 end
 
 [dPr_constraint', [dPr_an]']

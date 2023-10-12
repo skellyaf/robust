@@ -96,8 +96,9 @@ for i = 1:n
         % Returns the stm and stt from the beginning to end of an
         % individual segment
 %         [x_i_final, stm_i(:,:,i), stt_i(:,:,:,i), xstmstt_t_i, t_i] = stateStmSttProp(x_i_initial, delta_t, simparams, eye(6), zeros(6,6,6));
-        extra_dt_times = linspace(delta_t/simparams.num_time_idxs_add_per_seg, delta_t-delta_t/simparams.num_time_idxs_add_per_seg, simparams.num_time_idxs_add_per_seg);
-        [x_i_final, stm_i(:,:,i), Q_i(:,:,i), xstmstt_t_i, t_i] = statestmQProp(x_i_initial, [extra_dt_times, delta_t], simparams);
+%         extra_dt_times = linspace(delta_t/simparams.num_time_idxs_add_per_seg, delta_t-delta_t/simparams.num_time_idxs_add_per_seg, simparams.num_time_idxs_add_per_seg);
+%         [x_i_final, stm_i(:,:,i), Q_i(:,:,i), xstmstt_t_i, t_i] = statestmQProp(x_i_initial, [extra_dt_times, delta_t], simparams);
+        [x_i_final, stm_i(:,:,i), Q_i(:,:,i), xstmstt_t_i, t_i] = statestmQProp(x_i_initial, delta_t, simparams);
 
         x_i_f(:,i) = x_i_final;
 

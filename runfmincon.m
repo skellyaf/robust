@@ -1,4 +1,4 @@
-function [x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams)
+function [x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams, outputPath)
 
 optoptions = simparams.optoptions;
 x = simparams.x0;
@@ -50,6 +50,11 @@ optoptions.OutputFcn = @outfun;
 
                if mod(size(history.x,3),10)==0
                    optimValues.fval
+               end
+
+               if mod(size(history.x,3),50)==0
+                   outputPathName = strcat('./',outputPath,'/history.mat');
+                   save(outputPathName,'history');
                end
              % Concatenate current search direction with 
              % searchdir.

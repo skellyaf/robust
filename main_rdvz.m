@@ -37,6 +37,13 @@ scenario = 'EED_LLO TCMs at nodes update';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
+% Setup for saving data
+formatOut = 'yyyymmdd_HHMM.SS';
+dateString = datestr(now,formatOut);
+outputPath = strcat('./sims/',dateString,'_',savename);
+mkdir(outputPath);
+    
+
 
 %% Create simulation parameters structure by running initialization script
 % 2bp
@@ -59,7 +66,7 @@ saveVideo = true;
 
 % cr3bp, 3 nominal maneuvers
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo_3dv';
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
@@ -74,6 +81,8 @@ init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv';
 
 % 3 dv NRI, TCMs at nodes
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+% EED to LEO, TCMs at nodes
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
@@ -156,7 +165,7 @@ axis equal;
 
 %% Fmincon call via output function
 tic
-[x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams);
+[x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams, outputPath);
 toc
 
 
@@ -250,12 +259,7 @@ solfig.CurrentAxes.Title.Visible="off";
 if saveOutput
 
 
-    % Saving movie of history
-    formatOut = 'yyyymmdd_HHMM.SS';
-    dateString = datestr(now,formatOut);
-    outputPath = strcat('./sims/',dateString,'_',savename);
-    mkdir(outputPath);
-    outputPathName = strcat('./',outputPath,'/video.avi');
+    
  
     % Save workspace    
     saveallfigs(strcat('./',outputPath),0);
@@ -309,7 +313,8 @@ if saveOutput
 
 
     if saveVideo
-        optimHistoryMovie(history,outputPathName, simparams);
+        vidOutputPathName = strcat('./',outputPath,'/video.avi');
+        optimHistoryMovie(history,vidOutputPathName, simparams);
     end
 
 
@@ -334,10 +339,10 @@ if 1
 end
 
 %% debug
-% [traj0]  = createStateStmSttHistory(x, simparams);
-% % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-% figure
-% plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
+[traj0]  = createStateStmSttHistory(x, simparams);
+% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+figure
+plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
 
 
 
