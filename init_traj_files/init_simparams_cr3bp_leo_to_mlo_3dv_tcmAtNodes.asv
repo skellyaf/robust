@@ -252,7 +252,7 @@ simparams.constrain_flyby_radius = false; % bool, true or false
 
 % Load
 % load('eed_leo_planar_robust0.mat'); % x_opt
-load('eed_leo_planar_robust_tcmNodes1.mat'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
+load('eed_leo_planar_robust_tcmNodes1.mat'); % the robust trajectory loaded starting from the 
 simparams.x0 = x_opt;
 
 %% Perform the initial trajectory history propagation
