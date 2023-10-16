@@ -117,7 +117,10 @@ simparams.segn_coast_fraction = 0.3; % percent of orbital period to coast in the
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
+simparams.target_Pr_constraint_on = 0; % Flag to constrain the target position dispersion (relevant when the TCMs are tied to nodes instead of optimized each iteration)
+
+
 simparams.correct_nominal_dvs = 1; % flag to incorporate a dispersion correction with the nominal delta Vs or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
@@ -126,7 +129,6 @@ simparams.start_P_growth_node = 2; % At which node to allow the covariance to gr
 
 simparams.tcm_rss_factor = 3;
 
-simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position dispersion (relevant when the TCMs are tied to nodes instead of optimized each iteration)
 
 
 %% Orbit parameters
