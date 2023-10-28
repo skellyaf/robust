@@ -15,10 +15,10 @@ function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_sear
 
 
 
-% if length(TCMr_idx_best) == 4
+% if length(TCMr_idx_best) == 5
 %     output = 1;
 %     counter = 1;
-%     fileID = fopen('4_tcm_gradient_steps.txt','w');
+%     fileID = fopen('5_tcm_gradient_steps.txt','w');
 % else
 %     output = 0;
 % end
@@ -32,7 +32,7 @@ for i = 1:length(maneuver_seg)
     end
 end
 
-counter = 0;
+% counter = 0;
 
 TCMr_time_best = traj.t(TCMr_idx_best)';
 
@@ -202,7 +202,7 @@ while improving
 %             ndDist2km = Rm;
 %             ndVel2kms = Rm * n;
 % 
-%             outline = [counter, t(TCMr_idx_test_save(minIdx,:))'*ndTime2hrs, minDV*ndVel2kms*1000];
+%             outline = [counter, traj.t(TCMr_idx_test_save(minIdx,:))'*ndTime2hrs, minDV*ndVel2kms*1000];
 % 
 % 
 %             fprintf(fileID,'%7.6f %7.6f %7.6f %7.6f %7.6f %7.6f\r\n',outline);
@@ -219,7 +219,7 @@ while improving
         TCMr_time_best = traj.t(TCMr_idx_best)';
 
 
-        counter = counter + 1;
+%         counter = counter + 1;
 
     end
 

@@ -80,9 +80,9 @@ mkdir(outputPath);
 
 
 % 3 dv NRI, TCMs at nodes
-% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
 % EED to LEO, TCMs at nodes
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';

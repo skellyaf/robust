@@ -13,7 +13,7 @@ if length(tcm_time)~=length(unique(tcm_time))
 end
 
 % Make sure only a single deltaV vector was passed
-assert(size(deltaV,2)==1);
+assert(size(deltaV,2)==1 || size(deltaV,2)==2);
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
@@ -165,14 +165,16 @@ else % Otherwise, if there are events, do:
             IN = eye(6) + N;
 
             if event_indicator(i) == 3 % Corrected nominal maneuver
+                assert(simparams.correct_nominal_dvs); % Should only be here if this flag is on
                 % Corrected nominal applies the nominal maneuver execution error
-                P_tcm = T * P_i_minus(:,:,i) * T'; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
+%                 P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; %%%%% QUESTION: APPLYING TCM R TO THE EXECUTION COST; APPLYING DV R TO THE DISPERSION...WHATS RIGHT? 
+                P_tcm = T * P_i_minus(:,:,i) * T'; %%%%% QUESTION: APPLYING TCM R TO THE EXECUTION COST; APPLYING DV R TO THE DISPERSION...WHATS RIGHT? 
                 P_i = IN * P_i_minus(:,:,i) * IN' + G*R_dv*G';
 
                 % Get i_dv
 %                 deltaV = deltaVs_nom(:, maneuver_segments == traj.t_s(event_idxs(i)) + 1 );
 
-                i_dv = deltaV / vecnorm(deltaV);
+                i_dv = deltaV(:,1) / vecnorm(deltaV(:,1));
                 tcm_dv(end+1) = sqrt(i_dv' * P_tcm * i_dv);
             elseif event_indicator(i) == 1 % TCM by itself
                 P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
@@ -181,7 +183,7 @@ else % Otherwise, if there are events, do:
             elseif event_indicator(i) == 2 % Concurrent nominal maneuver and TCM performed separately
                 P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
                 P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G';
-                tcm_dv(end+1) = sqrt(trace(P_tcm));
+                tcm_dv(end+1) = sqrt(trace(P_tcm)); 
             else
                 assert(0,'Something happened that we did not plan for!');
             end
@@ -192,7 +194,10 @@ else % Otherwise, if there are events, do:
   
 
         else % otherwise, it must be a nominal maneuver only
+
+            
             % Add maneuver execution error 
+
             P_i = P_i_minus(:,:,i) + G*R_dv*G';
             P_i_plus(:,:,i) = P_i;
 
@@ -232,8 +237,22 @@ else % Otherwise, if there are events, do:
 
 
 
+
+
+
     if vel_disp_flag
-        tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6)));
+        if simparams.correct_nominal_dvs
+            % Use the first order TSE expansion savings, if flagged
+%             [~, DVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams)
+%             DV_final = DVs_nom(:,end);
+            i_dvf = deltaV(:,2) / vecnorm(deltaV(:,2));
+            
+            tcm_dv(end+1) = sqrt(i_dvf' * (P_target(4:6,4:6)) * i_dvf);
+        else
+            % If not flagged to perform simultaneous correction, just clean
+            % up the remaining velocity dispersion
+            tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6) + R_tcm));
+        end
     end
 
     tcm_dv_total = sum(tcm_dv);

@@ -203,6 +203,11 @@ for k = 1:num_events
         if event_indicator(k) > 0
             % Calculate dstmNC and assemble dTk
 
+            if isempty(tCk) || isempty(target_time)
+                ppp=1;
+            end
+
+
             [dstmNCkdxi, dstmNCkddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, target_time, tCk, i, simparams);
 
             dTkdxi(:,:,:,k,i) = T_partial(stmNCk, dstmNCkdxi);
@@ -282,87 +287,31 @@ for k = 1:num_events
 
 
         if event_indicator(k) == 1 || event_indicator(k) == 2
-            % Assemble gradient
+            % Assemble gradient w/TCM execution error incorporated in
+            % sigma_tcm calc (simparams.R)
             % dxi
-            tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
-    
+            tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i), simparams.R);    
             % ddti
-            tcm_gradient_r(i*7,tcm_idx) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
+            tcm_gradient_r(i*7,tcm_idx) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i), simparams.R);
+            
 
         elseif event_indicator(k) == 3
             if i < target_node && i >= previous_target_node
 
                 % Ptcm
+%                 Ptcm = Tk * P_k_minus(:,:,k) * Tk' + simparams.R;
                 Ptcm = Tk * P_k_minus(:,:,k) * Tk';
                 % dPtcm
                 dPtcmdxi = calc_dABA(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
                 dPtcmddti = calc_dABA(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
-%                 % dPtcm_minus
-%                 if i == 1
-%                     dPtcmdxi_minus = zeros(3,3,6);
-%                     dPtcmddti_minus = zeros(3,3);
-%                 else
-%                     dPtcmdxi_minus = calc_dABA(Tk, dTkdxi(:,:,:,k,i-1), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i-1));
-%                     dPtcmddti_minus = calc_dABA(Tk, dTkddti(:,:,k,i-1), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i-1));
-%                 end
 
-                % dDVdx initialization / for use when not at a delta V node
-                
-
-                if ismember(i+1, simparams.maneuverSegments) || ismember(i, simparams.maneuverSegments)
-
-                    % i_DV
-                    % What # maneuver is it
-%                     dv_seg = t_s(event_times(k)==t) + 1; % the segment that the nominal DV occurs at the beginning of
-                    
-%                     deltaV = deltaVs_nom(:,dv_seg == simparams.maneuverSegments);
-                    i_DV = i_DVs(:,target_leg);
-                    dv_mag = DV_norms(target_leg);
-                    
-%                     dv_mag = vecnorm(deltaV);
-%                     i_DV = deltaV/dv_mag;
-        
-                    % di_DV
-                    di_DVdDV = calc_diDVdDV(deltaVs_nom(:,target_leg), dv_mag);     
-                end
-
-
-%                 if ismember(i+1, simparams.maneuverSegments)
-                if i+1 == simparams.maneuverSegments(target_leg)
-                    dDVdx = - stm_i(4:6,:,i);
-                    
-                    xdot_xif_minus = stateDot(x_i_f(:,i), mu, simparams.dynSys);
-                    vdot_xif_minus = xdot_xif_minus(4:6);
-                    dDVdt = -vdot_xif_minus;
-%                 elseif ismember(i, simparams.maneuverSegments)                    
-                elseif i == simparams.maneuverSegments(target_leg)
-                    dDVdx = [zeros(3,3), eye(3,3)];
-
-                    dDVdt = zeros(3,1); %%%%%%%% NEED TO CONFIRM THIS LINE!
-                else
-                    dDVdt = zeros(3,1);
-                    dDVdx = zeros(3,6);
-                    di_DVdDV = zeros(3,3);
-                end
-
-    
-                    
-                di_DVddt = di_DVdDV * dDVdt;
-
-
-                
-                di_DVdx = di_DVdDV * dDVdx;
-
-
+                i_DV = i_DVs(:,target_leg);
+                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, simparams.maneuverSegments, target_leg, simparams.dynSys, simparams.mu); 
 
                 % Into the gradient structure
-                % Previous segment
                 % ddti_minus
                 tcm_gradient_r((i)*7,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVddt, Ptcm, dPtcmddti);
                 % dxi_minus
-%                 tcm_gradient_r((i-2)*7+1:(i-2)*7+6,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx_minus, Ptcm, dPtcmdxi_minus);
-
-                % Current segment
                 tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx, Ptcm, dPtcmdxi);
 
 
@@ -376,20 +325,45 @@ for k = 1:num_events
 
         % The final tcmV gradient
         if k == num_events - 1
-            %% new method            
-
-            Pn = P_k_minus(:,:,end);
+            % Target dispersion covariance
+%             Pn = P_k_minus(:,:,end) + G * simparams.R * G'; % QUESTION: ADDING TCM EXECUTION ERROR DIRECTLY TO FINAL STATE...IS THAT RIGHT?
+            Pn = P_k_minus(:,:,end); % QUESTION: ADDING TCM EXECUTION ERROR DIRECTLY TO FINAL STATE...IS THAT RIGHT?
             dPndxi = calc_dPckMinus(stmNCk, dstmNCkdxi, simparams.R, Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
-            dPnddti = calc_dPckMinus(stmNCk, dstmNCkddti, simparams.R, Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
+            dPnddti = calc_dPckMinus(stmNCk, dstmNCkddti, simparams.R, Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));   
 
-
-%             assert(event_indicator(k-1)==1,'Error: need to incoroprate logic here for when the event prior to the final target is a nominal maneuver!');
             assert(event_indicator(k)==1,'Error: need to incoroprate logic here for when the event prior to the final target is a nominal maneuver!');
-      
 
-            tcm_gradient_v((i-1)*7+1:(i-1)*7+6,1) = calc_dSigk(Mv, zeros(3,6,6), Pn, dPndxi);
-            tcm_gradient_v(i*7,1) = calc_dSigk(Mv, zeros(3,6), Pn, dPnddti);
-       
+            if simparams.correct_nominal_dvs
+                % If the TSE vector addition reduction is applied
+                i_DV = i_DVs(:,end); % Final DV
+                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, simparams.maneuverSegments, length(simparams.maneuverSegments), simparams.dynSys, simparams.mu); 
+
+
+                % Into the gradient structure
+                % ddti_minus
+                tcm_gradient_v(i*7,1) = calc_dSigCorrectedDV(i_DV, di_DVddt, Pn(4:6,4:6), dPnddti(4:6,4:6));
+                % dxi_minus
+                tcm_gradient_v((i-1)*7+1:(i-1)*7+6,1) = calc_dSigCorrectedDV(i_DV, di_DVdx, Pn(4:6,4:6), dPndxi(4:6,4:6,:));
+
+
+
+
+            else
+                % Otherwise, if just directly cleaning up the remaining
+                % velocity dispersion
+    
+                
+    
+    
+                
+          
+    
+                tcm_gradient_v((i-1)*7+1:(i-1)*7+6,1) = calc_dSigk(Mv, zeros(3,6,6), Pn, dPndxi, simparams.R);
+                tcm_gradient_v(i*7,1) = calc_dSigk(Mv, zeros(3,6), Pn, dPnddti, simparams.R);
+
+
+            end
+           
 
 
 

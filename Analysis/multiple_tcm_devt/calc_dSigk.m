@@ -1,4 +1,4 @@
-function dSig = calc_dSigk(T, dT, P, dP)
+function dSig = calc_dSigk(T, dT, P, dP, R)
 
 depth_dT = size(dT,3);
 depth_dP = size(dP,3);
@@ -7,7 +7,7 @@ assert(depth_dT == depth_dP);
 dSig = zeros(depth_dT,1);
 
 
-sigk = sqrt(trace(T*P*T'));
+sigk = sqrt(trace(T*P*T' + R));
 
 dTPT_t1 = tmult(dT,P*T');
 dTPT_t2 = tmult(T,tmult(dP,T'));

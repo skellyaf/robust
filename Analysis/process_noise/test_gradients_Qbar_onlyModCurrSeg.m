@@ -21,7 +21,9 @@ saveVideo = false;
 % init_fn = 'init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv';
 % init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
 
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
 
 
 run(init_fn);
@@ -126,17 +128,21 @@ dQ_8_minus_dx = zeros(6,6,length(x(:)));
 dtcm_1_fd = zeros(length(x(:)),1);
 dtcm_2_fd = zeros(length(x(:)),1);
 dtcm_3_fd = zeros(length(x(:)),1);
-% dtcm_4_fd = zeros(length(x(:)),1);
-% dtcm_5_fd = zeros(length(x(:)),1);
-% dtcm_6_fd = zeros(length(x(:)),1);
-% dtcm_7_fd = zeros(length(x(:)),1);
-% dtcm_8_fd = zeros(length(x(:)),1);
+dtcm_4_fd = zeros(length(x(:)),1);
+dtcm_5_fd = zeros(length(x(:)),1);
+dtcm_6_fd = zeros(length(x(:)),1);
+dtcm_7_fd = zeros(length(x(:)),1);
+dtcm_8_fd = zeros(length(x(:)),1);
+dtcm_9_fd = zeros(length(x(:)),1);
+dtcm_10_fd = zeros(length(x(:)),1);
+dtcm_11_fd = zeros(length(x(:)),1);
+dtcm_12_fd = zeros(length(x(:)),1);
+dtcm_13_fd = zeros(length(x(:)),1);
 
 dtcm_total_fd = zeros(length(x(:)),1);
 M = [eye(3), zeros(3,3)];
 P_c1 = P_i_minus(:,:,6);
 Pr_constraint = sqrt(trace(M*P_c1*M')) - simparams.P_max_r;
-
 
 parfor i = 1:simparams.m*simparams.n
 % for i = 1:simparams.m*simparams.n
@@ -256,10 +262,15 @@ parfor i = 1:simparams.m*simparams.n
     dtcm_2_fd(i) = (tcm_dv1dx(2) - tcm_dv(2)) ./ dx;
     dtcm_3_fd(i) = (tcm_dv1dx(3) - tcm_dv(3)) ./ dx;
     dtcm_4_fd(i) = (tcm_dv1dx(4) - tcm_dv(4)) ./ dx;
-%     dtcm_5_fd(i) = (tcm_dv1dx(5) - tcm_dv(5)) ./ dx;
-%     dtcm_6_fd(i) = (tcm_dv1dx(6) - tcm_dv(6)) ./ dx;
-%     dtcm_7_fd(i) = (tcm_dv1dx(7) - tcm_dv(7)) ./ dx;
-%     dtcm_8_fd(i) = (tcm_dv1dx(8) - tcm_dv(8)) ./ dx;
+    dtcm_5_fd(i) = (tcm_dv1dx(5) - tcm_dv(5)) ./ dx;
+    dtcm_6_fd(i) = (tcm_dv1dx(6) - tcm_dv(6)) ./ dx;
+    dtcm_7_fd(i) = (tcm_dv1dx(7) - tcm_dv(7)) ./ dx;
+    dtcm_8_fd(i) = (tcm_dv1dx(8) - tcm_dv(8)) ./ dx;
+    dtcm_9_fd(i) = (tcm_dv1dx(9) - tcm_dv(9)) ./ dx;
+    dtcm_10_fd(i) = (tcm_dv1dx(10) - tcm_dv(10)) ./ dx;
+    dtcm_11_fd(i) = (tcm_dv1dx(11) - tcm_dv(11)) ./ dx;
+    dtcm_12_fd(i) = (tcm_dv1dx(12) - tcm_dv(12)) ./ dx;
+    dtcm_13_fd(i) = (tcm_dv1dx(13) - tcm_dv(13)) ./ dx;
 
     dtcm_total_fd(i) = (tcm_dv_total1dx - tcm_dv_total) ./ dx;
 
@@ -415,7 +426,12 @@ dQ_k_km1_ddti(:,:,8,:) % 21-24 is populated
 [dtcm_5_fd, tcm_gradient_r(:,5), dtcm_total_fd-tcm_gradient]
 [dtcm_6_fd, tcm_gradient_r(:,6), dtcm_total_fd-tcm_gradient]
 [dtcm_7_fd, tcm_gradient_r(:,7), dtcm_total_fd-tcm_gradient]
-[dtcm_8_fd, tcm_gradient_v(:,1)]
+[dtcm_8_fd, tcm_gradient_r(:,8), dtcm_total_fd-tcm_gradient]
+[dtcm_9_fd, tcm_gradient_r(:,9), dtcm_total_fd-tcm_gradient]
+[dtcm_10_fd, tcm_gradient_r(:,10), dtcm_total_fd-tcm_gradient]
+[dtcm_11_fd, tcm_gradient_r(:,11), dtcm_total_fd-tcm_gradient]
+[dtcm_12_fd, tcm_gradient_r(:,12), dtcm_total_fd-tcm_gradient]
+[dtcm_13_fd, tcm_gradient_v(:,1)]
 
 [dtcm_total_fd, tcm_gradient, dtcm_total_fd-tcm_gradient]
 [dtcm_total_fd, tcm_gradient, (dtcm_total_fd-tcm_gradient)./dtcm_total_fd]
@@ -493,7 +509,7 @@ dQ_7_minus_dx(:,:,i_seg*7-6:i_seg*7-1)
 
 %% leftover
 
-
+assert(0);
 [dtcm1_fd' ,  dtcm2_fd' ,  dtcm3_fd', dtcmV_fd]
 
 

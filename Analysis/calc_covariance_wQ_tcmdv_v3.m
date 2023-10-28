@@ -160,6 +160,7 @@ else % Otherwise, if there are events, do:
     
                 if event_indicator(i) == 3 % Corrected nominal maneuver
                     % Corrected nominal applies the nominal maneuver execution error
+%                     P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
                     P_tcm = T * P_i_minus(:,:,i) * T'; % QUESTION!!!!!!! with or without error since the error is incorporated in the dispersion covariance update
                     P_i = IN * P_i_minus(:,:,i) * IN' + G*R_dv*G';
     
@@ -202,7 +203,18 @@ else % Otherwise, if there are events, do:
     P_target = P_i_minus(:,:,end); 
     
     if vel_disp_flag
-        tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6)));
+        if simparams.correct_nominal_dvs
+            % Use the first order TSE expansion savings, if flagged
+            DV_final = deltaVs_nom(:,end);
+            i_dvf = DV_final / norm(DV_final);
+            
+%             tcm_dv(end+1) = sqrt(i_dvf' * (P_target(4:6,4:6) + R_tcm) * i_dvf);
+            tcm_dv(end+1) = sqrt(i_dvf' * (P_target(4:6,4:6)) * i_dvf);
+        else
+            % If not flagged to perform simultaneous correction, just clean
+            % up the remaining velocity dispersion
+            tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6) + R_tcm));
+        end
     end
 
     

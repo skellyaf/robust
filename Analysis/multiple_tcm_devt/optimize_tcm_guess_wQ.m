@@ -57,7 +57,10 @@ while improving
         test_logical(tcm_idx:end) = false;
     else
         test_logical(tcm_idx) = false; % Don't test on top of other TCMs
-        test_logical(1:tcm_idx(1)) = false; % Don't test before the first TCM
+        %%%%%%%%%%%%%%%%%%%%%%%%%%% BUG HERE MAYBE!!!!! WHY DID I NOT TEST BEFORE
+        %%%%%%%%%%%%%%%%%%%%%%%%%%% THE FIRST TCM?!??!?!
+%         test_logical(1:tcm_idx(1)) = false; % Don't test before the first TCM
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         test_logical(tcm_idx(end)+1:end) = false; % Don't test after the last TCM
     end
 

@@ -80,7 +80,8 @@ mkdir(outputPath);
 
 
 % 3 dv NRI, TCMs at nodes
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
 % EED to LEO, TCMs at nodes
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 
@@ -97,6 +98,18 @@ init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_T
 
 
 run(init_fn);
+
+
+
+
+%%%%% DEBUGGING
+
+load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20231010_1041.47_nri_3dv_TcmAtNodes_robust_WORKED\workspace.mat')
+simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
+%%%%%%%%
+
+
 
 %% ONLY If using a previous reference trajectory as the initial guess:
 % load('.\init_traj_files\initial_guesses\tli_llo_deterministic_opt.mat')

@@ -70,9 +70,9 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
 % simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
-% simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
 % simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
@@ -83,10 +83,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 
 
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
-% simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-simparams.Qt = 1e-8 * eye(3);
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 
 %% Load saved trajectory parameters
@@ -102,7 +100,7 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 
 simparams.maneuverSegments = [2, 10, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
-simparams.max_num_TCMs = 4; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
 simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a correction occurs (currently the first nominal maneuver); set to 0 to not tie to a nominal maneuver
@@ -329,11 +327,21 @@ x_new(:,1) = simparams.x0(:,1);
 
 x_new(:,end) = simparams.x0(:,end);
 
-x_new(1:6,2) = simparams.x0(1:6,2);
-x_new(1:6,7) = simparams.x0(1:6,simparams.P_constrained_nodes(1));
 
-tcm_idxs_p1 = 1:4;
-tcm_idxs_p2 = 5:7;
+
+% What is the index for the second nominal maneuver / first TCM set target
+t_tcm_tgt_1 = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
+idx_tcm_tgt_1 = find(traj0.t == t_tcm_tgt_1);
+
+% tcms_before_p1 = tcm_idx0 ( tcm_idx0 < idx_tcm_tgt_1)
+
+% tcm_idxs_p1 = 1:4;
+% tcm_idxs_p2 = 5:7;
+tcm_idxs_p1 = find( tcm_idx0 < idx_tcm_tgt_1);
+tcm_idxs_p2 = find( tcm_idx0 > idx_tcm_tgt_1);
+
+x_new(1:6,2) = simparams.x0(1:6,2);
+x_new(1:6,length(tcm_idxs_p1) + 3) = simparams.x0(1:6,simparams.P_constrained_nodes(1));
 
 % TCM portion 1
 for i = 1:length(tcm_idxs_p1)
@@ -346,28 +354,30 @@ for i = 1:length(tcm_idxs_p1)
 
 end
 t_flyby = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
-x_new(7, 6) = t_flyby - tcm_time0(length(tcm_idxs_p1));
+x_new(7, length(tcm_idxs_p1) + 2) = t_flyby - tcm_time0(length(tcm_idxs_p1));
 
 % TCM portion 2
 for i = 1:length(tcm_idxs_p2)
-    x_new(1:6,i+7) = traj0.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
+    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj0.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
 
 
     % Duration
-    x_new(7,i+6) = traj0.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i));
+    x_new(7,i+length(tcm_idxs_p1) + 2) = traj0.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
 end
 
 t_nri = sum(simparams.x0(7,1:simparams.P_constrained_nodes(2)-1));
-x_new(7,10) = t_nri - tcm_time0(length(tcm_idxs_p2));
+x_new(7,length(tcm_idx0) + 3) = t_nri - tcm_time0(end);
 
 % Reassign important simparams
 simparams.n = size(x_new,2);
 
-simparams.maneuverSegments = [2, 3 + length(tcm_idxs_p1), simparams.n-1];
+simparams.maneuverSegments = [2, 3 + length(tcm_idxs_p1), simparams.n];
 
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 
-simparams.tcm_nodes = [tcm_idxs_p1+2, ];
+simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
+
+simparams.x0 = x_new(:);
 
 
 %% Reset numerical propagation options

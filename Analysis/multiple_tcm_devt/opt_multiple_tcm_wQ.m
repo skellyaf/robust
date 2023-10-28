@@ -48,6 +48,9 @@ for i = 1:length(simparams.P_constrained_nodes)
         traj_eval.stm_t = traj.stm_t(:,:,start_idx:target_idx);
         traj_eval.stm_t_i = traj.stm_t_i(1:target_node - 1);
         traj_eval.x_t = traj.x_t(start_idx:target_idx,:);
+%         traj_eval.x_i_f = traj.x_i_f(:,1:target_node-1);
+%         traj_eval.stm_i = traj.stm_i(:,:,1:target_node-1);
+        
 
 
 
@@ -89,6 +92,8 @@ for i = 1:length(simparams.P_constrained_nodes)
         stm0M = invert_stm(traj.stm_t(:,:,start_idx), simparams);
         traj_eval.stm_t = tmult(traj.stm_t(:,:,start_idx:target_idx), stm0M);
         traj_eval.stm_t_i = traj.stm_t_i(start_node:target_node-1);
+%         traj_eval.stm_i = traj.stm_i(:,:,start_node:target_node-1);
+%         traj_eval.x_i_f = traj.x_i_f(:,start_node:target_node-1);
 
 
 
@@ -112,6 +117,7 @@ for i = 1:length(simparams.P_constrained_nodes)
     % final target node
     if i == length(simparams.P_constrained_nodes)
         vel_disp_flag = 1;
+        deltaVs_nom_eval = [deltaVs_nom_eval, deltaVs_nom(:,end)];
     end
     
     %% First, calculate the location of the lowest Delta V option that meets the
