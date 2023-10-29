@@ -317,25 +317,25 @@ end
 
 % Powered flyby node distance from moon constraint
 
-if simparams.constrain_flyby_radius
-    r_b = [1-simparams.mu; 0; 0]; % Position of the moon
-    r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
-    r_d = r_n - r_b;
-    d = vecnorm(r_d);
-    % As an inequality constraint
-    cin(niq+1) = simparams.flyby_radius - d;
-    
-
-    % Gradient addition
-    if outputCGradients
-        i_d = r_d / d;
-        k = simparams.flyby_node;
-        % Gradient if it is an inequality constraint
-        cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
-    end
-
-    niq = niq+1;
-end
+% if simparams.constrain_flyby_radius
+%     r_b = [1-simparams.mu; 0; 0]; % Position of the moon
+%     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
+%     r_d = r_n - r_b;
+%     d = vecnorm(r_d);
+%     % As an inequality constraint
+%     cin(niq+1) = simparams.flyby_radius - d;
+%     
+% 
+%     % Gradient addition
+%     if outputCGradients
+%         i_d = r_d / d;
+%         k = simparams.flyby_node;
+%         % Gradient if it is an inequality constraint
+%         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
+%     end
+% 
+%     niq = niq+1;
+% end
 
 
 

@@ -104,9 +104,15 @@ run(init_fn);
 
 %%%%% DEBUGGING
 
-load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20231010_1041.47_nri_3dv_TcmAtNodes_robust_WORKED\workspace.mat')
-simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
-simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20231010_1041.47_nri_3dv_TcmAtNodes_robust_WORKED\workspace.mat')
+% simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+% simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
+% simparams.constrain_flyby_radius = 0;
+% formatOut = 'yyyymmdd_HHMM.SS';
+% dateString = datestr(now,formatOut);
+% outputPath = strcat('./sims/',dateString,'_',savename);
+% mkdir(outputPath);
+
 %%%%%%%%
 
 
