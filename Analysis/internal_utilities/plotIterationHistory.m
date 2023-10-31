@@ -121,7 +121,8 @@ elseif strcmp(simparams.dynSys,'cr3bp')
     m = surf(xunit*moon_radius + (1-simparams.mu),yunit*moon_radius,zunit*moon_radius);
     colormap('gray');
 
-    legend([p1, p2, p3, p4, p5], 'Location','NorthEast')
+%     legend([p1, p2, p3, p4, p5], 'Location','NorthEast')
+    legend([p1, p2, p3, p5], 'Location','NorthEast')
 
 end
 

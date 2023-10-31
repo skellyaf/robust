@@ -245,6 +245,7 @@ plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
 title('optim_solution')
 solfig.CurrentAxes.Title.Visible="off";
 
+[event_times, event_indicator] = define_events_v2(x_opt(:), traj.t, tcm_time, simparams);
 
 
 % Comparison with 'LAR' TCM method -- for NRHO example for now
@@ -345,7 +346,17 @@ plotIterationHistory(history.x,simparams)
 title('iteration_history')
 iterhist.CurrentAxes.Title.Visible="off";
 
+
+xlim([0.98 1.02])
+ylim([0 .05])
+zlim([-.1375, -.075])
+
+outputPath='C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20231028_2158.47_eed_llo_3dv_TcmAtNodes_robust_WORKED~~~';
 savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
+
+exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
+
+
 
 %% Save to results summary file
 

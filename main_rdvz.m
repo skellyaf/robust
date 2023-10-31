@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_det'];
-scenario = 'EED_LLO TCMs at nodes update';
+savename = ['nrho_rdvz_det_startNearPerilune'];
+scenario = 'nrho rdvz want 5 min sep start closer to perilune';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
@@ -80,7 +80,7 @@ mkdir(outputPath);
 
 
 % 3 dv NRI, TCMs at nodes
-init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
 % EED to LEO, TCMs at nodes
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 
@@ -93,7 +93,8 @@ init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_T
 % init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
 
 % Rendezvous, nrho, make the TCMs occur at segment intersections
-% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; %%%%%%%
+init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; % Beginning just after perilune
+% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmSegI_startNRI'; % Beginning at NRI-ish
 
 
 run(init_fn);
@@ -332,7 +333,7 @@ savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 if 1
     save_to_excel;
-%     save_to_excel_nrho_rdvz;
+    save_to_excel_nrho_rdvz;
     
     
 

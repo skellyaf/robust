@@ -180,14 +180,10 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 
 
 %% Propagate the NRHO to get chaser and target initial states
-time_past_perilune_chaser0 = .15 / ndTime2days;
+% time_past_perilune_chaser0 = .15 / ndTime2days;
 % time_past_perilune_chaser0 = 2.25 / ndTime2days;
 % time_past_perilune_chaser0 = .5 / ndTime2days;
-
-
-% time_past_perilune_chaser0 = 1 / ndTime2days;
-
-
+time_past_perilune_chaser0 = 1 / ndTime2days;
 % time_past_chaser_target0 = 1.5 / ndTime2hrs; 
 % time_past_chaser_target0 = 12 / ndTime2hrs; 
 time_past_chaser_target0 = 1 * 5/60 / ndTime2hrs; 
@@ -203,9 +199,9 @@ simparams.x0_target = x0_target;
 simparams.T_target = T_nrho;
 
 % Extra coast in the target orbit duration
-% extra_target_coast = 1.15 / ndTime2days;
+extra_target_coast = 1.15 / ndTime2days;
 % extra_target_coast = .1 / ndTime2days;
-extra_target_coast = .25 / ndTime2days;
+% extra_target_coast = .25 / ndTime2days;
 % extra_target_coast = .21 / ndTime2days;
 % extra_target_coast = 2.1 / ndTime2days;
 
@@ -219,9 +215,9 @@ simparams.T0 = T_nrho;
 % total_transfer_duration = .7475 / ndTime2days;
 
 % total_transfer_duration = 1.84 / ndTime2days;
-% total_transfer_duration = 5.4 / ndTime2days;
+total_transfer_duration = 5.4 / ndTime2days;
 
-total_transfer_duration = 6.2 / ndTime2days;
+% total_transfer_duration = 6.2 / ndTime2days;
 % total_transfer_duration = 5.3 / ndTime2days;
 % total_transfer_duration = 4 / ndTime2days;
 simparams.tf = total_transfer_duration;
@@ -456,9 +452,9 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 
 
 % Optimality and constraint satisfaction tolerances
-simparams.optoptions.OptimalityTolerance = 1e-15;
+% simparams.optoptions.OptimalityTolerance = 1e-15;
 % simparams.optoptions.OptimalityTolerance = 1e-8;
-% simparams.optoptions.OptimalityTolerance = 1e-6;
+simparams.optoptions.OptimalityTolerance = 1e-6;
 % simparams.optoptions.ConstraintTolerance = 2e-10 * simparams.n * simparams.m;
 simparams.optoptions.ConstraintTolerance = 1e-14 * simparams.n * simparams.m;
 simparams.optoptions.StepTolerance = 1e-16; 
