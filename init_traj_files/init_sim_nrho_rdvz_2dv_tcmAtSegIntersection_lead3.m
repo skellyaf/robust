@@ -48,12 +48,12 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 1e-12;
 
 % Small
-simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
-simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+% simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
+% simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
 % Medium
-% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
-% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
 % simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
@@ -65,15 +65,15 @@ simparams.P_initial = diag([simparams.sig_pos^2 simparams.sig_pos^2 simparams.si
 
 % TCM execution error
 % simparams.sig_tcm_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
-% simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
+simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
 
 simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
 
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
-% simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+% simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
 % simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
 % simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
@@ -126,9 +126,9 @@ simparams.idv_tcmV_method = 0;
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.correct_nominal_dvs = 0; % flag to incorporate a dispersion correction with the nominal delta Vs or not
+simparams.correct_nominal_dvs = 1; % flag to incorporate a dispersion correction with the nominal delta Vs or not
 
-simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
 
@@ -181,17 +181,8 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 
 
 %% Propagate the NRHO to get chaser and target initial states
-time_past_perilune_chaser0 = 2 / ndTime2days;
-% time_past_perilune_chaser0 = 2.25 / ndTime2days;
-% time_past_perilune_chaser0 = .5 / ndTime2days;
-
-
-% time_past_perilune_chaser0 = 1 / ndTime2days;
-
-
-% time_past_chaser_target0 = 1.5 / ndTime2hrs; 
-% time_past_chaser_target0 = 12 / ndTime2hrs; 
-time_past_chaser_target0 = 1 * 5/60 / ndTime2hrs; 
+time_past_perilune_chaser0 = 1.30464 / ndTime2days;
+time_past_chaser_target0 = 1 * 6.06288/60 / ndTime2hrs; 
 
 [x0_chaser] = stateProp(x0_nrho, time_past_perilune_chaser0, simparams);
 [x0_target] = stateProp(x0_chaser, time_past_chaser_target0, simparams);
@@ -222,8 +213,8 @@ simparams.T0 = T_nrho;
 % total_transfer_duration = 1.84 / ndTime2days;
 % total_transfer_duration = 5.4 / ndTime2days;
 
-total_transfer_duration = 6.2 / ndTime2days;
-% total_transfer_duration = 5.3 / ndTime2days;
+% total_transfer_duration = 6. / ndTime2days;
+total_transfer_duration = 5.08 / ndTime2days;
 % total_transfer_duration = 4 / ndTime2days;
 simparams.tf = total_transfer_duration;
 

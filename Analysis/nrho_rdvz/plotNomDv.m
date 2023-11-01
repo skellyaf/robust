@@ -8,7 +8,7 @@ for i = 1:length(simparams.maneuverSegments)
     else
         r_dv = x(1:3,simparams.maneuverSegments(i));
     end
-    plot3(r_dv(1),r_dv(2),r_dv(3),"pentagram",'MarkerSize',10,'MarkerFaceColor','Cyan','MarkerEdgeColor','Black');
+    plot3(r_dv(1),r_dv(2),r_dv(3),"pentagram",'MarkerSize',10,'MarkerFaceColor','Cyan','MarkerEdgeColor','Black','HandleVisibility','off');
 end
 
 end

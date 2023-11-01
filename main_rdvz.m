@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['nrho_rdvz_det_startNearPerilune'];
-scenario = 'nrho rdvz want 5 min sep start closer to perilune';
+savename = ['nrho_rdvz_robust_nriarrival_case1_correctingNomsNow'];
+scenario = 'nrho rendezvous start at nri arrival';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
@@ -41,7 +41,6 @@ saveVideo = true;
 formatOut = 'yyyymmdd_HHMM.SS';
 dateString = datestr(now,formatOut);
 outputPath = strcat('./sims/',dateString,'_',savename);
-mkdir(outputPath);
     
 
 
@@ -93,7 +92,9 @@ mkdir(outputPath);
 % init_fn = './init_traj_files/init_simparams_cr3bp_nrho_rdvz_2dv';
 
 % Rendezvous, nrho, make the TCMs occur at segment intersections
-init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; % Beginning just after perilune
+% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; % Beginning just after perilune
+% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead2'; % Beginning just after perilune
+init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead3'; % Beginning at NRI w/100 km sep
 % init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmSegI_startNRI'; % Beginning at NRI-ish
 
 
@@ -166,6 +167,8 @@ axis equal;
 
 %% Fmincon call via output function
 tic
+mkdir(outputPath);
+
 [x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams, outputPath);
 toc
 
@@ -188,18 +191,21 @@ end
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, traj.x_i_f, traj.stm_i, simparams);
 % [tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
-[tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
-tcm_time = zeros(1, length(simparams.tcm_nodes));
-
-x_opt = reshape(x_opt, simparams.m, simparams.n);
-for i = 1:length(simparams.tcm_nodes)                
-    tcm_time(i) = sum(x_opt(7,1:simparams.tcm_nodes(i)-1));
-end
-
-
-for i = 1:length(tcm_time)
-    tcm_idx(i) = find(traj.t == tcm_time(i))';
+if ~simparams.perform_correction
+    [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+else
+    tcm_time = zeros(1, length(simparams.tcm_nodes));
+    
+    x_opt = reshape(x_opt, simparams.m, simparams.n);
+    for i = 1:length(simparams.tcm_nodes)                
+        tcm_time(i) = sum(x_opt(7,1:simparams.tcm_nodes(i)-1));
+    end
+    
+    
+    for i = 1:length(tcm_time)
+        tcm_idx(i) = find(traj.t == tcm_time(i))';
+    end
 end
 
 
@@ -224,8 +230,24 @@ totalcostmps = totalDV*ndVel2kms*1000
 solfig = figure;
 plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
 % plotMultiSegTraj(x_opt, x_t, t_s, simparams);
-title('optim_solution')
+title('optim_solution_labels')
 solfig.CurrentAxes.Title.Visible="off";
+lg=legend('','','','','','','','','','','','TCM','9:2 NRHO','','','Initial Chaser Position','Nominal Maneuver','','Rdvz No Later Than','Initial Target Position','Location','north')
+lg.Position(2)=.7;
+lg.Position(1)=.61;
+axis equal
+
+
+
+solfig2 = figure;
+plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
+title('optim_solution_zoomedIn')
+solfig2.CurrentAxes.Title.Visible="off";
+axis equal
+view([90 0])
+% xlim([])
+ylim([-.015 .015])
+zlim([-.19 -.17])
 
 
 
@@ -258,6 +280,8 @@ solfig.CurrentAxes.Title.Visible="off";
 % if output.firstorderopt < 4 && exitflag ~= -2 && saveOutput
 % if exitflag ~= -2 && saveOutput
 if saveOutput
+
+
 
 
     

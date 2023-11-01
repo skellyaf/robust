@@ -181,7 +181,7 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 
 
 %% Propagate the NRHO to get chaser and target initial states
-time_past_perilune_chaser0 = 2 / ndTime2days;
+time_past_perilune_chaser0 = 1.3047 / ndTime2days;
 % time_past_perilune_chaser0 = 2.25 / ndTime2days;
 % time_past_perilune_chaser0 = .5 / ndTime2days;
 

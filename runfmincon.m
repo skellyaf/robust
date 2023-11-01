@@ -21,10 +21,28 @@ history.constrviolation = [];
 % Call optimization
 optoptions.OutputFcn = @outfun;
 
-[x_opt,J,exitflag,output] = fmincon(@(x)obj_min_tcm(x,simparams),x,[],[],[],[],[],[],@(x)constraint_min_tcm(x,simparams),optoptions)
+objf = @(x)nestedobjective(x,simparams);
+constf = @(x)constraint_min_tcm(x,simparams);
+
+[x_opt,J,exitflag,output] = fmincon(objf,x,[],[],[],[],[],[],constf,optoptions)
+% [x_opt,J,exitflag,output] = fmincon(@(x)obj_min_tcm(x,simparams),x,[],[],[],[],[],[],@(x)constraint_min_tcm(x,simparams),optoptions)
 
 
-     function stop = outfun(x,optimValues,state)
+
+    function [y, ygrad] = nestedobjective(x, simparams)
+        [y, ygrad] = obj_min_tcm(x, simparams);
+
+%         if mod(size(history.x,3),2)==0
+%             simparams.tcm_rss_factor = 9;
+%             objf = @(x)nestedobjective(x,simparams);
+%             constf = @(x)constraint_min_tcm(x,simparams);
+
+                   
+%        end
+
+    end
+
+     function [stop] = outfun(x,optimValues,state)
          stop = false;
 
          switch state
@@ -48,8 +66,14 @@ optoptions.OutputFcn = @outfun;
                    history.x(:,:,end+1) = x;
                end
 
+
+%                if mod(size(history.x,3),2)==0
+%                    objf = @(x)nestedobjective(x,simparams);
+%                    constf = @(x)constraint_min_tcm(x,simparams);
+%                end
+
                if mod(size(history.x,3),10)==0
-                   optimValues.fval
+                   optimValues.fval                   
                end
 
                if mod(size(history.x,3),50)==0

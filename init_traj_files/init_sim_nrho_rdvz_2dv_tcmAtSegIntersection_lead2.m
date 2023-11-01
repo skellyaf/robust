@@ -181,7 +181,7 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 
 
 %% Propagate the NRHO to get chaser and target initial states
-time_past_perilune_chaser0 = 2 / ndTime2days;
+time_past_perilune_chaser0 = .15 / ndTime2days;
 % time_past_perilune_chaser0 = 2.25 / ndTime2days;
 % time_past_perilune_chaser0 = .5 / ndTime2days;
 
@@ -190,8 +190,8 @@ time_past_perilune_chaser0 = 2 / ndTime2days;
 
 
 % time_past_chaser_target0 = 1.5 / ndTime2hrs; 
-% time_past_chaser_target0 = 12 / ndTime2hrs; 
-time_past_chaser_target0 = 1 * 5/60 / ndTime2hrs; 
+time_past_chaser_target0 = 12 / ndTime2hrs; 
+% time_past_chaser_target0 = 1 * 5/60 / ndTime2hrs; 
 
 [x0_chaser] = stateProp(x0_nrho, time_past_perilune_chaser0, simparams);
 [x0_target] = stateProp(x0_chaser, time_past_chaser_target0, simparams);
@@ -222,7 +222,7 @@ simparams.T0 = T_nrho;
 % total_transfer_duration = 1.84 / ndTime2days;
 % total_transfer_duration = 5.4 / ndTime2days;
 
-total_transfer_duration = 6.2 / ndTime2days;
+total_transfer_duration = 5.75 / ndTime2days;
 % total_transfer_duration = 5.3 / ndTime2days;
 % total_transfer_duration = 4 / ndTime2days;
 simparams.tf = total_transfer_duration;
