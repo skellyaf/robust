@@ -431,27 +431,27 @@ simparams.tcm_nodes = [3, 4, 5];
 
 
 
-% Seg 2 is long, divide it into 4 segments (+3)
-[~,x_2_t, t_2] = stateProp(x0_new(1:6,2), x0_new(7,2), simparams);
-x_2_new = subdivide_segment(x_2_t, t_2, 4);
-
-x_new2 = zeros(7,size(x0_new,2)+3);
-x_new2(:,1:1) = x0_new(:,1:1);
-x_new2(:,2:5) = x_2_new;
-x_new2(:,6:end) = x0_new(:,3:end);
-
-
-
-
-% Re-do params
-simparams.n = size(x_new2,2);
-simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 3];
-simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
-
-simparams.tcm_nodes = [simparams.tcm_nodes(:) + 3];
-
-
-simparams.x0 = x_new2(:);
+% % Seg 2 is long, divide it into 4 segments (+3)
+% [~,x_2_t, t_2] = stateProp(x0_new(1:6,2), x0_new(7,2), simparams);
+% x_2_new = subdivide_segment(x_2_t, t_2, 4);
+% 
+% x_new2 = zeros(7,size(x0_new,2)+3);
+% x_new2(:,1:1) = x0_new(:,1:1);
+% x_new2(:,2:5) = x_2_new;
+% x_new2(:,6:end) = x0_new(:,3:end);
+% 
+% 
+% 
+% 
+% % Re-do params
+% simparams.n = size(x_new2,2);
+% simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 3];
+% simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+% 
+% simparams.tcm_nodes = [simparams.tcm_nodes(:) + 3];
+% 
+% 
+% simparams.x0 = x_new2(:);
 
 %% Fmincon optimization options
 
