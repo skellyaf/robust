@@ -94,7 +94,8 @@ outputPath = strcat('./sims/',dateString,'_',savename);
 % Rendezvous, nrho, make the TCMs occur at segment intersections
 % init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection'; % Beginning just after perilune
 % init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead2'; % Beginning just after perilune
-init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead3'; % Beginning at NRI w/100 km sep
+% init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead3'; % Beginning at NRI w/100 km sep
+init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmAtSegIntersection_lead4'; % case 1, beginning with previous 3 tcm opt solution
 % init_fn = './init_traj_files/init_sim_nrho_rdvz_2dv_tcmSegI_startNRI'; % Beginning at NRI-ish
 
 
