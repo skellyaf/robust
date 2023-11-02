@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['nrho_rdvz_robust_nriarrival_case2_correctingNomsNow_fewersegs'];
+savename = ['nrho_rdvz_robust_nriarrival_c2_corrNoms_fewersegs_10cmsnomDVerr'];
 scenario = 'nrho rendezvous start at nri arrival';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
@@ -232,7 +232,7 @@ plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
 % plotMultiSegTraj(x_opt, x_t, t_s, simparams);
 title('optim_solution_labels')
 solfig.CurrentAxes.Title.Visible="off";
-lg=legend('','','','','','','','','','','','TCM','9:2 NRHO','','','Initial Chaser Position','Nominal Maneuver','','Rdvz No Later Than','Initial Target Position','Location','north')
+lg=legend('','','','','','','','','TCM','9:2 NRHO','','','Initial Chaser Position','Nominal Maneuver','','Rdvz No Later Than','Initial Target Position','Location','north')
 lg.Position(2)=.7;
 lg.Position(1)=.61;
 axis equal
@@ -246,8 +246,11 @@ solfig2.CurrentAxes.Title.Visible="off";
 axis equal
 view([90 0])
 % xlim([])
-ylim([-.015 .015])
-zlim([-.19 -.17])
+% ylim([-.015 .015])
+% zlim([-.19 -.17])
+
+ylim([.025 .045])
+zlim([-.16 -.12])
 
 
 
