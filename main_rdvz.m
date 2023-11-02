@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['nrho_rdvz_robust_nriarrival_c1_corrNoms_fewersegs_10cmsnomDVerr'];
+savename = ['nrho_rdvz_robust_nriarrival_c2_corrNoms_fewersegs_10cmsnomDVerr'];
 scenario = 'nrho rendezvous start at nri arrival';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
