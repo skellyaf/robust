@@ -82,7 +82,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
 % simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-simparams.Qt = 1e-6 * eye(3);
+% simparams.Qt = 1e-6 * eye(3);
+simparams.Qt = 1e-8 * eye(3);
 
 %% Load saved trajectory parameters
 
@@ -254,11 +255,14 @@ simparams.constrain_flyby_radius = false; % bool, true or false
 % Load
 % load('eed_leo_planar_robust0.mat'); % x_opt
 simparams_old = simparams;
-load('eed_leo_planar_robust_tcmNodes1.mat','x_opt','simparams'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
-simparams_old.maneuverSegments = simparams.maneuverSegments;
-simparams_old.P_constrained_nodes = simparams.P_constrained_nodes;
-simparams_old.n = simparams.n;
-simparams = simparams_old;
+% load('eed_leo_planar_robust_tcmNodes1.mat','x_opt','simparams'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
+% simparams_old.maneuverSegments = simparams.maneuverSegments;
+% simparams_old.P_constrained_nodes = simparams.P_constrained_nodes;
+% simparams_old.n = simparams.n;
+% simparams = simparams_old;
+
+load('eed_leo_planar_robust0.mat','x_opt'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
+
 
 simparams.x0 = x_opt;
 
@@ -356,11 +360,14 @@ simparams.x0 = x_new;
 [x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 12, 1);
 simparams.x0 = x_new;
 
-[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 21, 5);
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 20, 2);
 simparams.x0 = x_new;
 
-[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 27, 2);
+
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 23, 3);
 simparams.x0 = x_new;
+
 
 
 
