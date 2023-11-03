@@ -82,7 +82,8 @@ outputPath = strcat('./sims/',dateString,'_',savename);
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
 % init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
 % EED to LEO, TCMs at nodes
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes_loadSimparams';
 
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';

@@ -342,9 +342,33 @@ simparams.x0 = x_new(:);
 
 
 
-%% debug
 
-% for i = 1:simparams.n
+% Insert additional segments
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 3, 3);
+simparams.x0 = x_new;
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 6, 2);
+simparams.x0 = x_new;
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 9, 2);
+simparams.x0 = x_new;
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 12, 1);
+simparams.x0 = x_new;
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 21, 5);
+simparams.x0 = x_new;
+
+[x_new, simparams] = insert_additional_segments(simparams.x0, simparams, 27, 2);
+simparams.x0 = x_new;
+
+
+
+
+%% FOR AN UNKONWN REASON, THE SERVER IS NOT CREATING THE SAME INITIAL TRAJECTORY. 
+% saving it here, then loading it to run on the server rather than creating
+% it via script
+% save('init_eed_planar_tcms_moreError_simparams.mat','simparams')
 %%
 
 %% Reset numerical propagation options
