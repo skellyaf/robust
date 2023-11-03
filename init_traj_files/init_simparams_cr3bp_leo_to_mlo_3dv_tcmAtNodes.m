@@ -280,7 +280,7 @@ end
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj_setup.x_i_f, traj_setup.stm_i, simparams);
 
 % Calculate the optimal TCMs
-[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj_setup, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+[tcm_time_setup, tcm_idx_setup, min_tcm_dv_setup, ~, ~, tcm_dv_each_setup] = opt_multiple_tcm_wQ(simparams.x0, traj_setup, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
 simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 
@@ -289,7 +289,7 @@ simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 
 %% Re-assign segment durations and the nodes that are tied to TCMs
 
-x_new = zeros(simparams.m, length(tcm_time0)+2 + 2);
+x_new = zeros(simparams.m, length(tcm_time_setup)+2 + 2);
 x_new(:,1) = simparams.x0(:,1);
 
 x_new(:,end) = simparams.x0(:,end);
@@ -297,8 +297,8 @@ x_new(:,end) = simparams.x0(:,end);
 x_new(1:6,2) = simparams.x0(1:6,2);
 
 t_dv2 = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
-tcm_idxs_p1 = find(tcm_time0 < t_dv2);
-tcm_idxs_p2 = find(tcm_time0 > t_dv2);
+tcm_idxs_p1 = find(tcm_time_setup < t_dv2);
+tcm_idxs_p2 = find(tcm_time_setup > t_dv2);
 
 
 x_new(1:6,3 + length(tcm_idxs_p1)) = simparams.x0(1:6,simparams.P_constrained_nodes(1));
@@ -307,27 +307,27 @@ x_new(1:6,3 + length(tcm_idxs_p1)) = simparams.x0(1:6,simparams.P_constrained_no
 % TCM portion 1
 for i = 1:length(tcm_idxs_p1)
     % TCM states
-    x_tcm_curr = traj_setup.x_t( tcm_idx0(tcm_idxs_p1(i)),1:6)';
+    x_tcm_curr = traj_setup.x_t( tcm_idx_setup(tcm_idxs_p1(i)),1:6)';
     x_new(1:6,i+2) = x_tcm_curr;
 
     % Segment duration
-    x_new(7,i+1) = traj_setup.t(tcm_idx0(tcm_idxs_p1(i))) - sum(x_new(7,1:i));
+    x_new(7,i+1) = traj_setup.t(tcm_idx_setup(tcm_idxs_p1(i))) - sum(x_new(7,1:i));
 
 end
 t_flyby = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
-x_new(7, length(tcm_idxs_p1)+2) = t_flyby - tcm_time0(length(tcm_idxs_p1));
+x_new(7, length(tcm_idxs_p1)+2) = t_flyby - tcm_time_setup(length(tcm_idxs_p1));
 
 % TCM portion 2
 for i = 1:length(tcm_idxs_p2)
-    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj_setup.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
+    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj_setup.x_t( tcm_idx_setup(tcm_idxs_p2(i)),1:6)';
 
 
     % Duration
-    x_new(7,i+length(tcm_idxs_p1) + 2) = traj_setup.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
+    x_new(7,i+length(tcm_idxs_p1) + 2) = traj_setup.t(tcm_idx_setup(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
 end
 
 t_dv3 = sum(simparams.x0(7,1:simparams.P_constrained_nodes(2)-1));
-x_new(7,end-1) = t_dv3 - tcm_time0(end);
+x_new(7,end-1) = t_dv3 - tcm_time_setup(end);
 
 % Reassign important simparams
 simparams.n = size(x_new,2);
