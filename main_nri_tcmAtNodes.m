@@ -150,7 +150,7 @@ if isfield(simparams,'rdvz_flag')
 end
 
 % Calculate total impulsive delta V for initial guess trajectory
-[deltaV0, deltaVs_nom0, deletelatergradient] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
+[deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
 
 tic
 % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
