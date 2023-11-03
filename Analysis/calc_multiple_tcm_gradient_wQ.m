@@ -331,7 +331,7 @@ for k = 1:num_events
             dPndxi = calc_dPckMinus(stmNCk, dstmNCkdxi, simparams.R, Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i));
             dPnddti = calc_dPckMinus(stmNCk, dstmNCkddti, simparams.R, Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));   
 
-            assert(event_indicator(k)==1,'Error: need to incoroprate logic here for when the event prior to the final target is a nominal maneuver!');
+            assert(event_indicator(k)==1,'Error: need to incorporate logic here for when the event prior to the final target is a nominal maneuver!');
 
             if simparams.correct_nominal_dvs
                 % If the TSE vector addition reduction is applied

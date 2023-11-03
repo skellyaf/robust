@@ -39,7 +39,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty

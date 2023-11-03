@@ -39,7 +39,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
@@ -240,6 +241,7 @@ time_between_dvs = total_transfer_duration - chaser_coast_before_dv1 - extra_tar
 
 %% Load previous case 1 3 TCM robust trajectory
 % reloading and restarting because the optimal switched to 2 TCMs
+% load('nrho_rdvz_robust_3tcm_c1.mat'); % contains x_opt
 load('nrho_rdvz_robust_3tcm_c2.mat'); % contains x_opt
 simparams.x0=x_opt;
 
@@ -319,7 +321,9 @@ simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive 
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
 
 
-simparams.tcm_nodes = [3, 4];
+simparams.tcm_nodes = [3, 4, 5];
+
+assert(length(tcm_time0) == length(simparams.tcm_nodes));
 
 
 
