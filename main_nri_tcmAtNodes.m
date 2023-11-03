@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_robust'];
-scenario = 'EED_LLO TCMs at nodes update';
+savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError'];
+scenario = 'EED_LLO TCMs at nodes update with larger errors';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
@@ -41,7 +41,6 @@ saveVideo = true;
 formatOut = 'yyyymmdd_HHMM.SS';
 dateString = datestr(now,formatOut);
 outputPath = strcat('./sims/',dateString,'_',savename);
-mkdir(outputPath);
     
 
 
@@ -81,9 +80,9 @@ mkdir(outputPath);
 
 % 3 dv NRI, TCMs at nodes
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
-init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
+% init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
 % EED to LEO, TCMs at nodes
-% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 
 
 % init_fn = './init_traj_files/init_simparams_cr3bp_bigHeo_to_mlo_3dv';
@@ -155,7 +154,29 @@ end
 
 tic
 % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+
+if ~simparams.perform_correction
+    [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+else
+    tcm_time0 = zeros(1, length(simparams.tcm_nodes));
+    
+    x0 = reshape(simparams.x0, simparams.m, simparams.n);
+    for i = 1:length(simparams.tcm_nodes)                
+        tcm_time0(i) = sum(x0(7,1:simparams.tcm_nodes(i)-1));
+    end
+    
+    
+    for i = 1:length(tcm_time0)
+        tcm_idx0(i) = find(traj0.t == tcm_time0(i))';
+    end
+
+    
+    [Q_k_km10, dQ_k_km1_dxi0, dQ_k_km1_ddti0] = calc_Q_events(traj0, x0, tcm_time0, simparams);
+    
+    [P_target0, min_tcm_dv0, tcm_dv_each0, P_i_minus0, P_i_plus0] = calc_covariance_wQ_tcmdv_v3(x0, traj0, tcm_time0, 1, deltaVs_nom0, simparams.P_initial, Q_k_km10, simparams);
+
+end
 toc
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
@@ -184,6 +205,8 @@ axis equal;
 
 %% Fmincon call via output function
 tic
+mkdir(outputPath);
+
 [x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams, outputPath);
 toc
 
@@ -206,18 +229,20 @@ end
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, traj.x_i_f, traj.stm_i, simparams);
 % [tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
-[tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-
-tcm_time = zeros(1, length(simparams.tcm_nodes));
-
-x_opt = reshape(x_opt, simparams.m, simparams.n);
-for i = 1:length(simparams.tcm_nodes)                
-    tcm_time(i) = sum(x_opt(7,1:simparams.tcm_nodes(i)-1));
-end
-
-
-for i = 1:length(tcm_time)
-    tcm_idx(i) = find(traj.t == tcm_time(i))';
+if ~simparams.perform_correction
+    [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+else
+    tcm_time = zeros(1, length(simparams.tcm_nodes));
+    
+    x_opt = reshape(x_opt, simparams.m, simparams.n);
+    for i = 1:length(simparams.tcm_nodes)                
+        tcm_time(i) = sum(x_opt(7,1:simparams.tcm_nodes(i)-1));
+    end
+    
+    
+    for i = 1:length(tcm_time)
+        tcm_idx(i) = find(traj.t == tcm_time(i))';
+    end
 end
 
 

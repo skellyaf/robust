@@ -235,7 +235,7 @@ plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
 % plotMultiSegTraj(x_opt, x_t, t_s, simparams);
 title('optim_solution_labels')
 solfig.CurrentAxes.Title.Visible="off";
-lg=legend('','','','','','','TCM','9:2 NRHO','','','Initial Chaser Position','Nominal Maneuver','','Rdvz No Later Than','Initial Target Position','Location','north');
+lg=legend('','','','','','','','','TCM','9:2 NRHO','','','Initial Chaser Position','Nominal Maneuver','','Rdvz No Later Than','Initial Target Position','Location','north');
 lg.Position(2)=.7;
 lg.Position(1)=.61;
 axis equal

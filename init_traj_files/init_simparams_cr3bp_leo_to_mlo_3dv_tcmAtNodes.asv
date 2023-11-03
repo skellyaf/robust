@@ -284,9 +284,6 @@ end
 
 simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 
-% figure
-% plotMultiSegTraj(simparams.x0, traj0.x_t, traj0.t_s, simparams, tcm_idx0);
-
 %% Re-assign segment durations and the nodes that are tied to TCMs
 
 x_new = zeros(simparams.m, length(tcm_time0)+2 + 2);
@@ -315,15 +312,15 @@ for i = 1:length(tcm_idxs_p1)
 
 end
 t_flyby = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
-x_new(7, length(tcm_idxs_p1)+2) = t_flyby - tcm_time0(length(tcm_idxs_p1));
+x_new(7, 6) = t_flyby - tcm_time0(length(tcm_idxs_p1));
 
 % TCM portion 2
 for i = 1:length(tcm_idxs_p2)
-    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj0.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
+    x_new(1:6,i+7) = traj0.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
 
 
     % Duration
-    x_new(7,i+length(tcm_idxs_p1) + 2) = traj0.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
+    x_new(7,i+6) = traj0.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+5));
 end
 
 t_dv3 = sum(simparams.x0(7,1:simparams.P_constrained_nodes(2)-1));
@@ -342,9 +339,7 @@ simparams.x0 = x_new(:);
 
 
 
-%% debug
-
-% for i = 1:simparams.n
+%%
 %%
 
 %% Reset numerical propagation options
