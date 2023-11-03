@@ -266,7 +266,7 @@ simparams.x0 = x_opt;
 
 % To calculate the optimal number of TCMs and place a segment at each TCM
 % intersection and modify how the optimization problem is constructed.
-traj0  = createStateStmSttQdQHistory(simparams.x0, simparams);
+traj_setup  = createStateStmSttQdQHistory(simparams.x0, simparams);
 
 if isfield(simparams,'rdvz_flag')
     if simparams.rdvz_flag == 1
@@ -277,10 +277,10 @@ if isfield(simparams,'rdvz_flag')
 end
 
 % Calculate total impulsive delta V for initial guess trajectory
-[deltaV0, deltaVs_nom0, deletelatergradient] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
+[deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj_setup.x_i_f, traj_setup.stm_i, simparams);
 
 % Calculate the optimal TCMs
-[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj_setup, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
 simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 
@@ -307,11 +307,11 @@ x_new(1:6,3 + length(tcm_idxs_p1)) = simparams.x0(1:6,simparams.P_constrained_no
 % TCM portion 1
 for i = 1:length(tcm_idxs_p1)
     % TCM states
-    x_tcm_curr = traj0.x_t( tcm_idx0(tcm_idxs_p1(i)),1:6)';
+    x_tcm_curr = traj_setup.x_t( tcm_idx0(tcm_idxs_p1(i)),1:6)';
     x_new(1:6,i+2) = x_tcm_curr;
 
     % Segment duration
-    x_new(7,i+1) = traj0.t(tcm_idx0(tcm_idxs_p1(i))) - sum(x_new(7,1:i));
+    x_new(7,i+1) = traj_setup.t(tcm_idx0(tcm_idxs_p1(i))) - sum(x_new(7,1:i));
 
 end
 t_flyby = sum(simparams.x0(7,1:simparams.P_constrained_nodes(1)-1));
@@ -319,11 +319,11 @@ x_new(7, length(tcm_idxs_p1)+2) = t_flyby - tcm_time0(length(tcm_idxs_p1));
 
 % TCM portion 2
 for i = 1:length(tcm_idxs_p2)
-    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj0.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
+    x_new(1:6,i+length(tcm_idxs_p1) + 3) = traj_setup.x_t( tcm_idx0(tcm_idxs_p2(i)),1:6)';
 
 
     % Duration
-    x_new(7,i+length(tcm_idxs_p1) + 2) = traj0.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
+    x_new(7,i+length(tcm_idxs_p1) + 2) = traj_setup.t(tcm_idx0(tcm_idxs_p2(i))) - sum(x_new(7,1:i+length(tcm_idxs_p1) + 1));
 end
 
 t_dv3 = sum(simparams.x0(7,1:simparams.P_constrained_nodes(2)-1));
