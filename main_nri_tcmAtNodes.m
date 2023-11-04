@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError'];
+savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_10xQ'];
 scenario = 'EED_LLO TCMs at nodes update with larger errors';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;

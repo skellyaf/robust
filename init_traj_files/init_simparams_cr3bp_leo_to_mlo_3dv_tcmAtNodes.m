@@ -82,8 +82,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
 % simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-% simparams.Qt = 1e-6 * eye(3);
-simparams.Qt = 1e-8 * eye(3);
+simparams.Qt = 1e-6 * eye(3);
+% simparams.Qt = 1e-8 * eye(3);
 
 %% Load saved trajectory parameters
 
