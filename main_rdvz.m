@@ -249,11 +249,11 @@ solfig2.CurrentAxes.Title.Visible="off";
 axis equal
 view([90 0])
 % xlim([])
-ylim([-.015 .015])
-zlim([-.19 -.17])
+% ylim([-.015 .015])
+% zlim([-.19 -.17])
 
-% ylim([.025 .045])
-% zlim([-.16 -.12])
+ylim([.025 .045])
+zlim([-.16 -.12])
 
 
 

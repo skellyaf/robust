@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_10xQ'];
+savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_10xQ_noNomCorr'];
 scenario = 'EED_LLO TCMs at nodes update with larger errors';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
@@ -154,7 +154,7 @@ end
 % Calculate total impulsive delta V for initial guess trajectory
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
 
-tic
+
 % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(simparams.x0, deltaVs_nom0, t0, t_s0, stm_t0, stm_t_i0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
@@ -174,12 +174,14 @@ else
     end
 
     
-    [Q_k_km10, dQ_k_km1_dxi0, dQ_k_km1_ddti0] = calc_Q_events(traj0, x0, tcm_time0, simparams);
-    
-    [P_target0, min_tcm_dv0, tcm_dv_each0, P_i_minus0, P_i_plus0] = calc_covariance_wQ_tcmdv_v3(x0, traj0, tcm_time0, 1, deltaVs_nom0, simparams.P_initial, Q_k_km10, simparams);
 
 end
-toc
+
+
+[Q_k_km10, dQ_k_km1_dxi0, dQ_k_km1_ddti0] = calc_Q_events(traj0, x0, tcm_time0, simparams);
+
+[P_target0, min_tcm_dv0, tcm_dv_each0, P_i_minus0, P_i_plus0] = calc_covariance_wQ_tcmdv_v3(x0, traj0, tcm_time0, 1, deltaVs_nom0, simparams.P_initial, Q_k_km10, simparams);
+
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
 
