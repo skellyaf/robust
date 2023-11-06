@@ -89,8 +89,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
 % simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-% simparams.Qt = 1e-8 * eye(3);
-simparams.Qt = 1e-6 * eye(3);
+simparams.Qt = 1e-8 * eye(3);
+% simparams.Qt = 1e-6 * eye(3);
 % simparams.Qt = zeros(3,3);
 
 %% Load saved trajectory parameters
@@ -136,7 +136,7 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 simparams.rdvz_flag = 0; % flag to identify a flexible final state for the rendezvous problem setup 
 
 % simparams.start_P_growth_node = simparams.maneuverSegments(1); % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
-simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+simparams.start_P_growth_node = 1; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
 
 simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
 

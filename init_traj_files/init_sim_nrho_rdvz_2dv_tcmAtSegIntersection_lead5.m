@@ -80,7 +80,8 @@ simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma =
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
-simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
+% simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
+simparams.add_tcm_improvement_threshold = 0;
 
 % simparams.R = diag([0 0 0]);
 
@@ -89,8 +90,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
 % simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
 % simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-% simparams.Qt = 1e-8 * eye(3);
-simparams.Qt = 1e-6 * eye(3);
+simparams.Qt = 1e-8 * eye(3);
+% simparams.Qt = 1e-6 * eye(3);
 % simparams.Qt = zeros(3,3);
 
 %% Load saved trajectory parameters
