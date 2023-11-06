@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_10xQ_noNomCorr'];
+savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_noNomCorr'];
 scenario = 'EED_LLO TCMs at nodes update with larger errors';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
@@ -380,7 +380,6 @@ xlim([0.98 1.02])
 ylim([0 .05])
 zlim([-.1375, -.075])
 
-outputPath='C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20231028_2158.47_eed_llo_3dv_TcmAtNodes_robust_WORKED~~~';
 savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
 exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
