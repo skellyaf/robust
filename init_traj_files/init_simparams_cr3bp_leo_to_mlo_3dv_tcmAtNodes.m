@@ -97,6 +97,8 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 
 simparams.maneuverSegments = [2, 13, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
+simparams.corrected_nominal_dvs = logical([0 1 1]);
+
 simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
