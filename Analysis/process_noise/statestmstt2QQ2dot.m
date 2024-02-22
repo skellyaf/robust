@@ -1,4 +1,4 @@
-function [xDot] = statestmQdot(t, X, mu, Qt)
+function [xDot] = statestmstt2QQ2dot(t, X, mu, Qt)
 
 % unpack x
 assert(length(X) == 510);

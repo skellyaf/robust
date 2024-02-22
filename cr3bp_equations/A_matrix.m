@@ -11,6 +11,8 @@ if strcmp(dynSys,'2bp')
 elseif strcmp(dynSys,'cr3bp')
     % Evaluation of 3 body dynamics
     A = cr3bp_sFrame_nd_Amatrix(x, mu);
+elseif strcmp(dynSys,'br4bp_sb1')
+    A = br4bp_sb1_Amatrix(x, simparams.mub, mu, simparams.a4);
 end
 
 

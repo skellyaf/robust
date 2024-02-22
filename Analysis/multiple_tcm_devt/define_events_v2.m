@@ -32,7 +32,7 @@ t_end = max(t); % had a bug when the NLP tried to get the last seg to go backwar
 maneuver_times = zeros(1,length(simparams.maneuverSegments));
 
 for i = 1:length(simparams.maneuverSegments)
-    maneuver_times(i) = sum(x(7,1:simparams.maneuverSegments(i)-1));
+    maneuver_times(i) = sum(x(m,1:simparams.maneuverSegments(i)-1));
 end
 
 % Combine nominal DV and TCMs into one array of event times

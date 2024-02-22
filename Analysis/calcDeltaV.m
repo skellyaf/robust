@@ -9,6 +9,8 @@ function [deltaV, deltaVs, deltaV_gradient] = calcDeltaV(x, x_i_f, stm_i, simpar
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
+nsv = m - 1; % The number of state variables
+
 maneuverSegments = simparams.maneuverSegments;
 mu = simparams.mu;
 dynSys = simparams.dynSys;
@@ -50,8 +52,9 @@ for j = 1:length(maneuverSegments)
             i = maneuverSegments(j);
             dv = vi(:,j) - vf(:,j);
             idv = dv / norm(dv);
-            dDVndx = idv' * [zeros(3,3), eye(3)];
-            deltaV_gradient(1:6, i) = dDVndx;
+            dDVndx = idv' * [zeros(3,3), eye(3), zeros(3,mod(nsv,6))]; % MOD FOR BR4BP
+%             dDVndx = idv' * [zeros(3,3), eye(3)];
+            deltaV_gradient(1:nsv, i) = dDVndx;
         end
 
     elseif maneuverSegments(j) == n+1
@@ -65,10 +68,10 @@ for j = 1:length(maneuverSegments)
             dv = vi(:,j) - vf(:,j);
             idv = dv / norm(dv);
             
-            dDVndx = - idv' * stm_i(4:6,:,n);
+            dDVndx = - idv' * stm_i(4:6,:,n); % NO BR4BP MOD REQUIRED - STM INCLUDES ALL COLUMNS 
             deltaV_gradient(1:6,n) = dDVndx;
 
-            xdot_xif = stateDot(x_i_f(:,n), mu, dynSys);
+            xdot_xif = stateDot(x_i_f(:,n), simparams);
             deltaV_gradient(7,n) = -idv' * xdot_xif(4:6);
 
         end
@@ -85,14 +88,15 @@ for j = 1:length(maneuverSegments)
             idv = dv / norm(dv);
 
             dDVndx_minus = -idv' * stm_i(4:6,:,i-1);
-            deltaV_gradient(1:6, i-1) = dDVndx_minus;
+            deltaV_gradient(1:nsv, i-1) = dDVndx_minus;
 
-            xdot_xif = stateDot(x_i_f(:,i-1), mu, dynSys);
+            xdot_xif = stateDot(x_i_f(:,i-1), simparams);
             dDVnddt_minus = -idv' * xdot_xif(4:6);
-            deltaV_gradient(7, i-1) = dDVnddt_minus;
+            deltaV_gradient(m, i-1) = dDVnddt_minus;
             
-            dDVndx = idv' * [zeros(3,3), eye(3)];
-            deltaV_gradient(1:6, i) = dDVndx;
+            dDVndx = idv' * [zeros(3,3), eye(3), zeros(3,mod(nsv,6))]; % MOD FOR BR4BP
+%             dDVndx = idv' * [zeros(3,3), eye(3)];
+            deltaV_gradient(1:nsv, i) = dDVndx;
         end
 
     end
@@ -107,12 +111,13 @@ if nargout > 2
             %%%% FLEXIBLE RENDEZVOUS TARGET
     %         total_time = sum(x(7,:));
     %         simparams.x_target = stateProp(simparams.x0_target, total_time, simparams);
-            x_dot_target = stateDot(simparams.x_target, mu, dynSys);
+            x_dot_target = stateDot(simparams.x_target, simparams);
     
             dv = vi(:,end) - vf(:,end);
             idv = dv / norm(dv);
     
-            deltaV_gradient(7,:) = deltaV_gradient(7,:) + idv' * x_dot_target(4:6) * ones(1,n);
+            deltaV_gradient(m,:) = deltaV_gradient(7,:) + idv' * x_dot_target(4:6) * ones(1,n); %IF I COME BACK TO USING THIS TARGET METHOD, THIS LINE NEEDS CLEANUP FROM IMPLEMENTING BR4BP
+%             deltaV_gradient(m,:) = deltaV_gradient(7,:) + idv' * x_dot_target(4:6) * ones(1,n);
 
         end
 

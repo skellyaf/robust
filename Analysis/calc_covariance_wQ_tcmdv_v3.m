@@ -18,13 +18,15 @@ end
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
+nsv = simparams.nsv;
 
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
 
 R_tcm = simparams.R;
 R_dv = simparams.R_dv; % nominal maneuver execution error covariance
-G = [zeros(3,3); eye(3,3)];
+
+G = [zeros(3,3); eye(3,3); zeros(mod(nsv,6),3)];
 
 
 %% Finding the nominal maneuvers, their times, and defining which events are TCMs
@@ -99,11 +101,11 @@ else % Otherwise, if there are events, do:
     % Plus one because a minus covariance for each event and the last is
     % going to be P at the target/end and there isn't an event for the
     % final / target time
-    P_i_minus = zeros(6,6,length(unique(event_times))); 
+    P_i_minus = zeros(nsv,nsv,length(unique(event_times))); 
 
-    P_i_plus = zeros(6,6,length(unique(event_times)));        
+    P_i_plus = zeros(nsv,nsv,length(unique(event_times)));        
 
-    start_time = sum(x(7,1:simparams.start_P_growth_node-1));
+    start_time = sum(x(m,1:simparams.start_P_growth_node-1));
     start_idx = find(traj.t == start_time);
 %     start_node = simparams.start_P_growth_node;
     
@@ -154,9 +156,9 @@ else % Otherwise, if there are events, do:
                 stmNC = dynCellCombine(traj.t, traj.t_s, idx_Ci, target_idx, simparams, traj.stm_t_i);
     
                 % Perform the TCM update matrix calculations     
-                T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
-                N = [zeros(3,6); T];
-                IN = eye(6) + N;
+                T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3), zeros(3,mod(nsv,6))];
+                N = [zeros(3,nsv); T; zeros(mod(nsv,6),nsv)];
+                IN = eye(nsv) + N;
     
                 if event_indicator(i) == 3 % Corrected nominal maneuver
                     % Corrected nominal applies the nominal maneuver execution error

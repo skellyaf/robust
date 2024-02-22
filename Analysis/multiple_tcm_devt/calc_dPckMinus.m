@@ -2,7 +2,7 @@ function [dPCkminusd] = calc_dPckMinus(stmCkClast, dstmCkClast, R, Tlast, dTlast
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
 
-
+nsv = size(stmCkClast,2);
 
 
 % % % % if k == 1
@@ -14,14 +14,14 @@ function [dPCkminusd] = calc_dPckMinus(stmCkClast, dstmCkClast, R, Tlast, dTlast
 
 %     R = simparams.R;
 
-    G = [zeros(3,3); eye(3,3)]; % mapping matrix to vv submatrix
+    G = [zeros(3,3); eye(3,3); zeros(mod(nsv,6),3)]; % mapping matrix to vv submatrix
 
-    
-    INlast = eye(6) + [zeros(3,6); Tlast];
+    Nlast = [zeros(3,nsv); Tlast; zeros(mod(nsv,6),nsv)];
+    INlast = eye(nsv) + Nlast;
     
     depth = size(dTlast,3);
 
-    dINlast = zeros(6,6,depth);
+    dINlast = zeros(nsv,nsv,depth);
     dINlast(4:6,:,:) = dTlast;
     
     

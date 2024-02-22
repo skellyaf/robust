@@ -29,7 +29,7 @@ function [Qbarf, dQbarf] = Qcombine(traj, idx_i, idx_f, simparams)
 %%% The fractional Qbar from segment j's effect on the final 
 
 % simparams.dynSys = dynSys;
-
+nsv = simparams.nsv;
 
 % Initial and final involved segment numbers
 segi = traj.t_s(idx_i);
@@ -50,10 +50,10 @@ end
 
 
 % Initialize structure for Qbarf
-Qbarf = zeros(6,6);
+Qbarf = zeros(nsv,nsv);
 
 if nargout == 2
-    dQbarf = zeros(6,6,6);
+    dQbarf = zeros(nsv,nsv,nsv);
 end
 
 iter = 1;

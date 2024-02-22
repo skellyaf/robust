@@ -10,14 +10,16 @@ mu = simparams.mu;
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
 
+nsv = simparams.m - 1;
+
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
 %% Propagate entire trajectory, save dynamics at each time step
 
 for i = 1:n
 
-    x_i_initial = x(1:6,i);
-    delta_t = x(7,i);
+    x_i_initial = x(1:nsv,i);
+    delta_t = x(m,i);
 
     %%%%%%%%%%%% WHAT IF DELTA_T IS NEGATIVE? HOW TO ALLOW THAT?  REQUIRES
     %%%%%%%%%%%% THOUGHT (one example resulted in convergence to an
@@ -28,9 +30,9 @@ for i = 1:n
 
         if i == 1
             % State history
-            x_t = xstm_t_i(:,1:6);
+            x_t = xstm_t_i(:,1:nsv);
             % STM history
-            stm_t = reshape( xstm_t_i(:,7:42)',6,6,[] );
+            stm_t = reshape( xstm_t_i(:,nsv+1:nsv+nsv*nsv)',nsv,nsv,[] );
             % Time history
             t = t_i;
             % Segment corresponding to each time
@@ -43,14 +45,14 @@ for i = 1:n
             % Append to history structure
             % Time (exclude first time element, it duplicates the final of
             % the previous)
-            t = [t; t_i(2:end) + sum(x(7,1:i-1))];
+            t = [t; t_i(2:end) + sum(x(m,1:i-1))];
             % Corresponding segment
             t_s = [t_s; i*ones([length(t_i)-1, 1])];
             % State
-            x_t = [x_t; xstm_t_i(2:end,1:6)];
+            x_t = [x_t; xstm_t_i(2:end,1:nsv)];
 
             % Reshape new STM history tensor
-            stm_t_i_curr = reshape( xstm_t_i(:,7:42)',6,6,[] );
+            stm_t_i_curr = reshape( xstm_t_i(:,nsv+1:nsv+nsv*nsv)',nsv,nsv,[] );
             % Add to STM history cell structure
             stm_t_i{i} = stm_t_i_curr;
 
@@ -70,12 +72,12 @@ for i = 1:n
     else
         x_i_final = x_i_initial;
         x_i_f(:,i) = x_i_final;
-        stm_i(:,:,i) = eye(6);
-        stm_t_i{i} = eye(6);
+        stm_i(:,:,i) = eye(nsv);
+        stm_t_i{i} = eye(nsv);
 
         if i == 1
             
-            stm_t = eye(6);
+            stm_t = eye(nsv);
             x_t = [x_i_initial'];
             t = 0;
             t_s = i;

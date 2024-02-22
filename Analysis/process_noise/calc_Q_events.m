@@ -4,6 +4,8 @@ function [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_tim
 %update then resets Qbar and it starts again at zero after each event.
 
 x = reshape(x,simparams.m,simparams.n);
+m = simparams.m;
+nsv = simparams.nsv;
 %% Define events
 
 % Get event info
@@ -12,17 +14,17 @@ x = reshape(x,simparams.m,simparams.n);
 event_idx_logical = logical(sum(traj.t'==event_times', 1));    
 event_idxs = find(event_idx_logical);
 
-Q_k_km1 = zeros(6,6,length(event_indicator));
+Q_k_km1 = zeros(nsv,nsv,length(event_indicator));
 
 if nargout > 1
-    dQ_k_km1_dxi = zeros(6,6,6,length(event_indicator),simparams.n);
+    dQ_k_km1_dxi = zeros(nsv,nsv,nsv,length(event_indicator),simparams.n);
 
-    dQ_k_km1_ddti = zeros(6,6,length(event_indicator),simparams.n);
+    dQ_k_km1_ddti = zeros(nsv,nsv,length(event_indicator),simparams.n);
 end
 
 
 if simparams.start_P_growth_node > 1
-    t_km1 = sum(x(7,1:simparams.start_P_growth_node-1));
+    t_km1 = sum(x(m,1:simparams.start_P_growth_node-1));
     idx_km1 = find(traj.t == t_km1);
 elseif simparams.start_P_growth_node == 1
     idx_km1 = 1;
@@ -48,15 +50,23 @@ for k = 1:length(event_indicator)
                     t0_i = 0;
                     idx_i = 1;
                 else
-                    t0_i = sum(x(7,1:i-1));
+                    t0_i = sum(x(m,1:i-1));
                     idx_i = find(traj.t == t0_i);
                 end
 
-                tf_i = sum(x(7,1:i));
+                tf_i = sum(x(m,1:i));
                 idx_fi = find(traj.t == tf_i);
 
                 if isempty(idx_fi)
                     [~, idx_fi] = min(abs(traj.t-tf_i));
+                end
+
+                if length(idx_fi) > 1
+                    idx_fi = idx_fi(1);
+                end
+
+                if length(idx_i) > 1
+                    idx_i = idx_i(1);
                 end
                     
 
@@ -248,7 +258,7 @@ for k = 1:length(event_indicator)
                         Q_fi_km1 = Qcombine(traj, idx_km1, idx_fi, simparams);
                         x_fi = traj.x_t(idx_fi,:)';
                         stm_k_fi = dynCellCombine(traj.t, traj.t_s, idx_fi, idx_k, simparams, traj.stm_t_i);
-                        dQ_fi_km1_ddti = Qdot(Q_fi_km1, x_fi, simparams.mu, simparams.Qt);
+                        dQ_fi_km1_ddti = Qdot(Q_fi_km1, x_fi, simparams);
                         dQ_k_km1_ddti(:,:,k,i) = stm_k_fi * dQ_fi_km1_ddti * stm_k_fi';
 
 

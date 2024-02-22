@@ -4,6 +4,8 @@ function [cin, ceq, cinGrad, ceqGrad] = constraint_min_tcm(x, simparams)
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments   
 x = reshape(x,m,n);   
+nsv = simparams.nsv;
+dynSys = simparams.dynSys;
 
 %% Setup
 x0 = simparams.x_init;
@@ -29,7 +31,7 @@ if fixed_xfer_duration
     t_f = simparams.tf;
 end
 
-if nargout == 4
+if nargout > 2
     outputCGradients = 1;
 else
     outputCGradients = 0;
@@ -40,22 +42,19 @@ end
     
 %% Calculate the dimensions of the equality constraint vector
 % Formula is the sum of the following:
-%   + 12: always constrained position and velocity for initial and final state 
-%   + 3 * the number of maneuverSegments: only position constraints
-%   + (n+1 -2 (each end constraint) - the # of maneuver segments) * 6: constrained intermediate segments that aren't maneuvers 
+%   + 6 + 6: always constrained position, velocity, and (if br4bp) NOT em angle for initial state; position and velocity constrained final state 
+%   + (3 + mod(nsv,6)) * the number of maneuverSegments: only position constraints (and theta_em angle if BR4BP) 
+%   + (n+1 -2 (each end constraint) - the # of maneuver segments) * nsv: full state constrained intermediate segments that aren't maneuvers 
 %   + 1 if there is a fixed total transfer duration
 
 num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 
 % ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
-ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration);
+ceq_length = 6 + 6 + length(maneuverSegments)*(3 + mod(nsv,6)) + num_int_full_constraint_nodes*nsv + logical(simparams.fixed_xfer_duration);
 
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
 
-if outputCGradients
-    ceqGrad = zeros(ceq_length, n*m);
-end
 
 %% Calculate the dimensions of the inequality constraint vector
 
@@ -71,59 +70,37 @@ cin_length = n + simparams.constrain_flyby_radius * 2;
 
 cin = zeros(1,cin_length);
 
+% Preallocate
 if outputCGradients
+    ceqGrad = zeros(ceq_length, n*m);
     cinGrad = zeros(cin_length, n*m);
 end
     
 %% Pre-calculate/propagate states/STMs before assembling constraints
 
-if existsAndTrue('target_Pr_constraint_on',simparams) && ~outputCGradients
-    % Create the state and stm history:
-    if sum(sum(simparams.Qt)) == 0
-        traj = createStateStmHistory(x(:), simparams);
-    else
-        traj = createStateStmQHistory(x(:), simparams);
-        [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
+if existsAndTrue('target_Pr_constraint_on',simparams)
 
-        % Assign TCM times to their assigned nodes (ALTERNATIVE METHOD)
-        tcm_time = zeros(1, length(simparams.tcm_nodes));
+    traj = createStateStmSttQdQHistory(x(:), simparams);
+    [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
 
-        for i = 1:length(simparams.tcm_nodes)                
-            tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
-        end
-        tcm_idx = find(traj.t == tcm_time)';
+    % Assign TCM times to their assigned nodes (ALTERNATIVE METHOD)
+    tcm_time = zeros(1, length(simparams.tcm_nodes));
+    tcm_idx = zeros(1, length(simparams.tcm_nodes));
 
-        Q_k_km1 = calc_Q_events(traj, x, tcm_time, simparams);
-        [P_target,~,~,P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
-
+    for i = 1:length(simparams.tcm_nodes)                
+        tcm_time(i) = sum(x(m,1:simparams.tcm_nodes(i)-1));
     end
-else
-    if sum(sum(simparams.Qt)) == 0
-        % No need to propagate process noise
-        traj  = createStateStmSttHistory(x, simparams);
 
-        % TODO: Need structures of zeros for : [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti]
-        
-    else
-        % Need to propagate process noise
-        traj = createStateStmSttQdQHistory(x, simparams);
-        [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
-
-        % Assign TCM times to their assigned nodes (ALTERNATIVE METHOD)
-        tcm_time = zeros(1, length(simparams.tcm_nodes));
-
-        for i = 1:length(simparams.tcm_nodes)                
-            tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
-        end
-        tcm_idx = find(traj.t == tcm_time)';
-
-        % Calculate the process noise and process noise sensitivity tensors
-        [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
-
-
+    for i = 1:length(tcm_time)
+        tcm_idx(i) = find(traj.t == tcm_time(i))';
     end
-    [P_target, ~, ~, P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
+    [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x, tcm_time, simparams);
+    [P_target,~,~,P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
     [~, ~, ~, dPCkminusdxi, dPCkminusddti] = calc_multiple_tcm_gradient_wQ(x, traj, tcm_time, tcm_idx, P_k_minus, dQ_k_km1_dxi, dQ_k_km1_ddti, deltaVs_nom, simparams);
+
+else
+    traj  = createStateStmHistory(x, simparams);
 
 end
 
@@ -138,22 +115,25 @@ niq = 0; % Inequality constraint counter
 for i = 1:n        
     
     % Extract from segment vector
-    x_i_initial = x(1:6,i);
+    x_i_initial = x(1:nsv,i);
     x_i_final = traj.x_i_f(:,i); % used for dynamics constraints        
-    delta_t = x(7,i);
+    delta_t = x(m,i);
     
     % Constraints on the first segment
     if i == 1
         % Constrain first segment initial position and velocity to
         % given initial state
-        ceq(neq+1:neq+6) = x_i_initial - x0;
+        ceq(neq+1:neq+nsv) = x_i_initial - x0; % Initial state with theta_em constrained
+%         ceq(neq+1:neq+6) = x_i_initial(1:6) - x0(1:6); % Initial state with theta_em UN-constrained
         
 
         if outputCGradients
-            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [eye(6), zeros(6,1)];
+            ceqGrad(neq+1:neq+nsv,(i-1)*m + 1:i*m) = [eye(nsv), zeros(nsv,1)]; % With theta_em constrained 
+%             ceqGrad(neq+1:neq+6,(i-1)*m + 1:i*m) = [eye(6), zeros(6,m-6)]; % Without theta_em constrained
         end
 
-        neq = neq + 6;
+        neq = neq + nsv; % Theta_em constrained
+%         neq = neq + 6; % With theta_em unconstrained
     end        
     
     % Constraint to allow an impulsive maneuver at end of first seg and
@@ -163,12 +143,17 @@ for i = 1:n
         if i+1 == simparams.n+1 % No final coast segment
             % Only constrain the ith segment final position to the target
             % position
+            
             ceq(neq+1:neq+3) = x_i_final(1:3) - x_target(1:3);
+
+            % If BR4BP, no constraint on final theta_em
+            % ACTUALLY - Constraining final theta_em in order to get a
+            % better initial guess
 
             if outputCGradients
                 % For now, only the gradient wrt the first half of the
                 % target position constraint equation (wrt x_i_final)
-                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [traj.stm_i(1:3,:,i), x_i_final(4:6)];
+                ceqGrad(neq+1:neq+3, (i-1)*m + 1:i*m) = [traj.stm_i(1:3,:,i), x_i_final(4:6)];
 
                 % The only relevant partial derivative for x_target is wrt
                 % segment durations (it is a fixed propagation from the
@@ -179,7 +164,7 @@ for i = 1:n
                 % outside the current for loop. Saving the
                 % target_constraint incides below to reference later.
 
-                t_idxs = logical(repmat([zeros(1,6), 1], 1, simparams.n));
+                t_idxs = logical(repmat([zeros(1,nsv), 1], 1, simparams.n));
 
                 ceqGrad(neq+1:neq+3, t_idxs) = ceqGrad(neq+1:neq+3, t_idxs) - ones(3,simparams.n) .* x_target(4:6);
 
@@ -194,22 +179,29 @@ for i = 1:n
 
 
         else
-
-    
-    
+            % Constrain only position on either side of maneuver nodes for
+            % all intermediate nodes    
     
             %  Constrain end position with starting position of next segment
-            x_next = x(1:6,i+1); % Beginning state of next segment
+            x_next = x(1:nsv,i+1); % Beginning state of next segment
             ceq(neq+1:neq+3) = x_next(1:3) - x_i_final(1:3);
     
             if outputCGradients
-                ceqGrad(neq+1:neq+3, (i-1)*7 + 1:i*7) = [-traj.stm_i(1:3,:,i), -x_i_final(4:6)];
-                ceqGrad(neq+1:neq+3, i*7 + 1:(i+1)*7) = [eye(3), zeros(3,4)];
-            end
-    
-    
-    
+                ceqGrad(neq+1:neq+3, (i-1)*m + 1:i*m) = [-traj.stm_i(1:3,:,i), -x_i_final(4:6)];
+                ceqGrad(neq+1:neq+3, i*m + 1:(i+1)*m) = [eye(3), zeros(3,m-3)];
+            end    
             neq = neq + 3;
+
+            if strcmp(dynSys, 'br4bp_sb1')
+                % Then also constrain the theta_em angle at the end of one
+                % segment to the beginning of the next
+                ceq(neq+1) = x_next(nsv) - x_i_final(nsv);
+                if outputCGradients
+                    ceqGrad(neq+1, (i-1)*m + 1:i*m) = [-traj.stm_i(nsv,:,i), -simparams.theta_em_dot];
+                    ceqGrad(neq+1, i*m + 1:(i+1)*m) = [zeros(1,nsv-1), 1, 0];
+                end   
+                neq = neq + 1;
+            end
         end
     
     %%%%%%%%%%%%%% ONE TIME TESTING CONSTRAINT - FORCE ALL PLANE CHANGE
@@ -239,31 +231,31 @@ for i = 1:n
     % All other intermediate segments - full state connection constraint
     elseif i < n            
         %  Constrain end position and velocity with beginning of next segment
-        x_next = x(1:6,i+1); % Beginning state of next segment
-        ceq(neq+1:neq+6) = x_next(1:6) - x_i_final(1:6);
+        x_next = x(1:nsv,i+1); % Beginning state of next segment
+        ceq(neq+1:neq+nsv) = x_next(1:nsv) - x_i_final(1:nsv);
 
 
         
 
         if outputCGradients
-            ceqGrad(neq+1:neq+6, (i-1)*7 + 1:i*7) = [-traj.stm_i(:,:,i), -stateDot(x_i_final, mu, simparams.dynSys)];
-            ceqGrad(neq+1:neq+6, i*7 + 1:(i+1)*7) = [eye(6), zeros(6,1)];
+            ceqGrad(neq+1:neq+nsv, (i-1)*m + 1:i*m) = [-traj.stm_i(:,:,i), -stateDot(x_i_final, simparams)];
+            ceqGrad(neq+1:neq+nsv, i*m + 1:(i+1)*m) = [eye(nsv), zeros(nsv,1)];
         end
 
 
-        neq = neq + 6;
+        neq = neq + nsv;
     elseif i == n % Final segment - constrained end to match target       
         
         % Constrain end of final segment to target state
-        ceq(neq+1:neq+6) = x_i_final - x_target;
+        ceq(neq+1:neq+nsv) = x_i_final - x_target;
 
         
 
         if outputCGradients
-            ceqGrad(neq+1:neq+6,(i-1)*7 + 1:i*7) = [traj.stm_i(:,:,i), stateDot(x_i_final, mu, simparams.dynSys)];
+            ceqGrad(neq+1:neq+nsv,(i-1)*m + 1:i*m) = [traj.stm_i(:,:,i), stateDot(x_i_final, simparams)];
         end
 
-        neq = neq+6;
+        neq = neq + nsv;
                                
     end
     
@@ -294,10 +286,10 @@ end % end of the main for loop
 
 
 if fixed_xfer_duration
-    total_time = sum(x(7,:));
+    total_time = sum(x(m,:));
     ceq(neq+1) = total_time - t_f;
     if outputCGradients
-        t_idxs = logical(repmat([zeros(1,6), 1], 1, simparams.n));
+        t_idxs = logical(repmat([zeros(1,nsv), 1], 1, simparams.n));
         ceqGrad(neq+1, t_idxs) = 1;
 
     end
@@ -307,198 +299,6 @@ end
 
 
 % Powered flyby node constraint options to ensure other points are not passing within the lunar surface
-% Option 1: the powered flyby happens no closer than a certain distance to the moon and the vector from the moon to the spacecraft (r_m_sc) is
-% orthogonal to the velocity vector (with or without the delta V?)
-
-
-% Works, but may be over constrained / suboptimal
-
-
-
-% Powered flyby node distance from moon constraint
-
-% if simparams.constrain_flyby_radius
-%     r_b = [1-simparams.mu; 0; 0]; % Position of the moon
-%     r_n = x(1:3,simparams.flyby_node); % Position of the constrained node
-%     r_d = r_n - r_b;
-%     d = vecnorm(r_d);
-%     % As an inequality constraint
-%     cin(niq+1) = simparams.flyby_radius - d;
-%     
-% 
-%     % Gradient addition
-%     if outputCGradients
-%         i_d = r_d / d;
-%         k = simparams.flyby_node;
-%         % Gradient if it is an inequality constraint
-%         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 3) = - i_d';
-%     end
-% 
-%     niq = niq+1;
-% end
-
-
-
-
-% % % % if simparams.constrain_flyby_radius
-% % % % 
-% % % %     x_flyby = x(1:6,simparams.flyby_node); % State at powered flyby
-% % % %     r_b = [1-simparams.mu; 0; 0]; % Position of the moon
-% % % % 
-% % % %     xf_pre_flyby = x_i_f(1:6,simparams.flyby_node - 1); % State at the node prior to the flyby node
-% % % %     stm_prev = stm_i(:,:,simparams.flyby_node - 1);
-% % % % 
-% % % % 
-% % % % 
-% % % % 
-% % % % 
-% % % % 
-% % % % 
-% % % % 
-% % % % %     dv_to_subtract = x_flyby(4:6) - x_i_f(4:6,simparams.flyby_node-1)
-% % % % 
-% % % %     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint_prev_vel_S(x_flyby, xf_pre_flyby, r_b, stm_prev, simparams);
-% % % % %     [apse_constraint_eqn, apse_constraint_gradient] = apse_constraint(x_flyby, r_b);
-% % % % 
-% % % %     % Apse constraint as an equality constraint
-% % % %     ceq(neq+1) = apse_constraint_eqn;
-% % % % 
-% % % %     if outputCGradients
-% % % %         k = simparams.flyby_node;
-% % % %     
-% % % %         % Apse equality constraint gradient
-% % % %         ceqGrad(neq+1,(k-2)*7 + 1 : k*7) = apse_constraint_gradient;
-% % % %     end
-% % % % 
-% % % %     neq = neq + 1;
-% % % % 
-% % % % end
-
-
-
-
-
-% Option 2: enforce that the position at the powered flyby is closer to the
-% moon than the state (not node) immediately before it or after it
-%%%% having trouble getting the option 2 numerical gradients to match...
-
-% if simparams.constrain_flyby_radius
-% 
-%     % Find the time of the powered flyby
-%     t_flyby = sum(x(7,1:simparams.flyby_node-1));
-%     idx_flyby = find(t==t_flyby);
-% 
-%     rm = [1-mu; 0; 0];
-% 
-%     r_sc_flyby = x(1:3,simparams.flyby_node);
-% 
-%     r_m_sc_flyby =  r_sc_flyby - rm;
-%     
-%     dist_flyby = vecnorm(r_m_sc_flyby);
-% 
-%     % How many indices are in the segment after the flyby
-%     num_ind_before = sum(simparams.flyby_node-1 == t_s);
-%     num_ind_before = 25;
-% %     idx_before = floor(idx_flyby - .2 * num_ind_before); % Go 1/4 of the way into the segment
-%     idx_before = floor(idx_flyby - num_ind_before); % testing a gradient bug
-% 
-%     r_sc_beforeFlyby = x_t(idx_before, 1:3)';
-%     r_m_sc_beforeFlyby = r_sc_beforeFlyby - rm;
-%     dist_beforeFlyby = vecnorm(r_m_sc_beforeFlyby);
-% 
-% 
-%     % How many indices are in the segment after the flyby
-%     num_ind_after = sum(simparams.flyby_node == t_s);
-%     idx_after = floor(idx_flyby + .2 * num_ind_after); % Go 1/4 of the way into the segment
-% 
-% 
-%     r_sc_afterFlyby = x_t(idx_after, 1:3)';
-% 
-%     r_m_sc_afterFlyby = r_sc_afterFlyby - rm;
-%     dist_afterFlyby = vecnorm(r_m_sc_afterFlyby);
-% 
-% 
-% 
-% 
-%     % Distance < distance_before
-%     cin(niq+1) = dist_flyby - dist_beforeFlyby;
-% 
-%     % Distance < distance_after constraint
-%     cin(niq+2) = dist_flyby - dist_afterFlyby;
-% 
-% 
-% 
-%     %%%% Debugging - 3 constraints to test which is messing up
-% 
-% 
-% 
-% %     cin(niq+1) = dist_beforeFlyby;
-% %     cin(niq+2) = dist_afterFlyby;
-% %     cin(niq+3) = dist_flyby;
-% 
-% 
-%     %%%% Debugging
-%     
-% 
-%     
-% 
-% 
-% 
-% 
-%     % Option 2 gradient
-%     if outputCGradients
-%         k = simparams.flyby_node;
-%         % Find the index for the first node of the segment before the flyby segment
-%         idx_pre_flyby = find(t_s==k-1);
-%         idx_pre_flyby_start = idx_pre_flyby(1);
-% 
-%         %%%%%% WEIRD THING HAPPENED HERE...NEED TO REMEMBER IF THAT IS HOW
-%         %%%%%% I SET IT UP ON PURPOSE. WHEN EVALAUTING t_s(t==sum(x(7,1:simparams.flyby_node-2)))
-%         %%%%%% , THE TIME ALONG THE TRAJECTORY AT THE END(?) OF SEGMENT 12,
-%         %%%%%% IT IS SLIGHTLY DIFFERENT THAN THE TIME AT THE BEGINNING OF
-%         %%%%%% SEGMENT 13: t(idx_pre_flyby_start)
-% 
-%         
-%         i_r_m_sc_flyby = r_m_sc_flyby / dist_flyby;
-%         i_r_m_sc_afterFlyby = r_m_sc_afterFlyby / dist_afterFlyby;
-%         i_r_m_sc_beforeFlyby = r_m_sc_beforeFlyby / dist_beforeFlyby;
-%         
-% %         stmCkClast = dynCellCombine(t, t_s, tClast_idx, tCk_idx, simparams, stm_t_i);
-% 
-%         stm_after_flyby = dynCellCombine(t, t_s, idx_flyby, idx_after, simparams, stm_t_i);
-%         stm_flyby_before = dynCellCombine(t, t_s, idx_pre_flyby_start, idx_before, simparams, stm_t_i);
-% 
-%         % Partial derivative wrt previous segment
-%         cinGrad(niq+1, (k-2)*7 + 1 : (k-2)*7 + 6) =  i_r_m_sc_beforeFlyby' * stm_flyby_before(1:3,:);
-% 
-%         % Partial derivative wrt current segment
-%         cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)];
-%         cinGrad(niq+2, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)] + i_r_m_sc_afterFlyby' * stm_after_flyby(1:3,:);
-% 
-% 
-% 
-% 
-% 
-% %         % d dist_beforeflyby / d prev segment
-% %         cinGrad(niq+1, (k-2)*7 + 1 : (k-2)*7 + 6) = i_r_m_sc_beforeFlyby' * stm_flyby_before(1:3,:);
-% % 
-% %         % d dist_afterFlyby / d curr segment
-% %         cinGrad(niq+2, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_afterFlyby' * stm_after_flyby(1:3,:);
-% % 
-% %         % d dist_flyby / d curr segment
-% %         cinGrad(niq+3, (k-1)*7 + 1 : (k-1)*7 + 6) = i_r_m_sc_flyby' * [eye(3), zeros(3,3)];
-%         
-%     end
-% 
-% 
-% 
-% 
-%     niq = niq + 2;
-% end
-
-
-
-
 
 % Option 3: Find perilune, constrain the distance from the moon to be
 % greater than or equal to the limit
@@ -533,13 +333,13 @@ if simparams.constrain_flyby_radius
 
 
 
-        t0_pSeg = sum(x(7,1:seg_perilune-1));
+        t0_pSeg = sum(x(m,1:seg_perilune-1));
         idx_pSeg = find(traj.t==t0_pSeg);
 
 
         stm_perilune_seg0 = dynCellCombine(traj.t, traj.t_s, idx_pSeg, idx_perilune, simparams, traj.stm_t_i);
         k = seg_perilune;
-        cinGrad(niq+1, (k-1)*7 + 1 : (k-1)*7 + 6) = -i_m_sc' * stm_perilune_seg0(1:3,:);
+        cinGrad(niq+1, (k-1)*m + 1 : (k-1)*m + nsv) = -i_m_sc' * stm_perilune_seg0(1:3,:);
 
 
 
@@ -561,18 +361,18 @@ if existsAndTrue('target_Pr_constraint_on',simparams)
 
     [event_times, event_indicator] = define_events_v2(x(:), traj.t, tcm_time, simparams);
 
-    event_idx_logical = logical(sum(traj.t'==event_times', 1));    
-    event_idxs = find(event_idx_logical);
+%     event_idx_logical = logical(sum(traj.t'==event_times', 1));    
+%     event_idxs = find(event_idx_logical);
 
-    M = [eye(3), zeros(3,3)];
+    M = [eye(3), zeros(3,nsv-3)];
 
     k_last = simparams.start_P_growth_node;
 
 
-    for m = 1:length(simparams.P_constrained_nodes)
+    for q = 1:length(simparams.P_constrained_nodes)
         % Get the event index for the covariance at (minus) the P
         % constrained node
-        t_k = sum(x(7,1:simparams.P_constrained_nodes(m)-1));
+        t_k = sum(x(m,1:simparams.P_constrained_nodes(q)-1));
         [~, k] = find(event_times == t_k);
 
 
@@ -590,11 +390,11 @@ if existsAndTrue('target_Pr_constraint_on',simparams)
 
         if outputCGradients    
             % Analytical Pr constraint gradient
-            for i = 1:simparams.n
-                for j = 1:6
-                    cinGrad(niq+1, (i-1)*7 + j) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,k,i)*M');
+            for i = 1:n
+                for j = 1:nsv
+                    cinGrad(niq+1, (i-1)*m + j) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusdxi(:,:,j,k,i)*M');
                 end
-                    cinGrad(niq+1, i*7) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusddti(:,:,k,i)*M');
+                    cinGrad(niq+1, i*m) = 1/2 * trace(M*P_k*M')^(-1/2) * trace(M*dPCkminusddti(:,:,k,i)*M');
             end
         end
 
@@ -635,8 +435,9 @@ if existsAndTrue('target_Pr_constraint_on',simparams)
 % % % % 
 % % % % 
 % % % %     end
-
-    niq = niq + 1; % Increment inequality constraints total
+% COMMENTED THE LINE BELOW - IT WAS UNCOMMENTED BEFORE, WHICH I BELIEVE WAS
+% A BUG:
+% % % %     niq = niq + 1; % Increment inequality constraints total
 end
 
 

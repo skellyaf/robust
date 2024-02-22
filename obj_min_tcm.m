@@ -7,6 +7,7 @@ function [J, J_gradient] = obj_min_tcm(x, simparams)
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
+nsv = simparams.nsv; % number of state variables
 
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
@@ -22,29 +23,41 @@ else
 end
 
 
-
+% NO GRADIENT OUTPUT
 if ~outputGradients
-    % Propagate entire trajectory state and STM history; save dynamics at each time step
-%     [stm_i, x_i_f, x_t, stm_t, t, t_s] = createStateStmHistory(x, simparams);
-    traj = createStateStmQHistory(x, simparams);
-
-    % Using saved dynamics, calculate total impulsive delta V
-    [deltaV, deltaVs_nom, deltaV_gradient] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
-
-    % Using saved dynamics, calculate the 3 sigma TCM pair
-
+ 
     if simparams.perform_correction
-        % Function to find the minimum pair along the trajectory
-%         [tcm_3sigma,tcm_time, dvR3sigma_tr, dvV3sigma_tr] = tcmPair_rv(x, t, stm_t, deltaVs_nom, simparams);
-        % Function to find the optimal number of TCMs and times to perform
-        % them along the nominal trajectory
-        [~, ~, min_tcm_dv] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
-%         [~,~,min_tcm_dv] = opt_multiple_tcm(x, t, t_s, stm_t, simparams);
+        % Propagate traj state, STM, and Q history
+        traj = createStateStmQHistory(x, simparams);
+        % Using saved dynamics, calculate total impulsive delta V
+        [deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
+        % Function to find the optimal number of TCMs and times to perform them along the nominal trajectory
+%         [~, ~, min_tcm_dv] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
+        % TCM at nodes method
+        tcm_time = zeros(1, length(simparams.tcm_nodes));
+%         tcm_idx = zeros(1, length(simparams.tcm_nodes));
+
+        for i = 1:length(simparams.tcm_nodes)                
+            tcm_time(i) = sum(x(m,1:simparams.tcm_nodes(i)-1));
+        end
+%         for i = 1:length(tcm_time)
+%             tcm_idx(i) = find(traj.t == tcm_time(i))';
+%         end
+
+        % Calculate the process noise covariance between updates
+        [Q_k_km1] = calc_Q_events(traj, x, tcm_time, simparams);
+        % Calculate the TCM dv and dispersion covariance prior to each covariance modifying event (k)            
+        [~, min_tcm_dv] = calc_covariance_wQ_tcmdv_v3(x(:), traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
         tcm_3sigma = simparams.tcm_rss_factor * min_tcm_dv;
     else
+        traj = createStateStmHistory(x, simparams);
+        deltaV = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
         tcm_3sigma = 0;
     end
 
+    
+% YES GRADIENT OUTPUT
 else
     % Propagate entire trajectory and necessary things for gradients
     if simparams.perform_correction
@@ -52,20 +65,15 @@ else
             traj  = createStateStmSttHistory(x, simparams);
         else
             traj = createStateStmSttQdQHistory(x, simparams);
-        end
-        
+        end        
     else
-        traj = createStateStmHistory(x, simparams);
-        
-
+        traj = createStateStmHistory(x, simparams);    
     end
 
-    if isfield(simparams,'rdvz_flag')
-        if simparams.rdvz_flag == 1
-            x = reshape(x,simparams.m,simparams.n);
-            totalTime = sum(x(7,:));
-            simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
-        end
+    if existsAndTrue('rdvz_flag', simparams)
+        x = reshape(x, simparams.m, simparams.n);
+        totalTime = sum(x(m,:));
+        simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
     end
 
     % Using saved dynamics, calculate total nominal impulsive delta V and
@@ -85,18 +93,28 @@ else
         
         if sum(sum(simparams.Qt)) == 0
             % Function to optimize the number and location of TCMs along the trajectory
-            [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus] = opt_multiple_tcm(x, deltaVs_nom, traj.t, traj.t_s, traj.stm_t, traj.stm_t_i, simparams);
+%             [tcm_time, tcm_idx, min_tcm_dv, P_i_minus, P_i_plus] = opt_multiple_tcm(x, deltaVs_nom, traj.t, traj.t_s, traj.stm_t, traj.stm_t_i, simparams);
+
+            tcm_time = zeros(1, length(simparams.tcm_nodes));
+            tcm_idx = zeros(1, length(simparams.tcm_nodes));
+
+            for i = 1:length(simparams.tcm_nodes)                
+                tcm_time(i) = sum(x(m,1:simparams.tcm_nodes(i)-1));
+            end
+            for i = 1:length(tcm_time)
+                tcm_idx(i) = find(traj.t == tcm_time(i))';
+            end
 
             tcm_gradient = calc_multiple_tcm_gradient(x, traj.x_i_f, traj.stm_i, traj.stm_t, traj.stm_t_i, traj.stt_t_i, traj.t, traj.t_s, tcm_time, tcm_idx, P_i_minus, deltaVs_nom, simparams);
         else
             % Optimize the number and location of TCMs with process noise
 %             [tcm_time, tcm_idx, min_tcm_dv, P_i_minus] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams);
-            % TCM at nodes alternative method
+            % TCM at nodes method
             tcm_time = zeros(1, length(simparams.tcm_nodes));
             tcm_idx = zeros(1, length(simparams.tcm_nodes));
 
             for i = 1:length(simparams.tcm_nodes)                
-                tcm_time(i) = sum(x(7,1:simparams.tcm_nodes(i)-1));
+                tcm_time(i) = sum(x(m,1:simparams.tcm_nodes(i)-1));
             end
             for i = 1:length(tcm_time)
                 tcm_idx(i) = find(traj.t == tcm_time(i))';

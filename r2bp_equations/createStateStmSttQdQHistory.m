@@ -35,15 +35,16 @@ mu = simparams.mu;
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
+nsv = simparams.nsv;
 
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
 
 % Preallocate
-stm_i = zeros(6,6,n);
-stt_i = zeros(6,6,6,n);
-Q_i = zeros(6,6,n);
-dQ_i = zeros(6,6,6,n);
+stm_i = zeros(nsv,nsv,n);
+stt_i = zeros(nsv,nsv,nsv,n);
+Q_i = zeros(nsv,nsv,n);
+dQ_i = zeros(nsv,nsv,nsv,n);
 stm_t_i = cell(1,n);
 stt_t_i = cell(1,n);
 Q_t_i = cell(1,n);
@@ -82,8 +83,8 @@ for i = 1:n
 % 
 %     else
     
-    x_i_initial = x(1:6,i);
-    delta_t = x(7,i);
+    x_i_initial = x(1:nsv,i);
+    delta_t = x(m,i);
 %         add_to_i = 1;
 %     end
 
@@ -104,12 +105,12 @@ for i = 1:n
 
         if i == 1
             % State history
-            x_t = xstmstt_t_i(:,1:6);
+            x_t = xstmstt_t_i(:,1:nsv);
             % STM time history from the beginning of each segment to each
             % time index
-            stm_t = reshape( xstmstt_t_i(:,7:42)',6,6,[] );
+            stm_t = reshape( xstmstt_t_i(:,nsv+1:nsv+nsv^2)',nsv,nsv,[] );
             % STT history - cell structure - from the beginning of each segment to each time
-            stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
+            stt_t_i{i} = reshape( xstmstt_t_i(:,nsv+nsv^2+1:nsv+nsv^2+nsv^3)',nsv,nsv,nsv,[] );
             % Mirroring the above with a STM history cell structure
             stm_t_i{i} = stm_t;
             % Time history
@@ -120,8 +121,8 @@ for i = 1:n
 
             % Process noise 
             
-            Q_t_i{i} = reshape( xstmstt_t_i(:,259:294)',6,6,[] );
-            dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
+            Q_t_i{i} = reshape( xstmstt_t_i(:,nsv+nsv^2+nsv^3+1:nsv+2*nsv^2+nsv^3)',nsv,nsv,[] );
+            dQ_t_i{i} = reshape( xstmstt_t_i(:,nsv+2*nsv^2+nsv^3+1:nsv+2*nsv^2+2*nsv^3)',nsv,nsv,nsv,[] );
 
             Q_t = Q_t_i{i};
 
@@ -130,31 +131,31 @@ for i = 1:n
             % Append to history structure
             % Time (exclude first time element, it duplicates the final of
             % the previous)
-            t = [t; t_i(2:end) + sum(x(7,1:i-1))];
+            t = [t; t_i(2:end) + sum(x(m,1:i-1))];
 
             % Corresponding segment
             t_s = [t_s; i*ones([length(t_i)-1, 1])];
 
             % State
-            x_t = [x_t; xstmstt_t_i(2:end,1:6)];
+            x_t = [x_t; xstmstt_t_i(2:end,1:nsv)];
 
             % Reshape new STM history tensor
-            stm_t_i_curr = reshape( xstmstt_t_i(:,7:42)',6,6,[] );
+            stm_t_i_curr = reshape( xstmstt_t_i(:,nsv+1:nsv+nsv^2)',nsv,nsv,[] );
             stm_t_i{i} = stm_t_i_curr;
 
             % Reshape new STT history tensor - into cell structure for
             % single segment STT history only (not from the beginning of
             % entire trajectory)
 %             stt_t_i{i} = reshape( xstmstt_t_i(2:end,43:258)',6,6,6,[] );
-            stt_t_i{i} = reshape( xstmstt_t_i(:,43:258)',6,6,6,[] );
+            stt_t_i{i} = reshape( xstmstt_t_i(:,nsv+nsv^2+1:nsv+nsv^2+nsv^3)',nsv,nsv,nsv,[] );
 
 
 
 
 
             % Process noise 
-            Q_t_i{i} = reshape( xstmstt_t_i(:,259:294)',6,6,[] );
-            dQ_t_i{i} = reshape( xstmstt_t_i(:,295:510)',6,6,6,[] );
+            Q_t_i{i} = reshape( xstmstt_t_i(:,nsv+nsv^2+nsv^3+1:nsv+2*nsv^2+nsv^3)',nsv,nsv,[] );
+            dQ_t_i{i} = reshape( xstmstt_t_i(:,nsv+2*nsv^2+nsv^3+1:nsv+2*nsv^2+2*nsv^3)',nsv,nsv,nsv,[] );
 
 
 %             Q_t = [Q_t; tmult(    stm_i(:,:,i-1), tmult( Q_t_i{i}(:,:,2:end), stm_i(:,:,i-1), [0 1] )    ) ];
@@ -197,24 +198,24 @@ for i = 1:n
     else
         x_i_final = x_i_initial;
         x_i_f(:,i) = x_i_final;
-        stm_i(:,:,i) = eye(6);
-        stt_i(:,:,:,i) = zeros(6,6,6);
-        stt_t_i{i} = zeros(6,6,6);
-        stm_t_i{i} = eye(6);
+        stm_i(:,:,i) = eye(nsv);
+        stt_i(:,:,:,i) = zeros(nsv,nsv,nsv);
+        stt_t_i{i} = zeros(nsv,nsv,nsv);
+        stm_t_i{i} = eye(nsv);
 
-        Q_i(:,:,i) = zeros(6,6);
-        dQ_i(:,:,:,i) = zeros(6,6,6);
-        Q_t_i{i} = zeros(6,6);
-        dQ_t_i{i} = zeros(6,6,6);
+        Q_i(:,:,i) = zeros(nsv,nsv);
+        dQ_i(:,:,:,i) = zeros(nsv,nsv,nsv);
+        Q_t_i{i} = zeros(nsv,nsv);
+        dQ_t_i{i} = zeros(nsv,nsv,nsv);
 
         if i == 1
             
-            stm_t = eye(6);
+            stm_t = eye(nsv);
 %             stt_t_i{i} = zeros(6,6,6);
             x_t = [x_i_initial'];
             t = 0;
             t_s = i;
-            Q_t = zeros(6,6);
+            Q_t = zeros(nsv,nsv);
 
         end
     end

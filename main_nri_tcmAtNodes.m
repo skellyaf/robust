@@ -80,9 +80,9 @@ outputPath = strcat('./sims/',dateString,'_',savename);
 
 % 3 dv NRI, TCMs at nodes
 % init_fn = './init_traj_files/init_simparams_cr3bp_leoinclined_lloflyby_nri_3dv_TCMsAtNodes';
-% init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
+init_fn = './init_traj_files/init_simpar_leoinclined_lloflyby_nri_3dv_TCMsNodes_moreQ';
 % EED to LEO, TCMs at nodes
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
+% init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes';
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_mlo_3dv_tcmAtNodes_loadSimparams';
 
 
@@ -402,6 +402,13 @@ end
 figure
 plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
 
+
+
+
+[traj0]  = createStateStmSttHistory(x_opt, simparams);
+% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+figure
+plotMultiSegTraj(x_opt, traj0.x_t, traj0.t_s, simparams);
 
 
 

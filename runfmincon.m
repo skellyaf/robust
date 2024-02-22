@@ -22,7 +22,11 @@ history.constrviolation = [];
 optoptions.OutputFcn = @outfun;
 
 objf = @(x)nestedobjective(x,simparams);
-constf = @(x)constraint_min_tcm(x,simparams);
+if existsAndTrue('constrain_circ_x0xf',simparams)
+    constf = @(x)constraint_circ_x0xf(x,simparams);
+else
+    constf = @(x)constraint_min_tcm(x,simparams);
+end
 
 [x_opt,J,exitflag,output] = fmincon(objf,x,[],[],[],[],[],[],constf,optoptions)
 % [x_opt,J,exitflag,output] = fmincon(@(x)obj_min_tcm(x,simparams),x,[],[],[],[],[],[],@(x)constraint_min_tcm(x,simparams),optoptions)

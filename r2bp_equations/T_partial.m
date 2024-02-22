@@ -7,7 +7,8 @@ function dT = T_partial(stmNI, STTnCdx)
 
 
 depth = size(STTnCdx,3);
-T_analytical_partial = zeros(3,6,depth);
+nsv = size(stmNI,2);
+T_analytical_partial = zeros(3,nsv,depth);
 
 
 

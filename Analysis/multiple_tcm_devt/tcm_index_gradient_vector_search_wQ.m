@@ -120,7 +120,7 @@ while improving
 
             % Preventing the test from going forward on top of the next TCM 
             if i == length(gradient_vector)
-                compare = 1e8;
+                compare = 1e15;
             else
                 compare = TCMr_idx_test(i+1);
             end

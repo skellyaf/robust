@@ -1,9 +1,16 @@
-function [Qdot_out] = Qdot(Q, x, mu, Qt)
+function [Qdot_out] = Qdot(Q, x, simparams)
 
+dynSys = simparams.dynSys;
+F = A_matrix(x, simparams);
 
-F = cr3bp_sFrame_nd_Amatrix(x, mu);
+if strcmp(dynSys,'2bp')
+    G = [zeros(3,3); eye(3,3)];
+elseif strcmp(dynSys,'cr3bp')
+    G = [zeros(3,3); eye(3,3)];
+elseif strcmp(dynSys,'br4bp_sb1')
+    G = [zeros(3,3); eye(3,3); zeros(1,3)];
+end
 
-G = [zeros(3,3); eye(3,3)];
 
 % stmdot = F*stm;
 
@@ -11,7 +18,7 @@ G = [zeros(3,3); eye(3,3)];
 
 
 % Qdot equations of motion
-Qdot_out = F*Q + Q*F' + G*Qt*G';
+Qdot_out = F*Q + Q*F' + G*simparams.Qt*G';
 
 % dFdx = einsum2(Fab, stm, [1, 2, 4], [4, 3], 3);
 

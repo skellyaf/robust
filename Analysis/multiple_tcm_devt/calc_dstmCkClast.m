@@ -6,16 +6,18 @@ function [dstmCkClastdxi, dstmCkClastddti] = calc_dstmCkClast(x, x_i_f, t, t_s, 
 % Symplectic unit matrix
 % J = [zeros(3,3), eye(3,3); -eye(3,3), zeros(3,3)];
 mu = simparams.mu;
-
+m = simparams.m;
+n = simparams.n;
+nsv = simparams.nsv;
 
 % The initial time for the current segment
 if i == 1
     t0_i = 0;
 else
-    t0_i = sum(x(7,1:i-1));
+    t0_i = sum(x(m,1:i-1));
 end
 
-tf_i = sum(x(7,1:i)); % The final time for the current segment
+tf_i = sum(x(m,1:i)); % The final time for the current segment
 
 
 tCk_idx = find(t==tCk);
@@ -27,8 +29,8 @@ tClast_idx = find(t==tClast);
 %% Logic case 1: [t0,i < tf,i < tClast < tCk]
 if tf_i <= tClast
     % State adjustments happen before any of the segments involved in the corrections 
-    dstmCkClastdxi = zeros(6,6,6);
-    dstmCkClastddti = zeros(6,6);
+    dstmCkClastdxi = zeros(nsv,nsv,nsv);
+    dstmCkClastddti = zeros(nsv,nsv);
 
 %% Logic case 2: [t0,i < tClast < tf,i < tCk] (TESTED - IS WORKING!)
 elseif t0_i <= tClast && tf_i <= tCk
@@ -69,7 +71,7 @@ elseif t0_i <= tClast && tCk < tf_i
     dstmCkClastdxi = tmult( stmCki0, dstmClasti0_inv ) + tmult( sttCki0, stmi0Clast );
 
     % Calc dstmCkClastddti
-    dstmCkClastddti = zeros(6,6);
+    dstmCkClastddti = zeros(nsv,nsv);
 
 
 
@@ -87,16 +89,16 @@ elseif t0_i <= tCk && tCk < tf_i
     dstmCkClastdxi = tmult( sttCki0, stmi0Clast );
 
     % Calc dstmCkClastddti
-    dstmCkClastddti = zeros(6,6);
+    dstmCkClastddti = zeros(nsv,nsv);
 
 
 %% Logic case 5: [tClast < tCk < t0,i < tf,i]
 elseif tCk < t0_i
     % State adjustments happen after any of the segments involved in the corrections 
-    dstmCkClastdxi = zeros(6,6,6);
+    dstmCkClastdxi = zeros(nsv,nsv,nsv);
 
     % Calc dstmCkClastddti
-    dstmCkClastddti = zeros(6,6);
+    dstmCkClastddti = zeros(nsv,nsv);
 
 %% Logic case 6: [tClast < t0,i < tf,i < tCk]
 elseif tf_i <= tCk
@@ -116,7 +118,7 @@ elseif tf_i <= tCk
 
 %% Something is messed up if we're here
 else
-    assert(0,'None of the 5 logic cases were satisfied, something is amiss!');
+    assert(0,'None of the logic cases were satisfied, something is amiss!');
 
 end
 

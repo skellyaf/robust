@@ -2,12 +2,13 @@ x = simparams.x0;
 % x = x_opt(:);
 
 % % % 
-
+%% Objective function gradient
 
 if 0
 
-%     dx = sqrt(eps);
-    dx = 1e-10;
+%     dx = 1e-6;
+    dx = sqrt(eps);
+%     dx = 1e-10;
     testGradJ = zeros(length(x(:)),1);
 
     [obj_x, ~] = obj_min_tcm(x,simparams);
@@ -41,13 +42,14 @@ end
 
 
 %%%%%%%%%%%%%%%%% VERIFYING EQUALITY CONSTRAINT GRADIENTS
-if 0
+if 1
     dx = sqrt(eps);
     outputGradients = 1;
     [~,nonpCeq] = constraint_min_tcm(x, simparams);
     testGradceq = [];
     
     for j = 1:length(x(:)) 
+        j
         xdx = x;
         dxd = dx;
 %         dxd = dx*x(j);
@@ -66,6 +68,8 @@ if 0
     ceqGrad_an = ceqGrad_an';
     diffGradceq = testGradceq - ceqGrad_an
 
+    (ceqGrad_an - testGradceq) ./ testGradceq
+
     
 
 end
@@ -78,6 +82,7 @@ dx = sqrt(eps);
 
 testGradcin = [];
     for j = 1:length(x(:)) %3
+        j
 
         if j == 134
             ppp=1;

@@ -20,7 +20,7 @@ if nargout == 2
 else
     stt_flag = 0;
 end
-
+nsv = simparams.nsv;
 % Enable the abilty to request an inverse STM or STT by providing a start
 % index that is greater than the end index
 if total_idx_start > total_idx_end
@@ -34,8 +34,8 @@ elseif total_idx_start < total_idx_end
     skip = 0;
 else
     skip = 1;
-    stm_combined = eye(6);
-    stt_combined = zeros(6,6,6);
+    stm_combined = eye(nsv);
+    stt_combined = zeros(nsv,nsv,nsv);
 end
 
 % STM and STT indices indicate the end of a segment, but we want to start
@@ -77,6 +77,10 @@ if ~skip
             % Don't go all the way to the end of the current cell
 
             end_logical = t(t_s==i)==t(total_idx_end);
+            
+%             if length(end_logical) > 1
+%                 end_logical = end_logical(1);
+%             end
 
 
             %%%%% TODO: WHAT WAS THIS NEXT SECTION OF CODE FOR? THERE

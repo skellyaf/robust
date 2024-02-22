@@ -7,10 +7,10 @@ function [tcm_gradient, tcm_gradient_r, tcm_gradient_v, dPCkminusdxi, dPCkminusd
 % Variable extraction
 m = simparams.m;
 n = simparams.n;
-mu = simparams.mu;
+nsv = simparams.nsv;
 % P_initial = simparams.P_initial;
 R = simparams.R;
-G = [zeros(3,3); eye(3,3)];
+G = [zeros(3,3); eye(3,3); zeros(mod(nsv,6),3)];
 R_dv = G*simparams.R_dv*G';
 % maneuverSegments = simparams.maneuverSegments;
 num_r_corrections = length(tcm_idx);
@@ -45,7 +45,7 @@ event_idx_logical = logical(sum(traj.t'==event_times', 1));
 event_idxs = find(event_idx_logical);
 
 % Find the first TCM target time
-target_time = sum(x(7,1:simparams.P_constrained_nodes(1)-1));
+target_time = sum(x(m,1:simparams.P_constrained_nodes(1)-1));
 target_node = simparams.P_constrained_nodes(1);
 target_leg = 1;
 previous_target_node = 1;
@@ -73,10 +73,10 @@ i_DVs = deltaVs_nom./DV_norms;
 %%% there is no need to save all of them.
 
 % Initialize partial derivative placeholders for each correction loop
-dPCkminusdxi = zeros(6,6,6,length(event_indicator),n);
-dPCkminusddti = zeros(6,6,length(event_indicator),n);
-dTkdxi = zeros(3,6,6,length(event_indicator),n);
-dTkddti = zeros(3,6,length(event_indicator),n);
+dPCkminusdxi = zeros(nsv,nsv,nsv,length(event_indicator),n);
+dPCkminusddti = zeros(nsv,nsv,length(event_indicator),n);
+dTkdxi = zeros(3,nsv,nsv,length(event_indicator),n);
+dTkddti = zeros(3,nsv,length(event_indicator),n);
 % dPCkminusdxi = zeros(6,6,6,num_r_corrections,n);
 % dPCkminusddti = zeros(6,6,num_r_corrections,n);
 % dTkdxi = zeros(3,6,6,num_r_corrections,n);
@@ -141,7 +141,7 @@ for k = 1:num_events
     % If the first iteration, the "last" TCM occured at t=0
     if k == 1
         if simparams.start_P_growth_node > 1
-            tClast = sum(x(7,1:simparams.start_P_growth_node-1));
+            tClast = sum(x(m,1:simparams.start_P_growth_node-1));
             tClast_idx = find(t == tClast);
             
         else
@@ -160,15 +160,15 @@ for k = 1:num_events
     if event_indicator(k) > 0 % If a TCM occurs at k
         % Calculate the T matrix
         stmNCk = dynCellCombine(t, t_s, tCk_idx, target_idx, simparams, stm_t_i);
-        Tk = [-inv( stmNCk(1:3,4:6) ) * stmNCk(1:3,1:3), -eye(3)];
+        Tk = [-inv( stmNCk(1:3,4:6) ) * stmNCk(1:3,1:3), -eye(3), zeros(3,mod(nsv,6))];
 
-        % Calculate the W and L matrices (used for TCMv calculation)
-        Wk = [stmNCk(4:6,4:6), -stmNCk(4:6,1:3)];
-        Lk = [Wk*Tk', zeros(3,3)];
-    
-        % Calculate N and IN matrices
-        Nk = [zeros(3,6); Tk];
-        INk = eye(6) + Nk;
+% % % %         % Calculate the W and L matrices (used for TCMv calculation)
+% % % %         Wk = [stmNCk(4:6,4:6), -stmNCk(4:6,1:3)];
+% % % %         Lk = [Wk*Tk', zeros(3,3)];
+% % % %     
+% % % %         % Calculate N and IN matrices
+% % % %         Nk = [zeros(3,6); Tk];
+% % % %         INk = eye(6) + Nk;
     end   
     
     %% Loop through the segments / calculate partial derivatives / gradients
@@ -191,22 +191,12 @@ for k = 1:num_events
         % -----     dINdxi (includes T partial, which is already calculated)---T partial needs updating for multiple TCMs
         % -----     dstmCkCminusdxi (a complicated one, needs 5 logic options
         %               based on t0,i, tf,i, tCk, tClast)
-
-        if i == 7 && k == 5
-            debug=1;
-        end
-
         
         [dstmCkClastdxi, dstmCkClastddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tClast, i, simparams); % verified numerically
 
 
         if event_indicator(k) > 0
             % Calculate dstmNC and assemble dTk
-
-            if isempty(tCk) || isempty(target_time)
-                ppp=1;
-            end
-
 
             [dstmNCkdxi, dstmNCkddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, target_time, tCk, i, simparams);
 
@@ -230,8 +220,8 @@ for k = 1:num_events
 % % % %                 dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6)) + dQ_k_km1_ddti(:,:,k,i);
 % % % %             end
 
-            dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(6,6,6), zeros(6,6)) + dQ_k_km1_dxi(:,:,:,k,i);
-            dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(6,6), zeros(6,6)) + dQ_k_km1_ddti(:,:,k,i);
+            dPCkminusdxi(:,:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastdxi, simparams.P_initial, zeros(nsv,nsv,nsv), zeros(nsv,nsv)) + dQ_k_km1_dxi(:,:,:,k,i);
+            dPCkminusddti(:,:,k,i) = calc_dphiPphi(stmCkClast, dstmCkClastddti, simparams.P_initial, zeros(nsv,nsv), zeros(nsv,nsv)) + dQ_k_km1_ddti(:,:,k,i);
         else
 
             dPClast_minus_dxi = dPCkminusdxi(:,:,:,k-1,i);
@@ -290,9 +280,9 @@ for k = 1:num_events
             % Assemble gradient w/TCM execution error incorporated in
             % sigma_tcm calc (simparams.R)
             % dxi
-            tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i), simparams.R);    
+            tcm_gradient_r((i-1)*m+1:(i-1)*m+nsv,tcm_idx) = calc_dSigk(Tk, dTkdxi(:,:,:,k,i), P_k_minus(:,:,k), dPCkminusdxi(:,:,:,k,i), simparams.R);    
             % ddti
-            tcm_gradient_r(i*7,tcm_idx) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i), simparams.R);
+            tcm_gradient_r(i*m,tcm_idx) = calc_dSigk(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i), simparams.R);
             
 
         elseif event_indicator(k) == 3
@@ -306,13 +296,13 @@ for k = 1:num_events
                 dPtcmddti = calc_dABA(Tk, dTkddti(:,:,k,i), P_k_minus(:,:,k), dPCkminusddti(:,:,k,i));
 
                 i_DV = i_DVs(:,target_leg);
-                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, simparams.maneuverSegments, target_leg, simparams.dynSys, simparams.mu); 
+                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, target_leg, simparams); 
 
                 % Into the gradient structure
                 % ddti_minus
-                tcm_gradient_r((i)*7,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVddt, Ptcm, dPtcmddti);
+                tcm_gradient_r((i)*m,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVddt, Ptcm, dPtcmddti);
                 % dxi_minus
-                tcm_gradient_r((i-1)*7+1:(i-1)*7+6,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx, Ptcm, dPtcmdxi);
+                tcm_gradient_r((i-1)*m+1:(i-1)*m+nsv,tcm_idx) = calc_dSigCorrectedDV(i_DV, di_DVdx, Ptcm, dPtcmdxi);
 
 
     
@@ -336,14 +326,14 @@ for k = 1:num_events
             if simparams.correct_nominal_dvs
                 % If the TSE vector addition reduction is applied
                 i_DV = i_DVs(:,end); % Final DV
-                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, simparams.maneuverSegments, length(simparams.maneuverSegments), simparams.dynSys, simparams.mu); 
+                [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, length(simparams.maneuverSegments), simparams); 
 
 
                 % Into the gradient structure
                 % ddti_minus
-                tcm_gradient_v(i*7,1) = calc_dSigCorrectedDV(i_DV, di_DVddt, Pn(4:6,4:6), dPnddti(4:6,4:6));
+                tcm_gradient_v(i*m,1) = calc_dSigCorrectedDV(i_DV, di_DVddt, Pn(4:6,4:6), dPnddti(4:6,4:6));
                 % dxi_minus
-                tcm_gradient_v((i-1)*7+1:(i-1)*7+6,1) = calc_dSigCorrectedDV(i_DV, di_DVdx, Pn(4:6,4:6), dPndxi(4:6,4:6,:));
+                tcm_gradient_v((i-1)*m+1:(i-1)*m+nsv,1) = calc_dSigCorrectedDV(i_DV, di_DVdx, Pn(4:6,4:6), dPndxi(4:6,4:6,:));
 
 
 
@@ -358,8 +348,8 @@ for k = 1:num_events
                 
           
     
-                tcm_gradient_v((i-1)*7+1:(i-1)*7+6,1) = calc_dSigk(Mv, zeros(3,6,6), Pn, dPndxi, simparams.R);
-                tcm_gradient_v(i*7,1) = calc_dSigk(Mv, zeros(3,6), Pn, dPnddti, simparams.R);
+                tcm_gradient_v((i-1)*m+1:(i-1)*m+nsv,1) = calc_dSigk(Mv, zeros(3,nsv,nsv), Pn, dPndxi, simparams.R);
+                tcm_gradient_v(i*m,1) = calc_dSigk(Mv, zeros(3,nsv), Pn, dPnddti, simparams.R);
 
 
             end

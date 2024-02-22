@@ -1,7 +1,7 @@
 function [stt12] = tensorCombine(stm1, stt1, stm2, stt2)
 
 
-ATA = zeros(6,6,6);
+% ATA = zeros(6,6,6);
 
 
 % T = stt2;

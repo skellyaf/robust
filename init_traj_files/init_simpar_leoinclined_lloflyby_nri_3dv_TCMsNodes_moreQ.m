@@ -94,6 +94,7 @@ simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converte
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
 % simparams.n = 25; % number of trajectory segments
 simparams.n = 20; % number of trajectory segments
+simparams.nsv = 6; 
 
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 

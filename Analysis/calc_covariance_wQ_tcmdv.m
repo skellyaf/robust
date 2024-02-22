@@ -17,13 +17,15 @@ assert(size(deltaV,2)==1 || size(deltaV,2)==2);
 
 m = simparams.m; % the number of elements per segment
 n = simparams.n; % the number of segments
+nsv = simparams.nsv;
+
 
 % Reshaping x so each column is a segment initial state and duration
 x = reshape(x,m,n);
 
 R_tcm = simparams.R;
 R_dv = simparams.R_dv; % nominal maneuver execution error covariance
-G = [zeros(3,3); eye(3,3)];
+G = [zeros(3,3); eye(3,3); zeros(mod(nsv,6),3)];
 
 
 %% Finding the nominal maneuvers, their times, and defining which events are TCMs
@@ -37,7 +39,8 @@ G = [zeros(3,3); eye(3,3)];
 % already the target. Additionally, the function define_events does not
 % include the target as an event. Therefore, the final propagation outside
 % the while loop brings the final "event" post covariance to the target.
-stmN0 = traj.stm_t(:,:,end);
+target_idx = size(traj.stm_t,3);
+% stmN0 = traj.stm_t(:,:,end);
 
 % stmN0 = dynCellCombine(t, traj.t_s, start_idx, target_idx, simparams, traj.stm_t_i);
 
@@ -71,7 +74,7 @@ else % Otherwise, if there are events, do:
 
     % Extract STMs for calculations
     % A tensor of STMs from the beginning of the trajectory to each correction
-    stmC0 = traj.stm_t(:,:,event_idx_logical);
+%     stmC0 = traj.stm_t(:,:,event_idx_logical);
 
 
     % Modified for events, not just TCMs
@@ -79,9 +82,9 @@ else % Otherwise, if there are events, do:
     % Plus one because a minus covariance for each event and the last is
     % going to be P at the target/end and there isn't an event for the
     % final / target time
-    P_i_minus = zeros(6,6,length(unique(event_times))+1); % Plus one because it captures the end of the trajectory portion, which isn't defined by an event
+    P_i_minus = zeros(nsv,nsv,length(unique(event_times))+1); % Plus one because it captures the end of the trajectory portion, which isn't defined by an event
 
-    P_i_plus = zeros(6,6,length(unique(event_times))); % no plus one, it is the dispersion covariance after each event    
+    P_i_plus = zeros(nsv,nsv,length(unique(event_times))); % no plus one, it is the dispersion covariance after each event    
 
 
 %     Q_Clast = zeros(6,6);
@@ -93,17 +96,21 @@ else % Otherwise, if there are events, do:
         % Propagate dispersion covariance from previous event to i
 
         if i == 1
-            stmCiClast = stmC0(:,:,i);
+%             stmCiClast = stmC0(:,:,i);
+            
             idx_Ci = event_idxs(i);
             idx_Clast = 1;
+            stmCiClast = dynCellCombine(traj.t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
             Q_Ci = traj.Q_t(:,:,idx_Ci);
-%             stmCiClast = dynCellCombine(t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
+
+
+            
         else
             idx_Ci = event_idxs(i);
             idx_Clast = event_idxs(i-1);
-%             stmCiClast = dynCellCombine(t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
-            stmCi0 = stmC0(:,:,i);
-            stmCiClast = stmCi0 * stm0C;
+%             stmCi0 = stmC0(:,:,i);
+%             stmCiClast = stmCi0 * stm0C;
+            stmCiClast = dynCellCombine(traj.t, traj.t_s, idx_Clast, idx_Ci, simparams, traj.stm_t_i);
             Q_Ci = traj.Q_t(:,:,idx_Ci) - stmCiClast * traj.Q_t(:,:,idx_Clast) * stmCiClast';
         end 
 
@@ -112,7 +119,7 @@ else % Otherwise, if there are events, do:
         if i == 1 && event_idx_logical(1)
 %         if i == 1 && event_idx_logical(1) || traj.t_s(event_idxs(i)) == traj.t_s(event_idxs(i)+1) - 1 && traj.t_s(event_idxs(i)+1) == simparams.start_P_growth_node
             P_i_minus(:,:,i) = P_i;
-            stm0C = eye(6);
+%             stm0C = eye(nsv);
         else
 %             x_Clast = traj.x_t(idx_Clast,:)';
 %             dt_CiClast = traj.t(idx_Ci) - traj.t(idx_Clast);
@@ -148,21 +155,22 @@ else % Otherwise, if there are events, do:
 %             Q_Ci = traj.Qbart(:,:,idx_Ci);
             
             P_i_minus(:,:,i) = stmCiClast * P_i * stmCiClast' + Q_Ci;
-            stm0C = invert_stm(stmC0(:,:,i), simparams);            
+%             stm0C = invert_stm(stmC0(:,:,i), simparams);
         end
 
 
         
-        stmNC = stmN0 * stm0C;
+%         stmNC = stmN0 * stm0C;
+        stmNC = dynCellCombine(traj.t, traj.t_s, idx_Ci, target_idx, simparams, traj.stm_t_i);
 
         % Is it a nominal maneuver (0), TCM (1), both at the same time (2), or a corrected nominal DV (3)?
 
         if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
 
             % Perform the TCM update matrix calculations     
-            T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3)];
-            N = [zeros(3,6); T];
-            IN = eye(6) + N;
+            T = [-inv( stmNC(1:3,4:6) ) * stmNC(1:3,1:3), -eye(3), zeros(3,mod(nsv,6))];
+            N = [zeros(3,nsv); T; zeros(mod(nsv,6),nsv)];
+            IN = eye(nsv) + N;
 
             if event_indicator(i) == 3 % Corrected nominal maneuver
                 assert(simparams.correct_nominal_dvs); % Should only be here if this flag is on

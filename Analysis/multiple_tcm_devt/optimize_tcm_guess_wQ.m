@@ -7,10 +7,10 @@ function [tcm_time,tcm_idx,min_tcm_dv,tcm_time_cell,tcm_idx_cell,tcm_num_option_
 % OPTIONAL INPUT: P_i
 % if length(varargin) < 1
 %     P_i = simparams.P_initial;
-% else
+% elsef
 %     P_i = varargin{1};
 % end
-
+x=reshape(x,simparams.m,simparams.n);
 
 %% Structure to store the TCM info
 tcm_time_cell{1} = tcm_time; % Cell structure
@@ -44,8 +44,15 @@ while improving
     % the nominal maneuvers there
     if simparams.correct_nominal_dvs
         for i = 1:length(simparams.maneuverSegments)
-            maneuverSegIdx = traj.t_s==simparams.maneuverSegments(i);
-            maneuverIdx = find(maneuverSegIdx,1)-1; % the time of the maneuver occurs at the intersection of 1 and 2, and the previous segment gets the final time index
+%             maneuverSegIdx = traj.t_s==simparams.maneuverSegments(i);
+%             maneuverIdx = find(maneuverSegIdx,1)-1; % the time of the maneuver occurs at the intersection of 1 and 2, and the previous segment gets the final time index
+%             test_logical(maneuverIdx) = false;
+
+
+
+
+            maneuver_time = sum(x(7,1:simparams.maneuverSegments(i)-1));
+            maneuverIdx = find(maneuver_time==traj.t);
             test_logical(maneuverIdx) = false;
         end
     end

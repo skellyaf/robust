@@ -90,7 +90,7 @@ simparams.Qt = 1e-8 * eye(3);
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
 simparams.n = 30; % number of trajectory segments
-
+simparams.nsv = 6;
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options

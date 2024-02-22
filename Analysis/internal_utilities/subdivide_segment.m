@@ -7,6 +7,8 @@ function [X] = subdivide_segment(x_t, t, n)
 
 idx_sep = floor( length(t) / n );
 
+nsv = size(x_t,2);
+
 % iter = 1;
 % i = idx_sep;
 % X(7,1) = t(i);
@@ -30,22 +32,22 @@ idx_sep = floor( length(t) / n );
 
 
 if n == 1
-    X(1:6,:) = x_t(1,:)';
-    X(7,:) = t(end);
+    X(1:nsv,:) = x_t(1,:)';
+    X(nsv+1,:) = t(end);
 else
 
 
     idxs = round(linspace(1, length(t) - idx_sep, n));
     
-    X(1:6,:) = x_t(idxs,:)';
-    X(7,1) = t(idxs(2));
+    X(1:nsv,:) = x_t(idxs,:)';
+    X(nsv+1,1) = t(idxs(2));
     
     for i = 2:size(X,2)
         if i == size(X,2)
-            X(7,i) = t(end) - t(idxs(i));
+            X(nsv+1,i) = t(end) - t(idxs(i));
     
         else
-            X(7,i) = t(idxs(i+1)) - t(idxs(i));
+            X(nsv+1,i) = t(idxs(i+1)) - t(idxs(i));
         end
     end
     
