@@ -151,7 +151,7 @@ else % Otherwise, if there are events, do:
     
             % Is it a nominal maneuver (0), TCM (1), both simultaneously (2), or a corrected nominal maneuver (3)?
     
-            if event_indicator(i) > 0 % If there is a TCM (by itself or combined)
+            if event_indicator(i) > 0 && i < length(event_indicator) % If there is a TCM (by itself or combined)
     
                 stmNC = dynCellCombine(traj.t, traj.t_s, idx_Ci, target_idx, simparams, traj.stm_t_i);
     
@@ -205,7 +205,8 @@ else % Otherwise, if there are events, do:
     P_target = P_i_minus(:,:,end); 
     
     if vel_disp_flag
-        if simparams.correct_nominal_dvs
+%         if simparams.correct_nominal_dvs
+        if simparams.corrected_nominal_dvs(end)
             % Use the first order TSE expansion savings, if flagged
             DV_final = deltaVs_nom(:,end);
             i_dvf = DV_final / norm(DV_final);

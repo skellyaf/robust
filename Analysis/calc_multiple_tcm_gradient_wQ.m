@@ -157,7 +157,7 @@ for k = 1:num_events
     stmCkClast = dynCellCombine(t, t_s, tClast_idx, tCk_idx, simparams, stm_t_i);
 
    
-    if event_indicator(k) > 0 % If a TCM occurs at k
+    if event_indicator(k) > 0 && k < num_events % If a TCM occurs at k
         % Calculate the T matrix
         stmNCk = dynCellCombine(t, t_s, tCk_idx, target_idx, simparams, stm_t_i);
         Tk = [-inv( stmNCk(1:3,4:6) ) * stmNCk(1:3,1:3), -eye(3), zeros(3,mod(nsv,6))];
@@ -195,7 +195,7 @@ for k = 1:num_events
         [dstmCkClastdxi, dstmCkClastddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, tCk, tClast, i, simparams); % verified numerically
 
 
-        if event_indicator(k) > 0
+        if event_indicator(k) > 0 && k < num_events
             % Calculate dstmNC and assemble dTk
 
             [dstmNCkdxi, dstmNCkddti] = calc_dstmCkClast(x, x_i_f, t, t_s, stm_t, stm_i, stm_t_i, stt_t_i, target_time, tCk, i, simparams);
@@ -323,7 +323,8 @@ for k = 1:num_events
 
             assert(event_indicator(k)==1,'Error: need to incorporate logic here for when the event prior to the final target is a nominal maneuver!');
 
-            if simparams.correct_nominal_dvs
+%             if simparams.correct_nominal_dvs
+            if simparams.corrected_nominal_dvs(end)
                 % If the TSE vector addition reduction is applied
                 i_DV = i_DVs(:,end); % Final DV
                 [di_DVddt, di_DVdx] = calc_diDV(deltaVs_nom, i, stm_i, x_i_f, length(simparams.maneuverSegments), simparams); 
@@ -380,12 +381,14 @@ for k = 1:num_events
     
         if event_times(k+1) == target_time
             future_targets = event_times(event_times>target_time & event_indicator~=1);
-            target_time = min(future_targets);
-            target_idx = find(t==target_time);    
-    
-            target_leg = target_leg + 1;
-            if target_leg <= length(simparams.P_constrained_nodes)
-                target_node = simparams.P_constrained_nodes(target_leg);
+            if ~isempty(future_targets)
+                target_time = min(future_targets);
+                target_idx = find(t==target_time);    
+        
+                target_leg = target_leg + 1;
+                if target_leg <= length(simparams.P_constrained_nodes)
+                    target_node = simparams.P_constrained_nodes(target_leg);
+                end
             end
         end
     end

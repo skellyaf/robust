@@ -173,7 +173,7 @@ else % Otherwise, if there are events, do:
             IN = eye(nsv) + N;
 
             if event_indicator(i) == 3 % Corrected nominal maneuver
-                assert(simparams.correct_nominal_dvs); % Should only be here if this flag is on
+%                 assert(simparams.correct_nominal_dvs); % Should only be here if this flag is on
                 % Corrected nominal applies the nominal maneuver execution error
 %                 P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; %%%%% QUESTION: APPLYING TCM R TO THE EXECUTION COST; APPLYING DV R TO THE DISPERSION...WHATS RIGHT? 
                 P_tcm = T * P_i_minus(:,:,i) * T'; %%%%% QUESTION: APPLYING TCM R TO THE EXECUTION COST; APPLYING DV R TO THE DISPERSION...WHATS RIGHT? 
@@ -249,7 +249,8 @@ else % Otherwise, if there are events, do:
 
 
     if vel_disp_flag
-        if simparams.correct_nominal_dvs
+%         if simparams.correct_nominal_dvs
+        if simparams.corrected_nominal_dvs(end)
             % Use the first order TSE expansion savings, if flagged
 %             [~, DVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams)
 %             DV_final = DVs_nom(:,end);

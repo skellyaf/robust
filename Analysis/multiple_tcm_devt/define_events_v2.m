@@ -39,11 +39,14 @@ end
 event_times = [maneuver_times, tcm_time];
 
 % Determine maneuver event indicator:
-if simparams.correct_nominal_dvs
-    maneuver_event_indicator = [3*ones(1,length(maneuver_times)-1), 0];
-else
-    maneuver_event_indicator = zeros(1,length(maneuver_times));
-end
+maneuver_event_indicator = zeros(1,length(maneuver_times));
+maneuver_event_indicator(simparams.corrected_nominal_dvs) = 3;
+
+% if simparams.correct_nominal_dvs
+%     maneuver_event_indicator = [3*ones(1,length(maneuver_times)-1), 0];
+% else
+%     maneuver_event_indicator = zeros(1,length(maneuver_times));
+% end
 
 % TCM event indicator:
 tcm_event_indicator = ones(1,length(tcm_time));

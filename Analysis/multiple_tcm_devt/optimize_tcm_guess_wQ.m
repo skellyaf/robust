@@ -42,7 +42,8 @@ while improving
 
     % Don't test where nominal maneuvers are if we're already correcting
     % the nominal maneuvers there
-    if simparams.correct_nominal_dvs
+%     if simparams.correct_nominal_dvs || sum(simparams.corrected_nominal_dvs) > 0
+    if sum(simparams.corrected_nominal_dvs) > 0
         for i = 1:length(simparams.maneuverSegments)
 %             maneuverSegIdx = traj.t_s==simparams.maneuverSegments(i);
 %             maneuverIdx = find(maneuverSegIdx,1)-1; % the time of the maneuver occurs at the intersection of 1 and 2, and the previous segment gets the final time index
