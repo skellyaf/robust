@@ -78,7 +78,7 @@ end
     
 %% Pre-calculate/propagate states/STMs before assembling constraints
 
-if existsAndTrue('target_Pr_constraint_on',simparams)
+if existsAndTrue('target_Pr_constraint_on',simparams) && simparams.perform_correction
 
     traj = createStateStmSttQdQHistory(x(:), simparams);
     [~, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
@@ -357,7 +357,7 @@ if simparams.constrain_flyby_radius
 end
 
 % Target position covariance RSS inequality constraint
-if existsAndTrue('target_Pr_constraint_on',simparams)
+if existsAndTrue('target_Pr_constraint_on',simparams) && simparams.perform_correction
 
     [event_times, event_indicator] = define_events_v2(x(:), traj.t, tcm_time, simparams);
 

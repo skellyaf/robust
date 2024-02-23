@@ -18,10 +18,12 @@ ndTime2sec = 1/n;
 ndTime2hrs = 1/n/3600;
 ndTime2days = 1/n/3600/24;
 ndDist2km = Rm;
+ndDist2m = Rm * 1000;
 ndVel2kms = Rm * n;
 
 % mu
 simparams.mu = moon.mu/(earth.mu + moon.mu);
+mu = simparams.mu;
 
 % Dynamical system flag for which differential equations to use
 simparams.dynSys = 'cr3bp'; % options are 2bp and cr3bp.
@@ -36,6 +38,7 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
 % zero
@@ -43,12 +46,16 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 1e-12;
 
 % Small
-% simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
-% simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
+simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+
+% Medium
+% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
-simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
-simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
+% simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 m/s in all 3 directions converted to ND dist / ND time
 % simparams.sig_vel = 10 / 1e5 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions converted to ND dist / ND time
 
 
@@ -63,7 +70,10 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+% simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
@@ -71,18 +81,30 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
 
+
+
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+
+
+
 %% Load saved trajectory parameters
 
 %% Trajectory parameter structure
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
-simparams.n = 25; % number of trajectory segments
+simparams.n = 20; % number of trajectory segments
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
+simparams.nsv = 6; % number of state variables
+
 
 %% Trajectory options
 
 simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive maneuver at their beginning
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
-simparams.max_num_TCMs = 6; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.corrected_nominal_dvs = logical([1 1]); % Logical flag for each nominal maneuver identifying if it should get the combined correction savings
+
+simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
 simparams.maneuver_w_corr = 0; % 1 The index of simpar.maneuverSegments where a correction occurs (currently the first nominal maneuver); set to 0 to not tie to a nominal maneuver
@@ -104,9 +126,20 @@ simparams.segn_coast_fraction = 0.25; % percent of orbital period to coast in th
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
 
 simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclination change to happen at dv1
+
+simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+
+simparams.tcm_rss_factor = 3;
+
+simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position dispersion (relevant when the TCMs are tied to nodes instead of optimized each iteration)
+
+simparams.skip_dv_1 = false; % Flag to not include the first nominal DV in the cost function / DV calculation / DV gradients.
+
+simparams.constrain_flyby_radius = false; % bool, true or false
+
 
 %% Orbit parameters
 %% Initial orbit - currently circular inclined
@@ -233,13 +266,12 @@ simparams.x0 = simparams.x0(:);
 
 %% Fmincon optimization options
 
-% Undefined algorithm
-
+% Undefined optimization algorithm
 simparams.optoptions = optimoptions('fmincon');
 
 % # Iterations
-simparams.optoptions.MaxFunctionEvaluations = 3e5;
-simparams.optoptions.MaxIterations = 1e4;
+simparams.optoptions.MaxFunctionEvaluations = 1e6;
+simparams.optoptions.MaxIterations = 1e6;
 
 % Algorithm
 simparams.optoptions.Algorithm = 'interior-point';
@@ -251,19 +283,19 @@ simparams.optoptions.SpecifyObjectiveGradient = true;
 
 
 % Optimality and constraint satisfaction tolerances
-simparams.optoptions.OptimalityTolerance = 1e-10;
-simparams.optoptions.ConstraintTolerance = 1e-10;
-simparams.optoptions.StepTolerance = 1e-14; % use with sqp
+simparams.optoptions.OptimalityTolerance = 1e-6;
+simparams.optoptions.ConstraintTolerance = 2e-10 * simparams.n * simparams.m;
+simparams.optoptions.StepTolerance = 1e-15; 
 % simparams.optoptions.FiniteDifferenceStepSize = 1e-5;
 
 % To use parallel processing
-simparams.optoptions.UseParallel = true;
+% simparams.optoptions.UseParallel = true;
 
 % Fmincon interior point feasibility mode
 % simparams.optoptions.EnableFeasibilityMode = true;
 % simparams.optoptions.SubproblemAlgorithm = 'cg';
 
+simparams.optoptions.Display='iter';
 
 % To have matlab check the analytical gradient, if being used
 % simparams.optoptions = optimoptions('fmincon','Algorithm','interior-point','MaxFunctionEvaluations',3e5,'MaxIterations',1e4,'SpecifyObjectiveGradient',true,'CheckGradients',true,'FiniteDifferenceType','central','FiniteDifferenceStepSize',1e-8);
-

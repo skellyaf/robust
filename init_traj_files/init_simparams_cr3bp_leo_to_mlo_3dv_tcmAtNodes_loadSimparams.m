@@ -105,8 +105,8 @@ simparams.start_P_growth_node = 2; % At which node to allow the covariance to gr
 
 simparams.tcm_rss_factor = 3;
 
-
-
+simparams.nsv = 6;
+simparams.corrected_nominal_dvs = logical([0 1 0]);
 %%
 
 %% Reset numerical propagation options
