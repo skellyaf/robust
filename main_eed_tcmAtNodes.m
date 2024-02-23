@@ -35,7 +35,7 @@ addpath(genpath('./'));
 savename = ['3dv_eed_llo_det'];
 scenario = '3dv LEO to EED to LLO deterministic';
 saveOutput = true; % bool for saving the output or not, true or false
-saveVideo = false;
+saveVideo = true;
 
 % Setup for saving data
 formatOut = 'yyyymmdd_HHMM.SS';
@@ -303,7 +303,16 @@ solfig.CurrentAxes.Title.Visible="off";
 % disp('Robust with LAR corrections')
 % 3*min_tcm_dv_total_lar*ndVel2kms*1000
 
+%% Save iteration history 
+iterhist = figure;
+plotIterationHistory(history.x,simparams)
+title('iteration_history')
+iterhist.CurrentAxes.Title.Visible="off";
 
+
+xlim([0.98 1.02])
+ylim([0 .05])
+zlim([-.1375, -.075])
 
 %% Save outputs
 
@@ -373,20 +382,11 @@ if saveOutput
 
 end
 
-% Save iteration history .fig only
-iterhist = figure;
-plotIterationHistory(history.x,simparams)
-title('iteration_history')
-iterhist.CurrentAxes.Title.Visible="off";
 
 
-xlim([0.98 1.02])
-ylim([0 .05])
-zlim([-.1375, -.075])
+% savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
 
-savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
-
-exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
+% exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
 
 
 
@@ -419,13 +419,13 @@ plotMultiSegTraj(x_opt, traj0.x_t, traj0.t_s, simparams);
 %% investigating natural motion of 
 
 
-[~, x_nofinalDV_t] = stateProp(x_opt(1:6,end-1),50/ndTime2days,simparams);
-
-figure
-axis equal
-grid on
-hold on
-plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
+% [~, x_nofinalDV_t] = stateProp(x_opt(1:6,end-1),50/ndTime2days,simparams);
+% 
+% figure
+% axis equal
+% grid on
+% hold on
+% plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
 
 %% investigating apse constraint
 % v_I = zeros(3,length(t));
