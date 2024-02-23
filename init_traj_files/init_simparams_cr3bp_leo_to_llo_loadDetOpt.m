@@ -25,6 +25,9 @@ ndVel2kms = Rm * n;
 simparams.mu = moon.mu/(earth.mu + moon.mu);
 mu = simparams.mu;
 
+% Earth mu
+simparams.mu_earth_nd = earth.mu / ndDist2km^3 * ndTime2sec^2;
+
 % Dynamical system flag for which differential equations to use
 simparams.dynSys = 'cr3bp'; % options are 2bp and cr3bp.
 
@@ -139,6 +142,8 @@ simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position d
 simparams.skip_dv_1 = false; % Flag to not include the first nominal DV in the cost function / DV calculation / DV gradients.
 
 simparams.constrain_flyby_radius = false; % bool, true or false
+
+simparams.circ_init_constraint = true; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
 
 
 %% Orbit parameters

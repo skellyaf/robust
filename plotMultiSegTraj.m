@@ -72,10 +72,15 @@ if strcmp(dynSys,'2bp')
     plot3(x_2(:,1), x_2(:,2), x_2(:,3),'Color','Black')
 elseif strcmp(dynSys,'cr3bp')
     [~, x_1] = ode113(@cr3bp_sFrame_nd_de, [0,simparams.T0], x_init, options, mu);
+    [~, x_1p2] = ode113(@cr3bp_sFrame_nd_de, [0,simparams.T0], x(1:6,1), options, mu);
     [~, x_2] = ode113(@cr3bp_sFrame_nd_de, [0,simparams.T_target], x_target, options, mu);
 
     % Plot the initial orbit
     plot3(x_1(:,1), x_1(:,2), x_1(:,3),'Color','Black')
+
+    % Plot the coast from initial state for a full orbit
+    plot3(x_1p2(:,1), x_1p2(:,2), x_1p2(:,3),'Color','Black')
+
     % Plot the target orbit
     plot3(x_2(:,1), x_2(:,2), x_2(:,3),'Color','Black')
 
@@ -141,8 +146,8 @@ elseif strcmp(dynSys,'cr3bp')
     view([0 90]); % planar
 
     % planar eed pef leo
-    xlim([-.75 1.1])
-    ylim([-.1 .9])
+%     xlim([-.75 1.1])
+%     ylim([-.1 .9])
 
     
     xlabel('X (nd)')

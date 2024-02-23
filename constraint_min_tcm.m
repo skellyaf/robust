@@ -52,6 +52,11 @@ num_int_full_constraint_nodes = n+1 - 2 - length(maneuverSegments);
 % ceq_length = 12 + length(maneuverSegments)*3 + num_int_full_constraint_nodes*6 + logical(simparams.fixed_xfer_duration) + simparams.constrain_flyby_radius;
 ceq_length = 6 + 6 + length(maneuverSegments)*(3 + mod(nsv,6)) + num_int_full_constraint_nodes*nsv + logical(simparams.fixed_xfer_duration);
 
+% If only constraining the initial orbit to be circular, of a specific
+% radius, and with a specific energy, remove 3 eq. constraints
+if existsAndTrue('circ_init_constraint', simparams)
+    ceq_length = ceq_length - 3;
+end
 % Create an empty equality constraint vector
 ceq = zeros(1,ceq_length);
 
@@ -121,19 +126,29 @@ for i = 1:n
     
     % Constraints on the first segment
     if i == 1
-        % Constrain first segment initial position and velocity to
-        % given initial state
-        ceq(neq+1:neq+nsv) = x_i_initial - x0; % Initial state with theta_em constrained
-%         ceq(neq+1:neq+6) = x_i_initial(1:6) - x0(1:6); % Initial state with theta_em UN-constrained
-        
 
-        if outputCGradients
-            ceqGrad(neq+1:neq+nsv,(i-1)*m + 1:i*m) = [eye(nsv), zeros(nsv,1)]; % With theta_em constrained 
-%             ceqGrad(neq+1:neq+6,(i-1)*m + 1:i*m) = [eye(6), zeros(6,m-6)]; % Without theta_em constrained
+        if existsAndTrue('circ_init_constraint', simparams)
+            if outputCGradients
+                [ceq(neq+1:neq+3), ceqGrad(neq+1:neq+3,(i-1)*7 + 1:i*7)] = circular_initial_orbit_constraint(x_i_initial,simparams);
+            else
+                ceq(neq+1:neq+3) = circular_initial_orbit_constraint(x_i_initial,simparams);
+            end
+            neq = neq + 3;
+        else
+            % Constrain first segment initial position and velocity to
+            % given initial state
+            ceq(neq+1:neq+nsv) = x_i_initial - x0; % Initial state with theta_em constrained
+    %         ceq(neq+1:neq+6) = x_i_initial(1:6) - x0(1:6); % Initial state with theta_em UN-constrained
+            
+    
+            if outputCGradients
+                ceqGrad(neq+1:neq+nsv,(i-1)*m + 1:i*m) = [eye(nsv), zeros(nsv,1)]; % With theta_em constrained 
+    %             ceqGrad(neq+1:neq+6,(i-1)*m + 1:i*m) = [eye(6), zeros(6,m-6)]; % Without theta_em constrained
+            end
+    
+            neq = neq + nsv; % Theta_em constrained
+    %         neq = neq + 6; % With theta_em unconstrained
         end
-
-        neq = neq + nsv; % Theta_em constrained
-%         neq = neq + 6; % With theta_em unconstrained
     end        
     
     % Constraint to allow an impulsive maneuver at end of first seg and

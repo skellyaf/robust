@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['2dv_leo_llo_det'];
+savename = ['2dv_leo_llo_robust_flex0'];
 scenario = '2dv LEO to LLO deterministic';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
@@ -59,7 +59,7 @@ outputPath = strcat('./sims/',dateString,'_',savename);
 
 % cr3bp
 % init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_llo';
-init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_llo_loadDetOpt';
+init_fn = './init_traj_files/init_simparams_cr3bp_leo_to_llo_loadDetOpt'; %%%%%%%%%
 % init_fn = './init_traj_files/init_simparams_cr3bp_geo_to_llo';
 % init_fn = './init_traj_files/init_simparams_cr3bp_heo_to_mlo';
 % init_fn = './init_traj_files/init_simparams_cr3bp_llo_to_nrho';
@@ -281,6 +281,24 @@ solfig.CurrentAxes.Title.Visible="off";
 [event_times, event_indicator] = define_events_v2(x_opt(:), traj.t, tcm_time, simparams);
 
 
+
+% Save iteration history .fig only
+iterhist = figure;
+plotIterationHistory(history.x,simparams)
+title('iteration_history')
+iterhist.CurrentAxes.Title.Visible="off";
+axis equal;
+
+% xlim([0.98 1.02])
+% ylim([0 .05])
+% zlim([-.1375, -.075])
+
+% savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
+% 
+% exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
+
+
+
 % Comparison with 'LAR' TCM method -- for NRHO example for now
 % x_opt = reshape(x_opt,simparams.m,simparams.n);
 % t_flyby = sum(x_opt(7,1:simparams.P_constrained_nodes(1)));
@@ -373,26 +391,12 @@ if saveOutput
 
 end
 
-% Save iteration history .fig only
-iterhist = figure;
-plotIterationHistory(history.x,simparams)
-title('iteration_history')
-iterhist.CurrentAxes.Title.Visible="off";
-
-
-xlim([0.98 1.02])
-ylim([0 .05])
-zlim([-.1375, -.075])
-
-savefig(iterhist, strcat(outputPath,'/iteration_history.fig'));
-
-exportgraphics(iterhist,'iterhist.pdf','ContentType','image')
 
 
 
 %% Save to results summary file
 
-if 1
+if 0
     save_to_excel;
 %     save_to_excel_nrho_rdvz;
     
@@ -401,31 +405,31 @@ if 1
 end
 
 %% debug
-[traj0]  = createStateStmSttHistory(x, simparams);
-% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-figure
-plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
-
-
-
-
-[traj0]  = createStateStmSttHistory(x_opt, simparams);
-% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-figure
-plotMultiSegTraj(x_opt, traj0.x_t, traj0.t_s, simparams);
-
-
-
-%% investigating natural motion of 
-
-
-[~, x_nofinalDV_t] = stateProp(x_opt(1:6,end-1),50/ndTime2days,simparams);
-
-figure
-axis equal
-grid on
-hold on
-plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
+% [traj0]  = createStateStmSttHistory(x, simparams);
+% % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+% figure
+% plotMultiSegTraj(x, traj0.x_t, traj0.t_s, simparams);
+% 
+% 
+% 
+% 
+% [traj0]  = createStateStmSttHistory(x_opt, simparams);
+% % [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm(x, t0, t_s0, stm_t0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+% figure
+% plotMultiSegTraj(x_opt, traj0.x_t, traj0.t_s, simparams);
+% 
+% 
+% 
+% %% investigating natural motion of 
+% 
+% 
+% [~, x_nofinalDV_t] = stateProp(x_opt(1:6,end-1),50/ndTime2days,simparams);
+% 
+% figure
+% axis equal
+% grid on
+% hold on
+% plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
 
 %% investigating apse constraint
 % v_I = zeros(3,length(t));
