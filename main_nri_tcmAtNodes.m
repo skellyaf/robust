@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['eed_llo_3dv_TcmAtNodes_robust_largerError_noNomCorr'];
-scenario = 'EED_LLO TCMs at nodes update with larger errors';
+savename = ['3dv_nri_smalldx0_flybynotcorrected_robust'];
+scenario = '3dv_nri_smalldx0_flybynotcorrected_robust';
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 

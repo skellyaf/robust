@@ -198,7 +198,7 @@ else
     plotMultiSegTraj(simparams.x0, traj0.x_t, traj0.t_s, simparams);
 end
 axis equal;
-
+legend('','','','','','','','','','','','','','','','','','','','','Initial Orbit','','','','Initial Position','Target Position','Nominal \DeltaV')
 
 
 
@@ -277,6 +277,10 @@ plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
 axis equal;
 title('optim_solution')
 solfig.CurrentAxes.Title.Visible="off";
+
+legend('','','','','','','','','','','','','','','','','','','','','TCM','','','','','','Initial Orbit','','','','Initial Position','Target Position','Nominal \DeltaV','','')
+
+
 
 [event_times, event_indicator] = define_events_v2(x_opt(:), traj.t, tcm_time, simparams);
 

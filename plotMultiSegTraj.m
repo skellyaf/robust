@@ -76,7 +76,7 @@ elseif strcmp(dynSys,'cr3bp')
     [~, x_2] = ode113(@cr3bp_sFrame_nd_de, [0,simparams.T_target], x_target, options, mu);
 
     % Plot the initial orbit
-    plot3(x_1(:,1), x_1(:,2), x_1(:,3),'Color','Black')
+%     plot3(x_1(:,1), x_1(:,2), x_1(:,3),'Color','Black')
 
     % Plot the coast from initial state for a full orbit
     plot3(x_1p2(:,1), x_1p2(:,2), x_1p2(:,3),'Color','Black')
@@ -182,7 +182,8 @@ end
 
 % Plot the initial position
 if strcmp(dynSys,'2bp') || strcmp(dynSys,'cr3bp')
-    ip1=plot3(simparams.x_init(1),simparams.x_init(2),simparams.x_init(3),'.','Color','Green','MarkerSize',25,'DisplayName','Initial Position');
+
+%     ip1=plot3(simparams.x_init(1),simparams.x_init(2),simparams.x_init(3),'.','Color','Green','MarkerSize',25,'DisplayName','Initial Position');
 
     % Plot the end of the trajectory (target after the final coast in most
     % instances)

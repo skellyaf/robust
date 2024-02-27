@@ -17,7 +17,9 @@ tcm_dv_each = [];
 
 
 %% Setup
-
+m = simparams.m;
+n = simparams.n;
+nsv = simparams.nsv;
 x = reshape(x,simparams.m,simparams.n);
 P = simparams.P_initial;
 
@@ -33,7 +35,7 @@ for i = 1:length(simparams.P_constrained_nodes)
         start_idx = 1;
 
         target_node = simparams.P_constrained_nodes(i);
-        target_time = sum(x(7,1:target_node - 1));
+        target_time = sum(x(m,1:target_node - 1));
         target_idx = find(target_time == traj.t);
 
 
@@ -46,14 +48,7 @@ for i = 1:length(simparams.P_constrained_nodes)
         traj_eval.t = traj.t(start_idx:target_idx);
         traj_eval.t_s = traj.t_s(start_idx:target_idx);
         traj_eval.stm_t = traj.stm_t(:,:,start_idx:target_idx);
-
-        % Attempt at fixing a bug: pass all of stm_t_i regardless of
-        % segmentation
         traj_eval.stm_t_i = traj.stm_t_i(1:target_node - 1);
-%         traj_eval.stm_t_i = traj.stm_t_i;
-        
-        
-        
         traj_eval.x_t = traj.x_t(start_idx:target_idx,:);
 %         traj_eval.x_i_f = traj.x_i_f(:,1:target_node-1);
 %         traj_eval.stm_i = traj.stm_i(:,:,1:target_node-1);
@@ -66,14 +61,15 @@ for i = 1:length(simparams.P_constrained_nodes)
         traj_eval.Q_t = traj.Q_t(:,:,1:target_idx);
         % Process noise cells accumulated from the beginning of each seg:
         traj_eval.Q_t_i = traj.Q_t_i(1:target_node-1);
-
+        % Process noise tensor corresponding to each segment
+        traj_eval.Q_i = traj.Q_i(:,:,1:target_node-1);
         
 
         
     else
 
         if i == 1
-            start_time = sum(x(7,1:simparams.start_P_growth_node-1));
+            start_time = sum(x(m,1:simparams.start_P_growth_node-1));
             start_idx = find(traj.t == start_time);
             start_node = simparams.start_P_growth_node;
         else
@@ -82,13 +78,39 @@ for i = 1:length(simparams.P_constrained_nodes)
         end
 
         target_node = simparams.P_constrained_nodes(i);
-        target_time = sum(x(7,1:target_node - 1));
+        target_time = sum(x(m,1:target_node - 1));
         target_idx = find(target_time == traj.t, 1);
 
         assert(~isempty(target_idx));
 
         traj_eval.t = traj.t(start_idx:target_idx);
+
+
+
         traj_eval.t_s = traj.t_s(start_idx:target_idx);
+
+
+
+        traj_eval.t_s = traj.t_s(start_idx:target_idx) - start_node + 1;
+%         HAVING TROUBLE REMEMBERING WHY I ADJUSTED T_S. MAYBE SOME BR4BP
+%         REASON?
+%         traj_eval.t_s = traj.t_s(start_idx:target_idx) - start_node + 1;
+        
+        %%%%%%%%%%%% HAVING AN ISSUE WHERE THE FIRST INDEX GOES TO ZERO WHEN ADJUSTING 
+        % T_S TO START AT 1.
+        %%%%%%%%%%%% NOT SURE IF THIS IS THE RIGHT WAY TO DEAL WITH
+        %%%%%%%%%%%% IT...TRYING IT OUT.
+        if traj_eval.t_s(1) == 0 && traj_eval.t_s(2) == 1
+            
+            traj_eval.t_s(1) = 1;
+            
+        end
+
+
+
+
+
+
         traj_eval.x_t = traj.x_t(start_idx:target_idx,:);
 
         % Want the STM from the beginning of the current correction portion (M)
@@ -98,12 +120,7 @@ for i = 1:length(simparams.P_constrained_nodes)
 
         stm0M = invert_stm(traj.stm_t(:,:,start_idx), simparams);
         traj_eval.stm_t = tmult(traj.stm_t(:,:,start_idx:target_idx), stm0M);
-
-
         traj_eval.stm_t_i = traj.stm_t_i(start_node:target_node-1);
-%         traj_eval.stm_t_i = traj.stm_t_i;
-
-        
 %         traj_eval.stm_i = traj.stm_i(:,:,start_node:target_node-1);
 %         traj_eval.x_i_f = traj.x_i_f(:,start_node:target_node-1);
 
@@ -118,6 +135,9 @@ for i = 1:length(simparams.P_constrained_nodes)
         % Process noise cells accumulated from the beginning of each seg,
         % corresponding to the eval segments:
         traj_eval.Q_t_i = traj.Q_t_i(start_node:target_node-1);
+
+        % Process noise tensor corresponding to each segment
+        traj_eval.Q_i = traj.Q_i(:,:,start_node:target_node-1);
 
     end
 
@@ -151,9 +171,6 @@ for i = 1:length(simparams.P_constrained_nodes)
     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess_wQ(x(:), traj_eval, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, simparams);
 %     [tcm_time,tcm_idx,min_tcm_dv] = optimize_tcm_guess(x(:), t, t_s, stm_t, stm_t_i, tcm_time, tcm_idx, tcm_num_option_DVs, vel_disp_flag, deltaVs_nom_eval, P, range, simparams);
     P = calc_covariance_wQ_tcmdv(x(:), traj_eval, tcm_time, vel_disp_flag, deltaVs_nom_eval, P, simparams);
-   
-
-
 
     % Calculate the covariance at the end of the coast portion to use at
     % the beginning of the next TCM coast portion

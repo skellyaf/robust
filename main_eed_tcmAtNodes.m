@@ -281,6 +281,26 @@ solfig.CurrentAxes.Title.Visible="off";
 [event_times, event_indicator] = define_events_v2(x_opt(:), traj.t, tcm_time, simparams);
 
 
+
+
+
+
+%%%% views of the flex0 TLI traj
+
+solfig2 = figure;
+plotMultiSegTraj(x_opt, traj.x_t, traj.t_s, simparams, tcm_idx);
+% plotMultiSegTraj(x_opt, x_t, t_s, simparams);
+axis equal;
+title('optim_solution_view2')
+solfig2.CurrentAxes.Title.Visible="off";
+
+
+xlim([.9 1.025])
+zlim([-.01 .05])
+ylim([-.025 .15])
+
+
+
 % Comparison with 'LAR' TCM method -- for NRHO example for now
 % x_opt = reshape(x_opt,simparams.m,simparams.n);
 % t_flyby = sum(x_opt(7,1:simparams.P_constrained_nodes(1)));
