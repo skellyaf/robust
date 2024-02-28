@@ -25,6 +25,9 @@ ndVel2kms = Rm * n;
 simparams.mu = moon.mu/(earth.mu + moon.mu);
 mu = simparams.mu;
 
+% Earth mu
+simparams.mu_earth_nd = earth.mu / ndDist2km^3 * ndTime2sec^2;
+
 % Dynamical system flag for which differential equations to use
 simparams.dynSys = 'cr3bp'; % options are 2bp and cr3bp.
 
