@@ -180,9 +180,9 @@ else
 end
 
 
-[Q_k_km10, dQ_k_km1_dxi0, dQ_k_km1_ddti0] = calc_Q_events(traj0, x0, tcm_time0, simparams);
+[Q_k_km10, dQ_k_km1_dxi0, dQ_k_km1_ddti0] = calc_Q_events(traj0, simparams.x0, tcm_time0, simparams);
 
-[P_target0, min_tcm_dv0, tcm_dv_each0, P_i_minus0, P_i_plus0] = calc_covariance_wQ_tcmdv_v3(x0, traj0, tcm_time0, 1, deltaVs_nom0, simparams.P_initial, Q_k_km10, simparams);
+[P_target0, min_tcm_dv0, tcm_dv_each0, P_i_minus0, P_i_plus0] = calc_covariance_wQ_tcmdv_v3(simparams.x0, traj0, tcm_time0, 1, deltaVs_nom0, simparams.P_initial, Q_k_km10, simparams);
 
 
 totalDV0 = deltaV0 + 3*min_tcm_dv0
