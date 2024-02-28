@@ -142,6 +142,8 @@ simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position d
 
 simparams.skip_dv_1 = false; % Flag to not include the first nominal DV in the cost function / DV calculation / DV gradients.
 
+simparams.circ_init_constraint = true; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
+
 %% Orbit parameters
 %% Initial orbit - currently circular inclined
 altitude_init = 450; % km

@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['3dv_nri_smalldx0_flybynotcorrected_robust'];
-scenario = '3dv_nri_smalldx0_flybynotcorrected_robust';
+savename = ['3dv_nri_smalldx0_flybynotcorrected_robust_flex0'];
+scenario = savename;
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
 
