@@ -32,8 +32,8 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['2dv_leo_llo_robust_flex0'];
-scenario = '2dv LEO to LLO deterministic';
+savename = ['2dv_leo_llo_robust'];
+scenario = savename;
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = false;
 
