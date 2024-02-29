@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['3dv_nri_meddx0_flybynotcorrected_robust'];
+savename = ['3dv_nri_meddx0_flybynotcorrected_robust_flex0'];
 scenario = savename;
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;
@@ -231,6 +231,8 @@ if isfield(simparams,'rdvz_flag')
         simparams.x_target = stateProp(simparams.x0_target, totalTime, simparams);
     end
 end
+
+
 
 % Calculate total impulsive delta V 
 [deltaV, deltaVs_nom] = calcDeltaV(x_opt, traj.x_i_f, traj.stm_i, simparams);

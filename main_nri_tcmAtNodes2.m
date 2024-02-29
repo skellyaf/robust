@@ -251,7 +251,8 @@ else
     end
 end
 
-
+% tcm_idx(8) = tcm_idx(8)+25
+% tcm_time = traj.t(tcm_idx)'
 [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x_opt, tcm_time, simparams);
 
 [P_target, min_tcm_dv, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x_opt, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);

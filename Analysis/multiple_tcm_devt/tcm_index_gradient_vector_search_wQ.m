@@ -94,7 +94,7 @@ while improving
                         if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
                             % If it is the final element and the covariance
                             % constraint is violated
-        
+                            pp=1;
                         else
                             TCMr_idx_test_save(i,:) = TCMr_idx_test;
                             minDV_save(i) = testDV;
@@ -146,6 +146,7 @@ while improving
                     % Comparing
                     if testDV < minDV
                         if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
+                            ppp=1;
                         else
                             TCMr_idx_test_save(i,:) = TCMr_idx_test;
                             minDV_save(i) = testDV;

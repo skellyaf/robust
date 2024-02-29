@@ -146,7 +146,7 @@ simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position d
 
 simparams.skip_dv_1 = false; % Flag to not include the first nominal DV in the cost function / DV calculation / DV gradients.
 
-simparams.circ_init_constraint = false; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
+simparams.circ_init_constraint = true; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
 
 %% Orbit parameters
 %% Initial orbit - currently circular inclined
@@ -310,8 +310,14 @@ simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_nrho_target;
 % Single parameter vector
 
 load('nri_det_opt_20seg.mat');
+% load('nri_det_opt_update.mat');
 
 simparams.x0 = x_opt;
+% simparams.n=size(x_opt,2);
+% 
+% simparams.maneuverSegments = [2, 14, simparams.n]; % the segments with an impulsive maneuver at their beginning
+% simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
+
 
 %% Perform the initial trajectory history propagation
 
@@ -328,7 +334,7 @@ if isfield(simparams,'rdvz_flag')
 end
 
 % Calculate total impulsive delta V for initial guess trajectory
-[deltaV0, deltaVs_nom0, deletelatergradient] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
+[deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
 
 % Calculate the optimal TCMs
 [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
@@ -468,10 +474,36 @@ simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 simparams.tcm_nodes = [simparams.tcm_nodes(1:7), simparams.tcm_nodes(8:end) + 3];
 
 
-
-
-
 simparams.x0 = x_new4(:);
+
+
+
+% % Seg 19 is also long, divide it into 3 segments (+2)
+% 
+% [~,x_19_t, t_19] = stateProp(x_new4(1:6,19), x_new4(7,19), simparams);
+% x_19_new = subdivide_segment(x_19_t, t_19, 3);
+% 
+% x_new5 = zeros(7,size(x_new4,2)+2);
+% x_new5(:,1:18) = x_new4(:,1:18);
+% x_new5(:,19:21) = x_19_new;
+% x_new5(:,22:end) = x_new4(:,20:end);
+% 
+% 
+% 
+% 
+% % Re-do params
+% simparams.n = size(x_new5,2);
+% 
+% simparams.maneuverSegments = [simparams.maneuverSegments(1:2), simparams.maneuverSegments(3:end) + 2];
+% 
+% simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+% 
+% simparams.tcm_nodes = [simparams.tcm_nodes(1:8), simparams.tcm_nodes(9:end) + 2];
+% 
+% 
+% 
+
+% simparams.x0 = x_new5(:);
 
 
 
