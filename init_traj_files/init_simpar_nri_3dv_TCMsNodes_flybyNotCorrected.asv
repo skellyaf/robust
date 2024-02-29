@@ -289,9 +289,9 @@ constraintMap = [0, 1, 0, 1, 0, 1];
 % Indices from external tests
 T_coast_nrho_target = t_nrho(280) - t_nrho(230);
 
-[minz,minzidx] = min(x_nrho_t(:,3));
+[minz,minz]
 
-simparams.x_target = x_nrho_t(minzidx,:)';
+simparams.x_target = x_nrho_t(280,:)';
 simparams.T_target = T_nrho;
 
 simparams.x0(1:6,simparams.maneuverSegments(3)) = x_nrho_t(230,:)';
