@@ -190,6 +190,11 @@ for i = 1:length(simparams.P_constrained_nodes)
 
 end
 
+% Try optimizing the entire trajectory
+
+[TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search_wQ_eT(x, traj, tcm_idx_combined, vel_disp_flag, deltaVs_nom, min_tcm_dv_total, simparams);
+tcm_idx_combined = TCMr_idx_best;
+tcm_time_combined = TCMr_time_best;
 
 % Recalculate with more accurate function (shorter STM segment portions vs
 % reaching back to the beginning of the trajectory like
