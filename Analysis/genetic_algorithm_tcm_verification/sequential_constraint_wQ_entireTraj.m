@@ -75,9 +75,12 @@ function [cin, ceq] = sequential_constraint_wQ_entireTraj(tcm_idx, x, traj, delt
 
     dv_events = find(event_indicator == 3 | event_indicator==0);
 
-    cin = zeros(2,1);
-    
-    cin(1) = sqrt(trace(P_i_minus(1:3,1:3,dv_events(2)))) - simparams.P_max_r;
-    cin(2) = sqrt(trace(P_i_minus(1:3,1:3,dv_events(3)))) - simparams.P_max_r;
+    linc = length(simparams.maneuverSegments) - 1;
+
+    cin = zeros(linc,1);
+    for i = 1:linc  
+        cin(i) = sqrt(trace(P_i_minus(1:3,1:3,dv_events(i+1)))) - simparams.P_max_r;
+    end
+%     cin(2) = sqrt(trace(P_i_minus(1:3,1:3,dv_events(3)))) - simparams.P_max_r;
 
 end

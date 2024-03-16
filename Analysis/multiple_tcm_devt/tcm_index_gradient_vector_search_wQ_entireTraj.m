@@ -1,9 +1,7 @@
-function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search_wQ_eT(x, traj, TCMr_idx_best, vel_disp_flag, deltaV, minDV, modRange, simparams)
+function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_search_wQ_entireTraj(x, traj, TCMr_idx_best, vel_disp_flag, deltaV, P_i, minDV, simparams)
 %tcm_index_gradient_search Alters the time index of each individual TCM in
 %each direction (earlier and later) to search for an improvement in the
 %total delta V
-%et = entire trajectory - unlike the original version that only optimized
-%a single targeting portion at a time
 
 % traj contains at least: x_t, t, t_s, stm_t
 
@@ -25,6 +23,39 @@ function [TCMr_idx_best, TCMr_time_best, minDV] = tcm_index_gradient_vector_sear
 %     output = 0;
 % end
 
+target_idx = [];
+
+for i = 1:length(simparams.P_constrained_nodes)
+
+    target_node = simparams.P_constrained_nodes(i);
+    target_time = sum(x(7,1:target_node - 1));
+    target_idx = [target_idx, find(target_time == traj.t)];
+
+end
+
+
+
+tcm_idx = sort([TCMr_idx_best]);
+
+tcm_time = traj.t(tcm_idx)';
+
+[event_times, event_indicator] = define_events_v2(x(:), traj.t, tcm_time, simparams);
+
+event_idx_logical = logical(sum(traj.t'==event_times', 1));    
+event_idxs = find(event_idx_logical);
+
+event_tgt_i = [];
+for i = 1:length(target_idx)
+    event_tgt_i = [event_tgt_i, find(event_idxs == target_idx(i))];
+end
+    
+
+
+
+
+
+
+
 maneuver_seg = simparams.maneuverSegments;
 maneuver_idxs = nan*ones(1,length(maneuver_seg));
 for i = 1:length(maneuver_seg)
@@ -38,16 +69,6 @@ end
 
 TCMr_time_best = traj.t(TCMr_idx_best)';
 
-[event_times, event_indicator] = define_events_v2(x(:), traj.t, TCMr_time_best, simparams);
-
-P_constrained_events = find(event_indicator == 3 | event_indicator==0);
-P_constrained_events = P_constrained_events(2:end);
-
-% event_idx_logical = logical(sum(traj.t'==event_times', 1));    
-% event_idxs = find(event_idx_logical);
-
-
-
 improving = 1;
 
 repeat_idx_counter = 0;
@@ -60,8 +81,7 @@ while improving
     minDV_save = ones(1,length(TCMr_time_best)-1 + 1) * 1e15;
 
 
-%     for i = 1:length(TCMr_time_best)
-    for i = modRange(1):modRange(2)
+    for i = 1:length(TCMr_time_best)
 
         TCMr_time_test = TCMr_time_best;
         TCMr_idx_test = TCMr_idx_best;
@@ -99,29 +119,28 @@ while improving
                     if length(TCMr_idx_test) ~= length(unique(TCMr_idx_test))
                         testDV = minDV;
                     else
-
-
                         Q_k_km1 = calc_Q_events(traj, x, TCMr_time_test, simparams);
-                        [~, testDV, ~, P_i_minus] = calc_covariance_wQ_tcmdv_v3(x(:), traj, TCMr_time_test, vel_disp_flag, deltaV, simparams.P_initial, Q_k_km1, simparams);
 
-                        % Extract the P constrained nodes position dispersion RSS
-
-                        pos_disp_fails = false;
-                        for p = 1:length(P_constrained_events)
-                            pos_disp_fails = logical(sqrt(trace(P_i_minus(1:3,1:3,P_constrained_events(p)))) > simparams.P_max_r | pos_disp_fails);
-                        end
-
-
-
+                        [~, testDV, ~, P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, Q_k_km1, simparams); 
 %                         [P_target, testDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, simparams); 
                     end
         
                     % Checking if it was cheaper
                     if testDV < minDV
+                        % Making sure none of the target position
+                        % dispersion constraints were violated by the
+                        % change
+                        target_Prss = [];
+
+                        for j = 1:length(event_tgt_i)
+                            target_Prss = [target_Prss, sqrt(trace(P_k_minus(1:3,1:3,event_tgt_i(j))))];
+                        end
+                        target_Pr_met = target_Prss <= simparams.P_max_r;
+                        
 %                         if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
-                        if pos_disp_fails
-                            % If the position dispersion constraint is
-                            % violated as a result of the mod
+                        if sum(target_Pr_met) < length(event_tgt_i)
+                            % If it is the final element and the covariance
+                            % constraint is violated
                             pp=1;
                         else
                             TCMr_idx_test_save(i,:) = TCMr_idx_test;
@@ -168,24 +187,27 @@ while improving
                         testDV = minDV;
                     else
 
-
                         Q_k_km1 = calc_Q_events(traj, x, TCMr_time_test, simparams);
-                        [~, testDV, ~, P_i_minus] = calc_covariance_wQ_tcmdv_v3(x(:), traj, TCMr_time_test, vel_disp_flag, deltaV, simparams.P_initial, Q_k_km1, simparams);
 
-                        % Extract the P constrained nodes position dispersion RSS
-
-                        pos_disp_fails = false;
-                        for p = 1:length(P_constrained_events)
-                            pos_disp_fails = logical(sqrt(trace(P_i_minus(1:3,1:3,P_constrained_events(p)))) > simparams.P_max_r | pos_disp_fails);
-                        end
+                        [~, testDV, ~, P_k_minus] = calc_covariance_wQ_tcmdv_v3(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, Q_k_km1, simparams); 
 
 %                         [P_target, testDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_test, vel_disp_flag, deltaV, P_i, simparams); 
                     end
         
                     % Comparing
                     if testDV < minDV
+                        % Making sure none of the target position
+                        % dispersion constraints were violated by the
+                        % change
+                        target_Prss = [];
+
+                        for j = 1:length(event_tgt_i)
+                            target_Prss = [target_Prss, sqrt(trace(P_k_minus(1:3,1:3,event_tgt_i(j))))];
+                        end
+                        target_Pr_met = target_Prss <= simparams.P_max_r;
+                        
 %                         if i == length(TCMr_time_best) && sqrt(trace(P_target(1:3,1:3))) > simparams.P_max_r
-                        if pos_disp_fails
+                        if sum(target_Pr_met) < length(event_tgt_i)
                             ppp=1;
                         else
                             TCMr_idx_test_save(i,:) = TCMr_idx_test;
@@ -224,25 +246,11 @@ while improving
     %         [~, minDV] = calc_covariance_tcmdv_v2(x, t, t_s, stm_t, stm_t_i, TCMr_time_best, vel_disp_flag, deltaV, P_i, range, simparams); 
 %             [~, minDV] = calc_covariance_wQ_tcmdv(x, traj, TCMr_time_best, vel_disp_flag, deltaV, P_i, simparams); 
 
+            Q_k_km1 = calc_Q_events(traj, x, TCMr_time_test, simparams);
 
-
-
-            Q_k_km1 = calc_Q_events(traj, x, TCMr_time_best, simparams);
-            [~, testDV, ~, P_i_minus] = calc_covariance_wQ_tcmdv_v3(x(:), traj, TCMr_time_test, vel_disp_flag, deltaV, simparams.P_initial, Q_k_km1, simparams);
-
-
-
-
-            pos_disp_fails = false;
-            for p = 1:length(P_constrained_events)
-                pos_disp_fails = logical(sqrt(trace(P_i_minus(1:3,1:3,P_constrained_events(p)))) > simparams.P_max_r | pos_disp_fails);
-            end
-
-
-            if ~ pos_disp_fails
-                TCMr_idx_test_save(end,:) = TCMr_idx_best;
-                minDV_save(end) = minDV;
-            end
+            [~, minDV] = calc_covariance_wQ_tcmdv_v3(x, traj, TCMr_time_best, vel_disp_flag, deltaV, P_i, Q_k_km1, simparams); 
+            TCMr_idx_test_save(end,:) = TCMr_idx_best;
+            minDV_save(end) = minDV;
         end
 
         % Check against the saved individual mods for the lowest

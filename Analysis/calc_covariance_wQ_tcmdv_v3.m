@@ -1,4 +1,4 @@
-function [P_target, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, vel_disp_flag, deltaVs_nom, P_i, Q_k_km1, simparams)
+function [P_target, tcm_dv_total, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, vel_disp_flag, deltaVs_nom, P_i, Q_k_km1, simparams) %#codegen
 %calc_covariance_tcmdv Calculates the final dispersion covariance and the
 %total delta V of the position corrections occuring along the nominal
 %trajectory at each entry in the array tcm_time, as well as calculating the
@@ -66,8 +66,9 @@ maneuver_segments = simparams.maneuverSegments;
 % the end of the trajectory and isn't included in tcm_time.
 % num_tcm = length(tcm_time);
 % tcm_dv = zeros(1,length(tcm_time)+1);
-tcm_dv = [];
-
+% tcm_dv = [];
+tcm_dv = zeros(1, sum(event_indicator>0));
+tcm_ctr = 1; % tcm counter, for indexing
 
 
 
@@ -170,15 +171,18 @@ else % Otherwise, if there are events, do:
                     deltaV = deltaVs_nom(:, maneuver_segments == traj.t_s(event_idxs(i)) + 1 );
     
                     i_dv = deltaV / vecnorm(deltaV);
-                    tcm_dv(end+1) = sqrt(i_dv' * P_tcm * i_dv);
+                    tcm_dv(tcm_ctr) = sqrt(i_dv' * P_tcm * i_dv);
+                    tcm_ctr = tcm_ctr + 1;
                 elseif event_indicator(i) == 1 % TCM by itself
                     P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
                     P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G';
-                    tcm_dv(end+1) = sqrt(trace(P_tcm));
+                    tcm_dv(tcm_ctr) = sqrt(trace(P_tcm));
+                    tcm_ctr = tcm_ctr + 1;
                 elseif event_indicator(i) == 2 % Concurrent nominal maneuver and TCM performed separately
                     P_tcm = T * P_i_minus(:,:,i) * T' + R_tcm; % with error in tcm_dv magnitude calc 
                     P_i = IN * P_i_minus(:,:,i) * IN' + G*R_tcm*G' + G*R_dv*G';
-                    tcm_dv(end+1) = sqrt(trace(P_tcm));
+                    tcm_dv(tcm_ctr) = sqrt(trace(P_tcm));
+                    tcm_ctr = tcm_ctr + 1;
                 else
                     assert(0,'Something happened that we did not plan for!');
                 end
@@ -195,7 +199,7 @@ else % Otherwise, if there are events, do:
     
     
 %             end
-        end
+            end
 
     
         
@@ -212,11 +216,11 @@ else % Otherwise, if there are events, do:
             i_dvf = DV_final / norm(DV_final);
             
 %             tcm_dv(end+1) = sqrt(i_dvf' * (P_target(4:6,4:6) + R_tcm) * i_dvf);
-            tcm_dv(end+1) = sqrt(i_dvf' * (P_target(4:6,4:6)) * i_dvf);
+            tcm_dv(tcm_ctr) = sqrt(i_dvf' * (P_target(4:6,4:6)) * i_dvf);
         else
             % If not flagged to perform simultaneous correction, just clean
             % up the remaining velocity dispersion
-            tcm_dv(end+1) = sqrt(trace(P_target(4:6,4:6) + R_tcm));
+            tcm_dv(tcm_ctr) = sqrt(trace(P_target(4:6,4:6) + R_tcm));
         end
     end
 

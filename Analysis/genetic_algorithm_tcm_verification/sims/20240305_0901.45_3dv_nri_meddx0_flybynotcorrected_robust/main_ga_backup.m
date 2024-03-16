@@ -32,10 +32,14 @@ savename = '';
 % 
 % [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
+load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240228_1754.43_3dv_nri_meddx0_flybynotcorrected_robust\workspace.mat')
 
 
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240229_0837.29_3dv_nri_meddx0_flybynotcorrected_det\workspace.mat')
 
-load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240222_1727.03_2dv_leo_llo_det\workspace.mat')
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240229_0837.29_3dv_nri_meddx0_flybynotcorrected_det\workspace.mat')
+
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240222_1727.03_2dv_leo_llo_det\workspace.mat')
 x = reshape(x_opt, simparams.m, simparams.n);
 
 
@@ -127,21 +131,23 @@ options = optimoptions(@ga,...
 
 
 
-start_node = 2;
-target_node = simparams.maneuverSegments(2);
-[tcm_idx_ga, fval_ga] = ga(@(tcm_idx_test)calc_tcm_dv_wQ(tcm_idx_test, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams), num_tcms_p1, A, b, [], [], lb, ub, @(tcm_idx_test)sequential_constraint_wQ(tcm_idx_test, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams), int_con1, options)
+% start_node = 2;
+% target_node = simparams.maneuverSegments(2);
+% [tcm_idx_ga, fval_ga] = ga(@(tcm_idx_test)calc_tcm_dv_wQ(tcm_idx_test, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams), num_tcms_p1, A, b, [], [], lb, ub, @(tcm_idx_test)sequential_constraint_wQ(tcm_idx_test, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams), int_con1, options)
+if length(simparams.maneuverSegments) == 2
+    tic
+    [tcm_idx_ga, fval_ga] = ga(@(tcm_idx_test)calc_tcm_dv_wQ_entireTraj(tcm_idx_test, x, traj, deltaVs_nom, simparams), num_tcms_p1, A, b, [], [], lb, ub, @(tcm_idx_test)sequential_constraint_wQ_entireTraj(tcm_idx_test, x, traj, deltaVs_nom, simparams), int_con1, options)
+    toc
 
-
-
-
-
+    fval_ga*ndVel2kms*3000
+    min_tcm_dv*ndVel2kms*3000
+end
 % Compare cost of GA to opt:
-tcm_idx_seg1 = tcm_idx(tcms_in_p1);
-tcm_dv_seg1 = calc_tcm_dv_wQ(tcm_idx_seg1, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams)
+% tcm_idx_seg1 = tcm_idx(tcms_in_p1);
+% tcm_dv_seg1 = calc_tcm_dv_wQ(tcm_idx_seg1, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams)
 
 
-fval_ga*ndVel2kms*3000
-tcm_dv_seg1*ndVel2kms*3000
+
 
 
 % tcm_idx_ga = [7, 474, 1856, 2287];
@@ -198,9 +204,10 @@ if length(simparams.maneuverSegments)>2
     
     
     int_concc = (1:num_tcms)';
-    
+    tic
     [tcm_idx_ga_entireTraj, fval_ga_entireTraj] = ga(@(tcm_idx_test)calc_tcm_dv_wQ_entireTraj(tcm_idx_test, x, traj, deltaVs_nom, simparams), num_tcms_p1 + num_tcms_p2, Ac, bc, [], [], lbc, ubc, @(tcm_idx_test)sequential_constraint_wQ_entireTraj(tcm_idx_test, x, traj, deltaVs_nom, simparams), int_concc, options)
-    
+    toc
+
     fval_ga_entireTraj * ndVel2kms*3000
     min_tcm_dv * ndVel2kms*3000
     

@@ -140,8 +140,8 @@ tcm_idx_seg1 = tcm_idx(tcms_in_p1);
 tcm_dv_seg1 = calc_tcm_dv_wQ(tcm_idx_seg1, x, traj, simparams.P_initial, idx_dv1, idx_dv2, start_node, target_node, 0, deltaVs_nom, simparams)
 
 
-fval_ga*ndVel2kms*3000
-tcm_dv_seg1*ndVel2kms*3000
+fval_ga*ndVel2kms*1000
+tcm_dv_seg1*ndVel2kms*1000
 
 
 % tcm_idx_ga = [7, 474, 1856, 2287];

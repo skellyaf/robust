@@ -476,4 +476,7 @@ plot3(x_nofinalDV_t(:,1),x_nofinalDV_t(:,2),x_nofinalDV_t(:,3),'LineWidth',2)
 % plot3(x_t(4100+minidx-1,1),x_t(4100+minidx-1,2),x_t(4100+minidx-1,3),'.','MarkerSize',25)
 
 
+
+
+
 beep

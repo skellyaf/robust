@@ -1,4 +1,4 @@
-function [event_times, event_indicator] = define_events_v2(x, t, tcm_time, simparams)
+function [event_times, event_indicator] = define_events_v2(x, t, tcm_time, simparams) %#codegen
 %define_events Finds the nominal maneuvers, their times, and defining which events are TCMs
 
 % In event_indicator:
@@ -79,7 +79,7 @@ event_indicator = event_indicator(keep_events);
 % event_times     = [0  0 .2 .3 .4 .4 .5]
 % event_indicator = [3  1  1  0  1  0  0]
 
-[unique_event_times, unique_idx, ic] = unique(event_times);
+[unique_event_times, unique_idx] = unique(event_times);
 
 if length(unique_event_times) ~= length(event_times)
 

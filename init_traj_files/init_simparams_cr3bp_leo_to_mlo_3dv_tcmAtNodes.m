@@ -9,6 +9,7 @@ simparams.colorblind = colorblind;
 
 %% CR3BP preamble
 
+moon.mu = 4902.8;
 
 Rm = moon.a; 
 n = sqrt((earth.mu + moon.mu)/Rm^3);
@@ -44,12 +45,12 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 1e-12;
 
 % Small
-simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
-simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+% simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
+% simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
 % Medium
-% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
-% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
 % simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
@@ -79,11 +80,13 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
 
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
-% simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
+
 % simparams.Qt = 1e-6 * eye(3);
-simparams.Qt = 1e-8 * eye(3);
+% simparams.Qt = 1e-8 * eye(3);
+
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 %% Load saved trajectory parameters
 
@@ -121,7 +124,7 @@ simparams.segn_coast_fraction = 0.3; % percent of orbital period to coast in the
 % following flag to anything but zero:
 simparams.target_final_maneuver = 1;
 
-simparams.perform_correction = 0; % flag to incorporate TCM in the trajectory or not
+simparams.perform_correction = 1; % flag to incorporate TCM in the trajectory or not
 simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position dispersion (relevant when the TCMs are tied to nodes instead of optimized each iteration)
 
 
@@ -264,6 +267,7 @@ simparams_old = simparams;
 % simparams = simparams_old;
 
 load('eed_leo_planar_robust0.mat','x_opt'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
+% load('eed_leo_planar_robust1.mat','x_opt'); % the robust trajectory loaded starting from the file above. re-baselining to reaply # of TCMs / nodes (load includes simparams)
 
 
 simparams.x0 = x_opt;
@@ -286,7 +290,7 @@ end
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj_setup.x_i_f, traj_setup.stm_i, simparams);
 
 % Calculate the optimal TCMs
-[tcm_time_setup, tcm_idx_setup, min_tcm_dv_setup, ~, ~, tcm_dv_each_setup] = opt_multiple_tcm_wQ(simparams.x0, traj_setup, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+[tcm_time_setup, tcm_idx_setup, min_tcm_dv_setup, ~, ~, tcm_dv_each_setup] = opt_multiple_tcm_wQ_multiPart(simparams.x0, traj_setup, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
 simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 

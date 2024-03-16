@@ -1,4 +1,4 @@
-function [stm_combined, stt_combined] = dynCellCombine(t, t_s, total_idx_start, total_idx_end, simparams, stm_t_i, stt_t_i)
+function [stm_combined, stt_combined] = dynCellCombine(t, t_s, total_idx_start, total_idx_end, simparams, stm_t_i, stt_t_i) %#codegen
 %dynCellCombine combines multiple STMs and STTs in the cell structures stm_t_i and stt_t_i to
 %create a single STT that spans from t_idx_start to t_idx_end
 %(stt_end_start)
@@ -43,8 +43,8 @@ end
 % to subtract one, unless it is already starting from the beginning (1)
 
 if ~skip
-    t_start = t(total_idx_start);
-    t_end = t(total_idx_end);
+%     t_start = t(total_idx_start);
+%     t_end = t(total_idx_end);
     
     seg_t_end = t_s(total_idx_end);
     seg_t_start = t_s(total_idx_start);
@@ -63,7 +63,7 @@ if ~skip
     
     
     for i = seg_t_start:seg_t_end
-        seg_times = t(t_s==i);
+%         seg_times = t(t_s==i);
 
 
         seg_idx = find(t_s==i);

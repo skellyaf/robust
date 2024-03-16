@@ -67,8 +67,8 @@ simparams.P_initial = diag([simparams.sig_pos^2 simparams.sig_pos^2 simparams.si
 
 % TCM execution error
 % simparams.sig_tcm_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
-simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
-% simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+% simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
+simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
 
 simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
 
@@ -86,11 +86,11 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.R = diag([0 0 0]);
 
 
+% simparams.Qt = 1e-10 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 % simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-% simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-simparams.Qt = 1e-6 * eye(3);
 
 %% Load saved trajectory parameters
 
@@ -337,7 +337,8 @@ end
 [deltaV0, deltaVs_nom0] = calcDeltaV(simparams.x0, traj0.x_i_f, traj0.stm_i, simparams);
 
 % Calculate the optimal TCMs
-[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+% [tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+[tcm_time0, tcm_idx0, min_tcm_dv0, ~, ~, tcm_dv_each0] = opt_multiple_tcm_wQ_multiPart(simparams.x0, traj0, deltaVs_nom0, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 
 simparams.x0 = reshape(simparams.x0,simparams.m,simparams.n);
 
@@ -401,80 +402,118 @@ simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
 
 
 %% Subdivide any lengthy segments
+extend_segs = [];
+for i = 2:simparams.n-1
+    if x_new(7,i) > .07
+        extend_segs = [extend_segs, i];
+    end
+end
+% extend_segs = find(x_new(1:end-1)>.07)
+x_new_save = x_new;
+
+for i = 1:length(extend_segs)
+    x_old = x_new;
+    seg_i = extend_segs(i);
+    [~,x_i_t, t_i] = stateProp(x_old(1:6,seg_i), x_old(7,seg_i), simparams);
+    x_i_new = subdivide_segment(x_i_t, t_i, 4);
+
+    x_new = zeros(7,size(x_old,2)+3);
+    x_new(:,1:seg_i - 1) = x_old(:,1:seg_i - 1);
+    x_new(:,seg_i:seg_i + 3) = x_i_new;
+    x_new(:,seg_i+4:end) = x_old(:,seg_i+1:end);
 
 
-% Seg 4 is long, divide it into 4 segments (+3)
-[~,x_4_t, t_4] = stateProp(x_new(1:6,4), x_new(7,4), simparams);
-x_4_new = subdivide_segment(x_4_t, t_4, 4);
-
-x_new2 = zeros(7,size(x_new,2)+3);
-x_new2(:,1:3) = x_new(:,1:3);
-x_new2(:,4:7) = x_4_new;
-x_new2(:,8:end) = x_new(:,5:end);
 
 
 
 
-% Re-do params
-simparams.n = size(x_new2,2);
+%     t_end_seg_i = sum(x_new(7,1:seg_i + 3));
 
-simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 3];
+    simparams.tcm_nodes(simparams.tcm_nodes > seg_i) = simparams.tcm_nodes(simparams.tcm_nodes > seg_i) + 3;
 
+    extend_segs(extend_segs > seg_i) = extend_segs(extend_segs > seg_i) + 3;
+
+    simparams.maneuverSegments(simparams.maneuverSegments > seg_i) = simparams.maneuverSegments(simparams.maneuverSegments > seg_i) + 3;
+
+end
+
+simparams.n = size(x_new,2);
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 
-simparams.tcm_nodes = [simparams.tcm_nodes(1:2), simparams.tcm_nodes(3:end) + 3];
+simparams.x0 = x_new(:);
 
-
-
-% Seg 3 is also long, divide it into 3 segments (+2)
-
-[~,x_3_t, t_3] = stateProp(x_new(1:6,3), x_new(7,3), simparams);
-x_3_new = subdivide_segment(x_3_t, t_3, 3);
-
-x_new3 = zeros(7,size(x_new2,2)+2);
-x_new3(:,1:2) = x_new2(:,1:2);
-x_new3(:,3:5) = x_3_new;
-x_new3(:,6:end) = x_new2(:,4:end);
-
-
-
-
-% Re-do params
-simparams.n = size(x_new3,2);
-
-simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 2];
-
-simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
-
-simparams.tcm_nodes = [simparams.tcm_nodes(1), simparams.tcm_nodes(2:end) + 2];
-
-
-
-
-% Seg 15 is also long, divide it into 4 segments (+3)
-
-[~,x_15_t, t_15] = stateProp(x_new3(1:6,15), x_new3(7,15), simparams);
-x_15_new = subdivide_segment(x_15_t, t_15, 4);
-
-x_new4 = zeros(7,size(x_new3,2)+3);
-x_new4(:,1:14) = x_new3(:,1:14);
-x_new4(:,15:18) = x_15_new;
-x_new4(:,19:end) = x_new3(:,16:end);
-
-
-
-
-% Re-do params
-simparams.n = size(x_new4,2);
-
-simparams.maneuverSegments = [simparams.maneuverSegments(1:2), simparams.maneuverSegments(3:end) + 3];
-
-simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
-
-simparams.tcm_nodes = [simparams.tcm_nodes(1:7), simparams.tcm_nodes(8:end) + 3];
-
-
-simparams.x0 = x_new4(:);
+% % % % % % Seg 4 is long, divide it into 4 segments (+3)
+% % % % % [~,x_4_t, t_4] = stateProp(x_new(1:6,4), x_new(7,4), simparams);
+% % % % % x_4_new = subdivide_segment(x_4_t, t_4, 4);
+% % % % % 
+% % % % % x_new2 = zeros(7,size(x_new,2)+3);
+% % % % % x_new2(:,1:3) = x_new(:,1:3);
+% % % % % x_new2(:,4:7) = x_4_new;
+% % % % % x_new2(:,8:end) = x_new(:,5:end);
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % % Re-do params
+% % % % % simparams.n = size(x_new2,2);
+% % % % % 
+% % % % % simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 3];
+% % % % % 
+% % % % % simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+% % % % % 
+% % % % % simparams.tcm_nodes = [simparams.tcm_nodes(1:2), simparams.tcm_nodes(3:end) + 3];
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % % Seg 3 is also long, divide it into 3 segments (+2)
+% % % % % 
+% % % % % [~,x_3_t, t_3] = stateProp(x_new(1:6,3), x_new(7,3), simparams);
+% % % % % x_3_new = subdivide_segment(x_3_t, t_3, 3);
+% % % % % 
+% % % % % x_new3 = zeros(7,size(x_new2,2)+2);
+% % % % % x_new3(:,1:2) = x_new2(:,1:2);
+% % % % % x_new3(:,3:5) = x_3_new;
+% % % % % x_new3(:,6:end) = x_new2(:,4:end);
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % % Re-do params
+% % % % % simparams.n = size(x_new3,2);
+% % % % % 
+% % % % % simparams.maneuverSegments = [simparams.maneuverSegments(1), simparams.maneuverSegments(2:end) + 2];
+% % % % % 
+% % % % % simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+% % % % % 
+% % % % % simparams.tcm_nodes = [simparams.tcm_nodes(1), simparams.tcm_nodes(2:end) + 2];
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % % Seg 15 is also long, divide it into 4 segments (+3)
+% % % % % 
+% % % % % [~,x_15_t, t_15] = stateProp(x_new3(1:6,15), x_new3(7,15), simparams);
+% % % % % x_15_new = subdivide_segment(x_15_t, t_15, 4);
+% % % % % 
+% % % % % x_new4 = zeros(7,size(x_new3,2)+3);
+% % % % % x_new4(:,1:14) = x_new3(:,1:14);
+% % % % % x_new4(:,15:18) = x_15_new;
+% % % % % x_new4(:,19:end) = x_new3(:,16:end);
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % 
+% % % % % % Re-do params
+% % % % % simparams.n = size(x_new4,2);
+% % % % % 
+% % % % % simparams.maneuverSegments = [simparams.maneuverSegments(1:2), simparams.maneuverSegments(3:end) + 3];
+% % % % % 
+% % % % % simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
+% % % % % 
+% % % % % simparams.tcm_nodes = [simparams.tcm_nodes(1:7), simparams.tcm_nodes(8:end) + 3];
+% % % % % 
+% % % % % 
+% % % % % simparams.x0 = x_new4(:);
 
 
 

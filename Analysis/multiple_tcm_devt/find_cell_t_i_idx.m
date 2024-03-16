@@ -1,4 +1,4 @@
-function [stt_idx, seg] = find_cell_t_i_idx(t, t_s, stt_t_i, t_idx)
+function [stt_idx, seg] = find_cell_t_i_idx(~, t_s, stt_t_i, t_idx) %#codegen
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,8 +7,8 @@ function [stt_idx, seg] = find_cell_t_i_idx(t, t_s, stt_t_i, t_idx)
 
 seg = t_s(t_idx);
 cum_pre_idx = 0;
-i=1;
-dims=1;
+% i=1;
+% dims=1;
 if seg > 1
     for i = 1:seg - 1
         if i == 1
