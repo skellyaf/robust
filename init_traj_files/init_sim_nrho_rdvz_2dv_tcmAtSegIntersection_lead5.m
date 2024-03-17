@@ -9,6 +9,7 @@ simparams.colorblind = colorblind;
 
 %% CR3BP preamble
 
+moon.mu = 4902.8;
 
 Rm = moon.a; 
 n = sqrt((earth.mu + moon.mu)/Rm^3);
@@ -39,8 +40,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
@@ -87,12 +88,10 @@ simparams.add_tcm_improvement_threshold = 0;
 
 
 
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
-% simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-simparams.Qt = 1e-8 * eye(3);
-% simparams.Qt = 1e-6 * eye(3);
-% simparams.Qt = zeros(3,3);
+
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 %% Load saved trajectory parameters
 
@@ -100,7 +99,7 @@ simparams.Qt = 1e-8 * eye(3);
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
 simparams.n = 10; % number of trajectory segments
 % simparams.n = 10; % number of trajectory segments
-
+simparams.nsv = 6;
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
@@ -108,6 +107,8 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 % simparams.maneuverSegments = [2, simparams.n+1]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
+simparams.corrected_nominal_dvs = logical([1 1]);
+
 simparams.max_num_TCMs = 3; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable

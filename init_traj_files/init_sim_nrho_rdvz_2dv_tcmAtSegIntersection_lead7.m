@@ -40,8 +40,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
-% simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
@@ -81,16 +81,14 @@ simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma =
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
-% simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
-simparams.add_tcm_improvement_threshold = 0;
+simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 % simparams.R = diag([0 0 0]);
 
 
 
-
-% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 %% Load saved trajectory parameters
@@ -107,8 +105,6 @@ simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial traj
 % simparams.maneuverSegments = [2, simparams.n+1]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.maneuverSegments = [2, simparams.n]; % the segments with an impulsive maneuver at their beginning (or the nodes with an impulsive maneuver)
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where the position dispersion is constrained to simparams.P_max_r
-simparams.corrected_nominal_dvs = logical([1 1]);
-
 simparams.max_num_TCMs = 3; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
@@ -138,7 +134,7 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 simparams.rdvz_flag = 0; % flag to identify a flexible final state for the rendezvous problem setup 
 
 % simparams.start_P_growth_node = simparams.maneuverSegments(1); % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
-simparams.start_P_growth_node = 1; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
 
 simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
 
@@ -243,8 +239,8 @@ time_between_dvs = total_transfer_duration - chaser_coast_before_dv1 - extra_tar
 
 %% Load previous case 1 3 TCM robust trajectory
 % reloading and restarting because the optimal switched to 2 TCMs
-% load('nrho_rdvz_robust_3tcm_c1.mat'); % contains x_opt
-load('nrho_rdvz_robust_3tcm_c2.mat'); % contains x_opt
+% load('nrho_rdvz_robust_3tcm_c2.mat'); % contains x_opt
+load('nrho_rdvz_robust_2tcm_c1.mat'); % case 1, contains x_opt
 simparams.x0=x_opt;
 
 
@@ -324,8 +320,6 @@ simparams.P_constrained_nodes = simparams.maneuverSegments(2:end); % Nodes where
 
 
 simparams.tcm_nodes = [3, 4, 5];
-
-assert(length(tcm_time0) == length(simparams.tcm_nodes));
 
 
 

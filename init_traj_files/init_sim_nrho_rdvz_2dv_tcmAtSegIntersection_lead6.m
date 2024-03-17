@@ -9,6 +9,7 @@ simparams.colorblind = colorblind;
 
 %% CR3BP preamble
 
+moon.mu = 4902.8;
 
 Rm = moon.a; 
 n = sqrt((earth.mu + moon.mu)/Rm^3);
@@ -86,12 +87,9 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 
 
 
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .000001; % the value used for dev/testing
-% simparams.Qt = sqrt(4.8e-7^2 / 3) * eye(3) * (ndTime2sec^3/ndDist2km^2) * .00001;
-% simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
-% simparams.Qt = 1e-8 * eye(3);
-simparams.Qt = 1e-6 * eye(3);
-% simparams.Qt = zeros(3,3);
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 %% Load saved trajectory parameters
 
@@ -99,7 +97,7 @@ simparams.Qt = 1e-6 * eye(3);
 simparams.m = 7; % number of elements per trajectory segment (6 element state vector, 1 for time duration of segment)
 simparams.n = 10; % number of trajectory segments
 % simparams.n = 10; % number of trajectory segments
-
+simparams.nsv = 6;
 simparams.x0 = zeros(simparams.m, simparams.n); % empty storage for initial trajectory guess
 
 %% Trajectory options
