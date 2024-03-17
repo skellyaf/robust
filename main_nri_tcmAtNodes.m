@@ -210,7 +210,7 @@ axis equal;
 % multiple_tcm_min_r5;
 
 %% Fmincon call via output function
-tic
+tic 
 mkdir(outputPath);
 
 [x_opt,J,history,searchdir,exitflag,output] = runfmincon(simparams, outputPath);

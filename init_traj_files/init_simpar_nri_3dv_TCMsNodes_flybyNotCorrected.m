@@ -146,7 +146,7 @@ simparams.target_Pr_constraint_on = 1; % Flag to constrain the target position d
 
 simparams.skip_dv_1 = false; % Flag to not include the first nominal DV in the cost function / DV calculation / DV gradients.
 
-simparams.circ_init_constraint = true; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
+simparams.circ_init_constraint = false; % flag to constrain the initial orbit to be circular and of a specific energy and radius rather than a full initial state constraint
 
 %% Orbit parameters
 %% Initial orbit - currently circular inclined
@@ -403,24 +403,39 @@ simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
 
 %% Subdivide any lengthy segments
 extend_segs = [];
+
 for i = 2:simparams.n-1
-    if x_new(7,i) > .07
+%     if x_new(7,i) > .07
+%         extend_segs = [extend_segs, i];
+%     end
+
+    if sum(traj0.t_s == i) > 300
         extend_segs = [extend_segs, i];
     end
+
 end
+orig_extend_segs = extend_segs;
+
+
 % extend_segs = find(x_new(1:end-1)>.07)
 x_new_save = x_new;
 
 for i = 1:length(extend_segs)
     x_old = x_new;
     seg_i = extend_segs(i);
-    [~,x_i_t, t_i] = stateProp(x_old(1:6,seg_i), x_old(7,seg_i), simparams);
-    x_i_new = subdivide_segment(x_i_t, t_i, 4);
 
-    x_new = zeros(7,size(x_old,2)+3);
+    [~,x_i_t, t_i] = stateProp(x_old(1:6,seg_i), x_old(7,seg_i), simparams);
+%     [~,~,~,~,~,x_i_t, t_i] = statestmsttQQ2Prop(x_old(1:6,seg_i), x_old(7,seg_i), simparams);
+
+%     n_new_segs = ceil(length(t_i) / 300);
+    n_new_segs = ceil(sum(traj0.t_s == orig_extend_segs(i)) / 300);
+
+    x_i_new = subdivide_segment(x_i_t, t_i, n_new_segs);
+
+    x_new = zeros(7,size(x_old,2) + n_new_segs - 1);
     x_new(:,1:seg_i - 1) = x_old(:,1:seg_i - 1);
-    x_new(:,seg_i:seg_i + 3) = x_i_new;
-    x_new(:,seg_i+4:end) = x_old(:,seg_i+1:end);
+    x_new(:,seg_i:seg_i + n_new_segs - 1) = x_i_new;
+    x_new(:,seg_i + n_new_segs:end) = x_old(:,seg_i + 1:end);
 
 
 
@@ -429,11 +444,11 @@ for i = 1:length(extend_segs)
 
 %     t_end_seg_i = sum(x_new(7,1:seg_i + 3));
 
-    simparams.tcm_nodes(simparams.tcm_nodes > seg_i) = simparams.tcm_nodes(simparams.tcm_nodes > seg_i) + 3;
+    simparams.tcm_nodes(simparams.tcm_nodes > seg_i) = simparams.tcm_nodes(simparams.tcm_nodes > seg_i) + n_new_segs - 1;
 
-    extend_segs(extend_segs > seg_i) = extend_segs(extend_segs > seg_i) + 3;
+    extend_segs(extend_segs > seg_i) = extend_segs(extend_segs > seg_i) + n_new_segs - 1;
 
-    simparams.maneuverSegments(simparams.maneuverSegments > seg_i) = simparams.maneuverSegments(simparams.maneuverSegments > seg_i) + 3;
+    simparams.maneuverSegments(simparams.maneuverSegments > seg_i) = simparams.maneuverSegments(simparams.maneuverSegments > seg_i) + n_new_segs - 1;
 
 end
 
