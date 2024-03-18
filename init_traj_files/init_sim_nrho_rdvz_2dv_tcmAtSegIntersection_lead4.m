@@ -138,7 +138,7 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 simparams.rdvz_flag = 0; % flag to identify a flexible final state for the rendezvous problem setup 
 
 % simparams.start_P_growth_node = simparams.maneuverSegments(1); % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
-simparams.start_P_growth_node = 1; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
 
 simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
 
@@ -329,7 +329,13 @@ assert(length(tcm_time0) == length(simparams.tcm_nodes));
 
 
 
-
+%% overwrite with another converged robust trajectory that is a much closer convergence
+load('nrho_rdvz_c2.mat');
+simparams.x0 = x_opt(:);
+simparams.m = m;
+simparams.n = n;
+simparams.maneuverSegments = maneuverSegments;
+simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 
 %% Fmincon optimization options
 
