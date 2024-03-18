@@ -310,14 +310,14 @@ simparams.x0(7,simparams.maneuverSegments(3)) = T_coast_nrho_target;
 
 % Single parameter vector
 
-load('nri_det_opt_flex0.mat');
-% load('nri_det_opt_20seg.mat');
+% load('nri_det_opt_flex0.mat');
+load('nri_det_opt_20seg.mat');
 % load('nri_det_opt_update.mat');
 
 simparams.x0 = x_opt;
-simparams.maneuverSegments = [2, 15, 24];
+simparams.maneuverSegments = [2, 10, 20];
 simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
-simparams.n = 24;
+simparams.n = 20;
 % simparams.n=size(x_opt,2);
 % 
 % simparams.maneuverSegments = [2, 14, simparams.n]; % the segments with an impulsive maneuver at their beginning
