@@ -93,8 +93,8 @@ simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
 % simparams.Qt = 4.8e-7 * eye(3) * ndTime2sec^3 / ndDist2m^2 * 1;
 % simparams.Qt = 1e-8 * eye(3);
 % simparams.Qt = 1e-6 * eye(3);
-simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-% simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 % simparams.Qt = zeros(3,3);
@@ -380,6 +380,8 @@ simparams.x0(7,end) = extra_target_coast;
 % Single parameter vector
 simparams.x0 = simparams.x0(:);
 
+
+
 %% Reset numerical propagation options
 simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.options = odeset('AbsTol',1e-12,'RelTol',1e-12);
@@ -388,6 +390,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 %% Perform the initial trajectory history propagations
 % To calculate the optimal number of TCMs and place a segment at each TCM
 % intersection and modify how the optimization problem is constructed.
+
+
 traj0  = createStateStmSttQdQHistory(simparams.x0, simparams);
 
 if isfield(simparams,'rdvz_flag')
@@ -461,6 +465,16 @@ simparams.tcm_nodes = [3, 4, 5];
 % 
 % 
 % simparams.x0 = x_new2(:);
+
+
+
+%% overwrite with another converged robust trajectory that is a much closer convergence
+load('nrho_rdvz_c1.mat');
+simparams.x0 = x_opt(:);
+simparams.m = m;
+simparams.n = n;
+simparams.maneuverSegments = maneuverSegments;
+simparams.P_constrained_nodes = simparams.maneuverSegments(2:end);
 
 %% Fmincon optimization options
 

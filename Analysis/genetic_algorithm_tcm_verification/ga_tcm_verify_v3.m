@@ -42,11 +42,15 @@ savename = 'nri_flex0_detOptSPverify';
 % det opt nri flex0
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240228_1252.03_3dv_nri_smalldx0_flybynotcorrected_det_flex0\workspace.mat')
 
+init_fn = 'init_simpar_nri_3dv_TCMsNodes_flybyNotCorrected_flex0';
+run(init_fn);
+
+
 % robust flex0
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_1711.31_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240316_2040.59_3dv_nri_meddx0_flybynotcorrected_robust_flex0\workspace.mat')
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_1711.54_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
-load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_2021.10_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_2021.10_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
 
 
 % close all;
@@ -85,18 +89,18 @@ x = reshape(x_opt, simparams.m, simparams.n);
 % % simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = (.3e-3)^2 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-% 
-% 
-% 
-% %%
-% traj = createStateStmSttQdQHistory(x, simparams);
-% [deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
-% % % IF WANT TO TEST THE RESULT OF THE ALGORITHM ALONG THE NOMINAL TRAJ --
-% % % UNCOMMENT IF TESTING THE NLP TCMs
-% [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ_multiPart(x, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
-% [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x_opt, tcm_time, simparams);
-% 
-% [P_target, min_tcm_dv, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
+
+
+%%
+traj = createStateStmSttQdQHistory(x(:), simparams);
+[deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
+% % IF WANT TO TEST THE RESULT OF THE ALGORITHM ALONG THE NOMINAL TRAJ --
+% % UNCOMMENT IF TESTING THE NLP TCMs
+[tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ_multiPart(x(:), traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+[Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x_opt, tcm_time, simparams);
+
+[P_target, min_tcm_dv, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
 
 %%
 
@@ -199,9 +203,9 @@ options = optimoptions(@ga,...
             		'MaxTime',36000,...
            		    'MaxGenerations',500 ,...
            		    'Display','iter',...
-            		'UseParallel',true, ...
+            		'UseParallel',false, ...
                     'PopulationSize',100, ...
-                    'MaxStallGenerations',100);
+                    'MaxStallGenerations',50);
 
 
 
