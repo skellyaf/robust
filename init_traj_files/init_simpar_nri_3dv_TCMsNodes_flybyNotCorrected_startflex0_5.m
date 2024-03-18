@@ -408,13 +408,14 @@ simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
 
 %% Subdivide any lengthy segments
 extend_segs = [];
+% extend_segs2 = [];
 
 for i = 2:simparams.n-1
 %     if x_new(7,i) > .07
-%         extend_segs = [extend_segs, i];
+%         extend_segs2 = [extend_segs2, i];
 %     end
 
-    if sum(traj0.t_s == i) > 200
+    if sum(traj0.t_s == i) > 200 || x_new(7,i) > .09
         extend_segs = [extend_segs, i];
     end
 
@@ -434,6 +435,11 @@ for i = 1:length(extend_segs)
 
 %     n_new_segs = ceil(length(t_i) / 300);
     n_new_segs = ceil(sum(traj0.t_s == orig_extend_segs(i)) / 200);
+    n_new_segs2 = ceil(t_i(end) / .05);
+
+    if n_new_segs2 > n_new_segs
+        n_new_segs = n_new_segs2;
+    end
 
     x_i_new = subdivide_segment(x_i_t, t_i, n_new_segs);
 
