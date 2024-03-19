@@ -40,8 +40,8 @@ simparams.options = odeset('AbsTol',2.3e-14,'RelTol',2.3e-14);
 % simparams.P_max_r = 100 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = .5 / ndDist2km; % km converted to ND dist
-simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
-% simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
+% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = .1 / ndDist2km; % km converted to ND dist
 % simparams.P_max_r = 5 / ndDist2km; % km converted to ND dist
 
 % Initial uncertainty
@@ -89,8 +89,8 @@ simparams.add_tcm_improvement_threshold = 0;
 
 
 
-% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 %% Load saved trajectory parameters
@@ -138,7 +138,7 @@ simparams.constrain_dv1_inclination_change = 0; % flag to constrain all inclinat
 simparams.rdvz_flag = 0; % flag to identify a flexible final state for the rendezvous problem setup 
 
 % simparams.start_P_growth_node = simparams.maneuverSegments(1); % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
-simparams.start_P_growth_node = 2; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
+simparams.start_P_growth_node = 1; % At which node to allow the covariance to grow via linear dynamics/STM. Another way to think about it: where simparams.P_initial is applied initially
 
 simparams.num_time_idxs_add_per_seg = 0; % in some cases, the indices around the optimal TCMs are somewhat far apart. Adding some to see if it helps.
 

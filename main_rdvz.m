@@ -196,7 +196,7 @@ end
 % [tcm_time,tcm_idx,min_tcm_dv,~,~,tcm_dv_each] = opt_multiple_tcm(x_opt, deltaVs_nom, t, t_s, stm_t, stm_t_i, simparams);
 
 if ~simparams.perform_correction
-    [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
+    [tcm_time, tcm_idx, min_tcm_dv, ~, ~, tcm_dv_each] = opt_multiple_tcm_wQ_multiPart(x_opt, traj, deltaVs_nom, simparams); % inputs: x, t, t_s, stm_t, stm_t_i, simparams
 else
     tcm_time = zeros(1, length(simparams.tcm_nodes));
     
