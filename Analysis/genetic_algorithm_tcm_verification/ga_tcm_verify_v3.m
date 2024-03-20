@@ -40,13 +40,15 @@ savename = 'nri_flex0_detOptSPverify';
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240222_1727.03_2dv_leo_llo_det\workspace.mat')
 
 % det opt nri flex0
-% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240228_1252.03_3dv_nri_smalldx0_flybynotcorrected_det_flex0\workspace.mat')
+load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240228_1252.03_3dv_nri_smalldx0_flybynotcorrected_det_flex0\workspace.mat')
 
-init_fn = 'init_simpar_nri_3dv_TCMsNodes_flybyNotCorrected_flex0';
-run(init_fn);
+% init_fn = 'init_simpar_nri_3dv_TCMsNodes_flybyNotCorrected_flex0';
+% init_fn = 'init_simpar_nri_3dv_TCMsNodes_flybyNotCorrected_startflex0';
+% run(init_fn);
 
 
 % robust flex0
+% load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240316_1624.04_3dv_nri_meddx0_flybynotcorrected_robust_flex0\workspace.mat')
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_1711.31_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\20240316_2040.59_3dv_nri_meddx0_flybynotcorrected_robust_flex0\workspace.mat')
 % load('C:\Users\skell\OneDrive - USU\Documents\code_repos\robust\sims\from_aries\20240317_1711.54_3dv_nri_flybynotcorrected_robust_flex0\workspace.mat')
@@ -62,33 +64,40 @@ x = reshape(x_opt, simparams.m, simparams.n);
 
 %% IF CHANGING THE STOCHASTIC PARAMS
 
-% simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
+simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % 
 % % Initial uncertainty
-% 
-% % Medium
-% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
-% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
-% 
-% simparams.P_initial = diag([simparams.sig_pos^2 simparams.sig_pos^2 simparams.sig_pos^2 simparams.sig_vel^2 simparams.sig_vel^2 simparams.sig_vel^2]);
-% 
-% % TCM execution error
-% % simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
-% simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
-% simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
-% 
-% % Nominal maneuver execution error
-% % simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+% Very Small
+% simparams.sig_pos = 10 / 1e3 / ndDist2km; % Position +/- 10 m in all 3 direction
+% simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
+
+% Small
+% simparams.sig_pos = 100 / 1e3 / ndDist2km; % Position +/- 100 m in all 3 direction
+% simparams.sig_vel = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions
+
+% Medium
+simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+
+simparams.P_initial = diag([simparams.sig_pos^2 simparams.sig_pos^2 simparams.sig_pos^2 simparams.sig_vel^2 simparams.sig_vel^2 simparams.sig_vel^2]);
+
+% TCM execution error
+% simparams.sig_tcm_error = .01 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 cm/s
+simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
+simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
+
+% Nominal maneuver execution error
+simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
 % simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
-% simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
-% 
-% simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
-% 
-% 
-% % simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-% % simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
+
+simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
+
+
+% simparams.Qt = 1e-8 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 % simparams.Qt = (.3e-3)^2 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
-% % simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
+% simparams.Qt = 1e-5 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converted to ND dist ^ 2 / ND time ^ 3
 
 
 
@@ -101,6 +110,12 @@ traj = createStateStmSttQdQHistory(x(:), simparams);
 [Q_k_km1, dQ_k_km1_dxi, dQ_k_km1_ddti] = calc_Q_events(traj, x_opt, tcm_time, simparams);
 
 [P_target, min_tcm_dv, tcm_dv, P_i_minus, P_i_plus] = calc_covariance_wQ_tcmdv_v3(x, traj, tcm_time, 1, deltaVs_nom, simparams.P_initial, Q_k_km1, simparams);
+
+
+min_tcm_dv*ndVel2kms*3000
+
+
+
 
 %%
 
@@ -195,7 +210,7 @@ b = -1 * ones(num_tcms_p1 - 1, 1);
 %             		'UseParallel',true, ...
 %                     'InitialPopulationMatrix',tcm_idx', ...
 %                     'PopulationSize',1, ...
-%                     'MaxStallGenerations',100);
+%                     'MaxStallGenerations',50);
 
 options = optimoptions(@ga,...
             		'ConstraintTolerance',1e-12,...
@@ -203,7 +218,7 @@ options = optimoptions(@ga,...
             		'MaxTime',36000,...
            		    'MaxGenerations',500 ,...
            		    'Display','iter',...
-            		'UseParallel',false, ...
+            		'UseParallel',true, ...
                     'PopulationSize',100, ...
                     'MaxStallGenerations',50);
 
