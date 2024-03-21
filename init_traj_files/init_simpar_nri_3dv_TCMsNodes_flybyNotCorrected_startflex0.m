@@ -54,12 +54,12 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
 % Small
-% simparams.sig_pos = 100 / 1e3 / ndDist2km; % Position +/- 100 m in all 3 direction
-% simparams.sig_vel = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions
+simparams.sig_pos = 100 / 1e3 / ndDist2km; % Position +/- 100 m in all 3 direction
+simparams.sig_vel = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions
 
 % Medium
-simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
-simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
 % simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
@@ -79,8 +79,8 @@ simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.
 % Nominal maneuver execution error
 % simparams.sig_dv_error = 1e-12; % Velocity 1 sigma = nearly 0 cm/s
 % simparams.sig_dv_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 cm/s
-simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
-% simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+% simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
 % simparams.sig_dv_error = 30 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = X m/s
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
