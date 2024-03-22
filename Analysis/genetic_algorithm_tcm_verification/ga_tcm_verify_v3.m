@@ -17,7 +17,7 @@ addpath(genpath('../../'));
 % x=reshape(x_opt, simparams.m, simparams.n);
 
 
-savename = 'nri_flex0_detOptSPverify';
+savename = 'nri_flex0_robustverify';
 
 %% x0
 
@@ -87,8 +87,8 @@ simparams.sig_tcm_error = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma 
 simparams.R = diag([simparams.sig_tcm_error, simparams.sig_tcm_error, simparams.sig_tcm_error]).^2;
 
 % Nominal maneuver execution error
-simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
-% simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
+% simparams.sig_dv_error = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 1 m/s
+simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma = 10 m/s
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
 simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
@@ -101,7 +101,7 @@ simparams.Qt = 1e-6 * eye(3) * ndTime2sec^3 / ndDist2m^2; % m^2 / sec^3 converte
 
 
 
-%%
+% %%
 traj = createStateStmSttQdQHistory(x(:), simparams);
 [deltaV, deltaVs_nom] = calcDeltaV(x, traj.x_i_f, traj.stm_i, simparams);
 % % IF WANT TO TEST THE RESULT OF THE ALGORITHM ALONG THE NOMINAL TRAJ --
@@ -322,7 +322,7 @@ end
 %% save output
 
 
-if 0
+if 1
     formatOut = 'yyyymmdd_HHMM.SS';
     dateString = datestr(now,formatOut);
     outputPath = strcat('./sims/',dateString,'_',savename);

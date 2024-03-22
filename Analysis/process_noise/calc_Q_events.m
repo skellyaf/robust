@@ -14,6 +14,16 @@ nsv = simparams.nsv;
 event_idx_logical = logical(sum(traj.t'==event_times', 1));    
 event_idxs = find(event_idx_logical);
 
+
+% For some reason, there is sometimes a time index that is 1e-16 off of
+% being exactly equal. This cleans it up:
+if length(event_idxs) ~= length(event_times)
+    event_idxs = zeros(1,length(event_times));
+    for i = 1:length(event_times)
+        [~, event_idxs(i)] = min(abs(traj.t - event_times(i)));
+    end
+end
+
 Q_k_km1 = zeros(nsv,nsv,length(event_indicator));
 
 if nargout > 1
@@ -54,6 +64,10 @@ for k = 1:length(event_indicator)
                     idx_i = find(traj.t == t0_i);
                 end
 
+                if isempty(idx_i)
+                    [~, idx_i] = min(abs(traj.t-t0_i));
+                end
+
                 tf_i = sum(x(m,1:i));
                 idx_fi = find(traj.t == tf_i);
 
@@ -69,6 +83,7 @@ for k = 1:length(event_indicator)
                     idx_i = idx_i(1);
                 end
                     
+                
 
 
 

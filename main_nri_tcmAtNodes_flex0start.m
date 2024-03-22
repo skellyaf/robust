@@ -32,7 +32,7 @@ clc;
 format longg;
 addpath(genpath('./'));
 
-savename = ['3dv_nri_flybynotcorrected_robust_flex0'];
+savename = ['3dv_nri_flybynotcorrected_robust_flex0_20maxtcms'];
 scenario = savename;
 saveOutput = true; % bool for saving the output or not, true or false
 saveVideo = true;

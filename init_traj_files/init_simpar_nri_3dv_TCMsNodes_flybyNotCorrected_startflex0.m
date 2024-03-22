@@ -54,12 +54,12 @@ simparams.P_max_r = 1 / ndDist2km; % km converted to ND dist
 % simparams.sig_vel = 10 / 1e6 / ndDist2km * ndTime2sec; % Velocity +/- 1 cm/s in all 3 directions
 
 % Small
-simparams.sig_pos = 100 / 1e3 / ndDist2km; % Position +/- 100 m in all 3 direction
-simparams.sig_vel = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions
+% simparams.sig_pos = 100 / 1e3 / ndDist2km; % Position +/- 100 m in all 3 direction
+% simparams.sig_vel = .1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 10 cm/s in all 3 directions
 
 % Medium
-% simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
-% simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
+simparams.sig_pos = 1 / ndDist2km; % Position +/- 1 km in all 3 direction converted to ND dist
+simparams.sig_vel = 1 / 1e3 / ndDist2km * ndTime2sec; % Velocity +/- 1 m/s in all 3 directions converted to ND dist / ND time
 
 % Large
 % simparams.sig_pos = 10 / ndDist2km; % Position +/- 10 km in all 3 direction converted to ND dist
@@ -85,8 +85,8 @@ simparams.sig_dv_error = 10 / 1e3 / ndDist2km * ndTime2sec; % Velocity 1 sigma =
 
 simparams.R_dv = diag([simparams.sig_dv_error, simparams.sig_dv_error, simparams.sig_dv_error]).^2;
 
-% simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
-simparams.add_tcm_improvement_threshold = 0;
+simparams.add_tcm_improvement_threshold = sqrt(trace(simparams.R)) * 3;
+% simparams.add_tcm_improvement_threshold = 0;
 
 % simparams.R = diag([0 0 0]);
 
@@ -116,7 +116,7 @@ simparams.corrected_nominal_dvs = logical([1 0 1]); % Logical flag for each nomi
 % simparams.correct_nominal_dvs = 0; % flag to incorporate a dispersion correction with the nominal delta Vs or not
 
 
-simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 20; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
@@ -415,13 +415,13 @@ simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
 extend_segs = [];
 
 for i = 2:simparams.n-1
-%     if x_new(7,i) > .07
-%         extend_segs = [extend_segs, i];
-%     end
-
-    if sum(traj0.t_s == i) > 200
+    if x_new(7,i) > .15
         extend_segs = [extend_segs, i];
     end
+% 
+%     if sum(traj0.t_s == i) > 600
+%         extend_segs = [extend_segs, i];
+%     end
 
 end
 orig_extend_segs = extend_segs;
@@ -438,7 +438,7 @@ for i = 1:length(extend_segs)
 %     [~,~,~,~,~,x_i_t, t_i] = statestmsttQQ2Prop(x_old(1:6,seg_i), x_old(7,seg_i), simparams);
 
 %     n_new_segs = ceil(length(t_i) / 300);
-    n_new_segs = ceil(sum(traj0.t_s == orig_extend_segs(i)) / 200);
+    n_new_segs = ceil(sum(traj0.t_s == orig_extend_segs(i)) / 300);
 
     x_i_new = subdivide_segment(x_i_t, t_i, n_new_segs);
 

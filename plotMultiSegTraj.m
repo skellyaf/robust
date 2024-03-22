@@ -141,9 +141,9 @@ if strcmp(dynSys,'2bp')
 elseif strcmp(dynSys,'cr3bp')
 %     view([-65, 15]); % nrho view
 
-%     view([80, 12]); %leo-nri view
+    view([80, 12]); %leo-nri view
 
-    view([0 90]); % planar
+%     view([0 90]); % planar
 
     % planar eed pef leo
 %     xlim([-.75 1.1])
