@@ -110,7 +110,7 @@ simparams.corrected_nominal_dvs = logical([1 0 1]); % Logical flag for each nomi
 % simparams.correct_nominal_dvs = 0; % flag to incorporate a dispersion correction with the nominal delta Vs or not
 
 
-simparams.max_num_TCMs = 10; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
+simparams.max_num_TCMs = 20; % maximum number of TCMs per TCM optimization portion (between nominal maneuvers)
 
 
 simparams.nom_dvctied = 0; % 1 A flag to force the TCM to occur concurrently with the corresponding nominal impulsive maneuver identified by the following variable
