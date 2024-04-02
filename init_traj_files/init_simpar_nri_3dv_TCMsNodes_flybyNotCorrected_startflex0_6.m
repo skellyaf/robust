@@ -417,7 +417,7 @@ simparams.tcm_nodes = [tcm_idxs_p1+2, tcm_idxs_p2+3];
 extend_segs = [];
 
 for i = 2:simparams.n-1
-    if x_new(7,i) > .15
+    if x_new(7,i) > .08
         extend_segs = [extend_segs, i];
     end
 % 
